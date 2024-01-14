@@ -35,7 +35,9 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
-include { INPUT_CHECK } from '../subworkflows/local/input_check'
+include { FETCH_READS    } from '../subworkflows/local/fetch_reads'
+
+include { CLEAN_ASSEMBLY } from '../subworkflows/local/clean_assembly'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -49,6 +51,9 @@ include { INPUT_CHECK } from '../subworkflows/local/input_check'
 include { FASTQC                      } from '../modules/nf-core/fastqc/main'
 include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
+include { SPADES                      } from '../modules/nf-core/spades/main'
+include { MEGAHIT                     } from '../modules/nf-core/megahit/main'
+
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -63,24 +68,56 @@ workflow MIASSEMBLER {
 
     ch_versions = Channel.empty()
 
-    //
-    // SUBWORKFLOW: Read in samplesheet, validate and stage input files
-    //
-    INPUT_CHECK (
-        file(params.input)
+    // Download reads //
+    FETCH_READS(
+        [ [id: params.reads_accession], params.study_accession, params.reads_accession ]
+        // fetch tool config file //
     )
-    ch_versions = ch_versions.mix(INPUT_CHECK.out.versions)
-    // TODO: OPTIONAL, you can use nf-validation plugin to create an input channel from the samplesheet with Channel.fromSamplesheet("input")
-    // See the documentation https://nextflow-io.github.io/nf-validation/samplesheets/fromSamplesheet/
-    // ! There is currently no tooling to help you write a sample sheet schema
 
-    //
-    // MODULE: Run FastQC
-    //
+    ch_versions = ch_versions.mix(FETCH_READS.out.versions.first())
+
     FASTQC (
-        INPUT_CHECK.out.reads
+        FETCH_READS.out.reads
     )
     ch_versions = ch_versions.mix(FASTQC.out.versions.first())
+
+    // Assembly //
+    assembly = Channel.empty()
+
+    if ( params.assembler == "metaspades" || params.assembler == "spades" ) {
+
+        SPADES(
+            reads.map { meta, reads -> [meta, reads, [], []] },
+            params.assembler,
+            [], // yml input parameters, which we don't use
+            []  // hmm, not used
+        )
+
+        assembly = SPADES.out.contigs
+        ch_versions = ch_versions.mix(SPADES.out.versions.first())
+
+    } else if ( params.assembler == "megahit" ) {
+
+        MEGAHIT(
+            FETCH_READS.out.reads
+        )
+
+        assembly = MEGAHIT.out.contigs
+        ch_versions = ch_versions.mix(SPADES.out.versions.first())
+    }
+
+    // Clean the assembly contigs //
+    CLEAN_ASSEMBLY(
+        assembly,
+        Channel.fromPath("reference_genome")
+    )
+
+    ch_versions = ch_versions.mix(CLEAN_ASSEMBLY.out.versions.first())
+
+    // Stats //
+    QUAST(
+
+    )
 
     CUSTOM_DUMPSOFTWAREVERSIONS (
         ch_versions.unique().collectFile(name: 'collated_versions.yml')
