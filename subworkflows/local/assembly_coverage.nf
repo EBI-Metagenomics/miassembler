@@ -1,7 +1,7 @@
-include { BWAMEM2_INDEX                        } from '../modules/nf-core/bwamem2/index/main'
-include { BWAMEM2_MEM                          } from '../modules/nf-core/bwamem2/mem/main'
-include { SAMTOOLS_INDEX                       } from '../modules/nf-core/samtools/index/main'
-include { METABAT2_JGISUMMARIZEBAMCONTIGDEPTHS } from '../modules/nf-core/metabat2/jgisummarizebamcontigdepths/main'
+include { BWAMEM2_INDEX                        } from '../../modules/nf-core/bwamem2/index/main'
+include { BWAMEM2_MEM                          } from '../../modules/nf-core/bwamem2/mem/main'
+include { SAMTOOLS_INDEX                       } from '../../modules/nf-core/samtools/index/main'
+include { METABAT2_JGISUMMARIZEBAMCONTIGDEPTHS } from '../../modules/nf-core/metabat2/jgisummarizebamcontigdepths/main'
 
 workflow ASSEMBLY_COVERAGE {
 
@@ -39,7 +39,7 @@ workflow ASSEMBLY_COVERAGE {
 
     ch_versions = ch_versions.mix(METABAT2_JGISUMMARIZEBAMCONTIGDEPTHS.out.versions.first())
 
-    output:
+    emit:
     coverage_depth   = METABAT2_JGISUMMARIZEBAMCONTIGDEPTHS.out.depth
     versions         = ch_versions
 }

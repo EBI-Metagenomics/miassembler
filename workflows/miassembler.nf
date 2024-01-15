@@ -13,8 +13,6 @@ def summary_params = paramsSummaryMap(workflow)
 // Print parameter summary log to screen
 log.info logo + paramsSummaryLog(workflow) + citation
 
-WorkflowMiassembler.initialise(params, log)
-
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     CONFIG FILES
@@ -35,7 +33,7 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
-include { FETCH_READS       } from '../subworkflows/local/fetch_reads'
+include { FETCHTOOL_READS   } from '../modules/local/fetchtool_reads'
 include { CLEAN_ASSEMBLY    } from '../subworkflows/local/clean_assembly'
 include { ASSEMBLY_COVERAGE } from '../subworkflows/local/assembly_coverage'
 
@@ -69,15 +67,15 @@ workflow MIASSEMBLER {
     ch_versions = Channel.empty()
 
     // Download reads //
-    FETCH_READS(
+    FETCHTOOL_READS(
         [ [id: params.reads_accession], params.study_accession, params.reads_accession ],
         file("$projectDir/assets/fetch_tool_anonymous.json")
     )
 
-    ch_versions = ch_versions.mix(FETCH_READS.out.versions.first())
+    ch_versions = ch_versions.mix(FETCHTOOL_READS.out.versions.first())
 
     FASTQC (
-        FETCH_READS.out.reads
+        FETCHTOOL_READS.out.reads
     )
     ch_versions = ch_versions.mix(FASTQC.out.versions.first())
 
@@ -87,7 +85,7 @@ workflow MIASSEMBLER {
     if ( params.assembler == "metaspades" || params.assembler == "spades" ) {
 
         SPADES(
-            reads.map { meta, reads -> [meta, reads, [], []] },
+            FETCHTOOL_READS.out.reads.map { meta, reads -> [meta, reads, [], []] },
             params.assembler,
             [], // yml input parameters, which we don't use
             []  // hmm, not used
@@ -110,16 +108,21 @@ workflow MIASSEMBLER {
     }
 
     // Clean the assembly contigs //
+
+    reference = Channel.fromPath("$params.reference_genomes_folder/$params.reference_genome.*", checkIfExists: true).collect().map { db_files ->
+        [ ["id": params.reference_genome], db_files ]
+    }
+
     CLEAN_ASSEMBLY(
         assembly,
-        Channel.fromPath("$params.reference_genomes_folder/$params.reference_genome.*", checkIfExists: true)
+        reference
     )
 
     ch_versions = ch_versions.mix(CLEAN_ASSEMBLY.out.versions)
 
     // Coverage //
     ASSEMBLY_COVERAGE(
-        FETCH_READS.out.reads,
+        FETCHTOOL_READS.out.reads,
         assembly
     )
 

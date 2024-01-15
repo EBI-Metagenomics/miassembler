@@ -1,6 +1,6 @@
 process SPADES {
     tag "$meta.id"
-    label 'process_high'
+    label 'process_high_memory'
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
@@ -34,23 +34,25 @@ process SPADES {
     def nanopore_reads = nanopore ? "--nanopore $nanopore" : ""
     def custom_hmms = hmm ? "--custom-hmms $hmm" : ""
     def reads = yml ? "--dataset $yml" : "$illumina_reads $pacbio_reads $nanopore_reads"
-    def metaspades = metaspdes ? "--metaspades" : ""
+    def metaspades_arg = metaspades ? "--meta" : ""
 
     // Handle retries
-    if (task.attempt > 0) {
+    def restart = ""
+    if (task.attempt > 1) {
         // Set of extra flags to restart the assembly process
-        def restart = "--restart-from last"
+        restart = "--restart-from last"
         reads = "" // --restart doesn't allow basic flags to be submitted
     }
 
     """
     spades.py \\
         $args \\
-        $metaspades \\
+        $metaspades_arg \\
         --threads $task.cpus \\
         --memory $maxmem \\
         $custom_hmms \\
         $reads \\
+        $restart \\
         -o ./
     mv spades.log ${prefix}.spades.log
 
