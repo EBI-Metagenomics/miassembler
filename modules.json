@@ -10,6 +10,16 @@
                         "git_sha": "209e5a3e2753c5e628736a662c877c20f341ee15",
                         "installed_by": ["modules"]
                     },
+                    "bwamem2/index": {
+                        "branch": "master",
+                        "git_sha": "3f5420aa22e00bd030a2556dfdffc9e164ec0ec5",
+                        "installed_by": ["modules"]
+                    },
+                    "bwamem2/mem": {
+                        "branch": "master",
+                        "git_sha": "a64788f5ad388f1d2ac5bd5f1f3f8fc81476148c",
+                        "installed_by": ["modules"]
+                    },
                     "custom/dumpsoftwareversions": {
                         "branch": "master",
                         "git_sha": "bba7e362e4afead70653f84d8700588ea28d0f9e",
@@ -25,9 +35,24 @@
                         "git_sha": "3f5420aa22e00bd030a2556dfdffc9e164ec0ec5",
                         "installed_by": ["modules"]
                     },
+                    "metabat2/jgisummarizebamcontigdepths": {
+                        "branch": "master",
+                        "git_sha": "3f5420aa22e00bd030a2556dfdffc9e164ec0ec5",
+                        "installed_by": ["modules"]
+                    },
                     "multiqc": {
                         "branch": "master",
                         "git_sha": "4ab13872435962dadc239979554d13709e20bf29",
+                        "installed_by": ["modules"]
+                    },
+                    "quast": {
+                        "branch": "master",
+                        "git_sha": "3f5420aa22e00bd030a2556dfdffc9e164ec0ec5",
+                        "installed_by": ["modules"]
+                    },
+                    "samtools/index": {
+                        "branch": "master",
+                        "git_sha": "a64788f5ad388f1d2ac5bd5f1f3f8fc81476148c",
                         "installed_by": ["modules"]
                     },
                     "seqkit/grep": {

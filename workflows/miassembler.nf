@@ -35,9 +35,9 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
-include { FETCH_READS    } from '../subworkflows/local/fetch_reads'
-
-include { CLEAN_ASSEMBLY } from '../subworkflows/local/clean_assembly'
+include { FETCH_READS       } from '../subworkflows/local/fetch_reads'
+include { CLEAN_ASSEMBLY    } from '../subworkflows/local/clean_assembly'
+include { ASSEMBLY_COVERAGE } from '../subworkflows/local/assembly_coverage'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -53,7 +53,7 @@ include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 include { SPADES                      } from '../modules/nf-core/spades/main'
 include { MEGAHIT                     } from '../modules/nf-core/megahit/main'
-
+include { QUAST                       } from '../modules/nf-core/quast/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -104,6 +104,9 @@ workflow MIASSEMBLER {
 
         assembly = MEGAHIT.out.contigs
         ch_versions = ch_versions.mix(SPADES.out.versions.first())
+
+    } else {
+        // TODO: raise ERROR
     }
 
     // Clean the assembly contigs //
@@ -112,11 +115,22 @@ workflow MIASSEMBLER {
         Channel.fromPath("reference_genome")
     )
 
-    ch_versions = ch_versions.mix(CLEAN_ASSEMBLY.out.versions.first())
+    ch_versions = ch_versions.mix(CLEAN_ASSEMBLY.out.versions)
+
+    // Coverage //
+    ASSEMBLY_COVERAGE(
+        FETCH_READS.out.reads,
+        assembly
+    )
+
+    ch_versions = ch_versions.mix(ASSEMBLY_COVERAGE.out.versions)
 
     // Stats //
+    /* The QUAST module was modified to run metaQUAST instead */
     QUAST(
-
+        CLEAN_ASSEMBLY.out.filtered_contigs,
+        [ [], [] ], // reference
+        [ [], [] ]  // gff
     )
 
     CUSTOM_DUMPSOFTWAREVERSIONS (
