@@ -70,8 +70,8 @@ workflow MIASSEMBLER {
 
     // Download reads //
     FETCH_READS(
-        [ [id: params.reads_accession], params.study_accession, params.reads_accession ]
-        // fetch tool config file //
+        [ [id: params.reads_accession], params.study_accession, params.reads_accession ],
+        file("$projectDir/assets/fetch_tool_anonymous.json")
     )
 
     ch_versions = ch_versions.mix(FETCH_READS.out.versions.first())
@@ -106,13 +106,13 @@ workflow MIASSEMBLER {
         ch_versions = ch_versions.mix(SPADES.out.versions.first())
 
     } else {
-        // TODO: raise ERROR
+        // TODO: raise ERROR, it shouldn't happen as the options are validated by nf-validation
     }
 
     // Clean the assembly contigs //
     CLEAN_ASSEMBLY(
         assembly,
-        Channel.fromPath("reference_genome")
+        Channel.fromPath("$params.reference_genomes_folder/$params.reference_genome.*", checkIfExists: true)
     )
 
     ch_versions = ch_versions.mix(CLEAN_ASSEMBLY.out.versions)
