@@ -20,7 +20,7 @@ workflow ASSEMBLY_COVERAGE {
     ch_versions = ch_versions.mix(BWAMEM2_INDEX.out.versions.first())
 
     BWAMEM2_MEM(
-        assembly.join( reads ),
+        reads,
         BWAMEM2_INDEX.out.index,
         true // sort BAM
     )
