@@ -72,12 +72,12 @@ workflow MIASSEMBLER {
         file("$projectDir/assets/fetch_tool_anonymous.json")
     )
 
-    ch_versions = ch_versions.mix(FETCHTOOL_READS.out.versions.first())
+    ch_versions = ch_versions.mix(FETCHTOOL_READS.out.versions)
 
     FASTQC (
         FETCHTOOL_READS.out.reads
     )
-    ch_versions = ch_versions.mix(FASTQC.out.versions.first())
+    ch_versions = ch_versions.mix(FASTQC.out.versions)
 
     // Assembly //
     assembly = Channel.empty()
@@ -92,7 +92,7 @@ workflow MIASSEMBLER {
         )
 
         assembly = SPADES.out.contigs
-        ch_versions = ch_versions.mix(SPADES.out.versions.first())
+        ch_versions = ch_versions.mix(SPADES.out.versions)
 
     } else if ( params.assembler == "megahit" ) {
 
@@ -101,7 +101,7 @@ workflow MIASSEMBLER {
         )
 
         assembly = MEGAHIT.out.contigs
-        ch_versions = ch_versions.mix(SPADES.out.versions.first())
+        ch_versions = ch_versions.mix(MEGAHIT.out.versions)
 
     } else {
         // TODO: raise ERROR, it shouldn't happen as the options are validated by nf-validation
@@ -154,6 +154,7 @@ workflow MIASSEMBLER {
     ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
     ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
     ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect{it[1]}.ifEmpty([]))
+    ch_multiqc_config = ch_multiqc_files.mix(ASSEMBLY_COVERAGE.out.samtools_idxstats{ it[1] }.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(QUAST.out.results.collect { it[1] }.ifEmpty([]))
 
     MULTIQC (

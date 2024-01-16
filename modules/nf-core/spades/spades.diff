@@ -1,0 +1,47 @@
+Changes in module 'nf-core/spades'
+--- modules/nf-core/spades/main.nf
++++ modules/nf-core/spades/main.nf
+@@ -1,6 +1,6 @@
+ process SPADES {
+     tag "$meta.id"
+-    label 'process_high'
++    label 'process_high_memory'
+ 
+     conda "${moduleDir}/environment.yml"
+     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+@@ -9,6 +9,7 @@
+ 
+     input:
+     tuple val(meta), path(illumina), path(pacbio), path(nanopore)
++    val(metaspades)
+     path yml
+     path hmm
+ 
+@@ -33,13 +34,25 @@
+     def nanopore_reads = nanopore ? "--nanopore $nanopore" : ""
+     def custom_hmms = hmm ? "--custom-hmms $hmm" : ""
+     def reads = yml ? "--dataset $yml" : "$illumina_reads $pacbio_reads $nanopore_reads"
++    def metaspades_arg = metaspades ? "--meta" : ""
++
++    // Handle retries
++    def restart = ""
++    if (task.attempt > 1) {
++        // Set of extra flags to restart the assembly process
++        restart = "--restart-from last"
++        reads = "" // --restart doesn't allow basic flags to be submitted
++    }
++
+     """
+     spades.py \\
+         $args \\
++        $metaspades_arg \\
+         --threads $task.cpus \\
+         --memory $maxmem \\
+         $custom_hmms \\
+         $reads \\
++        $restart \\
+         -o ./
+     mv spades.log ${prefix}.spades.log
+ 
+
+************************************************************

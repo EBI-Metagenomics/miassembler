@@ -12,7 +12,9 @@ report_section_order:
 export_plots: true
 
 top_modules:
+  - fastqc
   - quast
+  - samtools
 
 sp:
   quast_config:
