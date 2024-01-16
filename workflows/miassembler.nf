@@ -97,7 +97,7 @@ workflow MIASSEMBLER {
     } else if ( params.assembler == "megahit" ) {
 
         MEGAHIT(
-            FETCH_READS.out.reads
+            FETCHTOOL_READS.out.reads
         )
 
         assembly = MEGAHIT.out.contigs

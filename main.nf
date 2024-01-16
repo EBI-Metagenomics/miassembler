@@ -19,14 +19,14 @@ include { validateParameters; paramsHelp; paramsSummaryLog; paramsSummaryMap; } 
 
 def summary_params = paramsSummaryMap(workflow)
 
+if (params.help) {
+   log.info paramsHelp("nextflow run ebi-metagenomics/miassembler --help")
+   exit 0
+}
+
 validateParameters()
 
 log.info paramsSummaryLog(workflow)
-
-if (params.help) {
-   log.info paramsHelp("nextflow run ebi-metagenomics/genomes-generation --help")
-   exit 0
-}
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
