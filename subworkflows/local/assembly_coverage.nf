@@ -35,7 +35,7 @@ workflow ASSEMBLY_COVERAGE {
     ch_versions = ch_versions.mix(SAMTOOLS_INDEX.out.versions)
 
     METABAT2_JGISUMMARIZEBAMCONTIGDEPTHS(
-        assembly.join( BWAMEM2_MEM.out.bam ).join( SAMTOOLS_INDEX.out.bai )
+        BWAMEM2_MEM.out.bam.join( SAMTOOLS_INDEX.out.bai )
     )
 
     ch_versions = ch_versions.mix(METABAT2_JGISUMMARIZEBAMCONTIGDEPTHS.out.versions)
@@ -48,6 +48,6 @@ workflow ASSEMBLY_COVERAGE {
 
     emit:
     coverage_depth     = METABAT2_JGISUMMARIZEBAMCONTIGDEPTHS.out.depth
-    samtools_idxstats  = SAMTOOLS_IDXSTATS.out.
+    samtools_idxstats  = SAMTOOLS_IDXSTATS.out.idxstats
     versions           = ch_versions
 }
