@@ -67,6 +67,11 @@
                     "default": 500,
                     "description": "Minimum contig length filter."
                 },
+                "spades_only_assembler": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Run SPAdes/metaSPAdes without the error correction step."
+                },
                 "outdir": {
                     "type": "string",
                     "format": "directory-path",
