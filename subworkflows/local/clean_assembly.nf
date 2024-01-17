@@ -17,6 +17,9 @@ workflow CLEAN_ASSEMBLY {
         assembly
     )
 
+    ch_versions = ch_versions.mix(SEQKIT_SEQ.out.versions)
+
+    // TODO: handle multiple reference genomes, which our current system does
     BLAST_BLASTN(
         SEQKIT_SEQ.out.fastx,
         reference_genome
@@ -29,7 +32,7 @@ workflow CLEAN_ASSEMBLY {
         BLAST_BLASTN.out.txt.map { meta, hits_txt -> hits_txt }
     )
 
-    ch_versions = ch_versions.mix(SEQKIT_GREP.out.versions.first())
+    ch_versions = ch_versions.mix(SEQKIT_GREP.out.versions)
 
     emit:
     filtered_contigs = SEQKIT_GREP.out.filter
