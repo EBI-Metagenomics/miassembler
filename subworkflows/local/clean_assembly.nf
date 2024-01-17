@@ -1,5 +1,6 @@
 include { BLAST_BLASTN } from '../../modules/nf-core/blast/blastn/main'
 include { SEQKIT_GREP } from '../../modules/nf-core/seqkit/grep/main'
+include { SEQKIT_SEQ } from '../../modules/nf-core/seqkit/seq/main'
 
 workflow CLEAN_ASSEMBLY {
 
@@ -11,15 +12,20 @@ workflow CLEAN_ASSEMBLY {
 
     ch_versions = Channel.empty()
 
+    /* Len filter using the parameter "min_contig_length" */
+    SEQKIT_SEQ(
+        assembly
+    )
+
     BLAST_BLASTN(
-        assembly,
+        SEQKIT_SEQ.out.fastx,
         reference_genome
     )
 
     ch_versions = ch_versions.mix(BLAST_BLASTN.out.versions.first())
 
     SEQKIT_GREP(
-        assembly,
+        SEQKIT_SEQ.out.fastx,
         BLAST_BLASTN.out.txt.map { meta, hits_txt -> hits_txt }
     )
 
