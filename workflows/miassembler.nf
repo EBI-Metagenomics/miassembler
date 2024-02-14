@@ -34,7 +34,7 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
 include { FETCHTOOL_READS   } from '../modules/local/fetchtool_reads'
-include { READS_QC          } from '../subworkflows/local/pre_assembly_qc'
+include { PRE_ASSEMBLY_QC          } from '../subworkflows/local/pre_assembly_qc'
 include { CLEAN_ASSEMBLY    } from '../subworkflows/local/clean_assembly'
 include { ASSEMBLY_COVERAGE } from '../subworkflows/local/assembly_coverage'
 
@@ -84,12 +84,13 @@ workflow MIASSEMBLER {
     ch_versions = ch_versions.mix(FASTQC.out.versions)
 
     // Perform QC on reads //
-    READS_QC(
-        FETCHTOOL_READS.out.reads.map { meta, _, reads -> [meta, reads] } // taken from Kate
-                                                                          // need to add ref_genome+index
+    PRE_ASSEMBLY_QC(
+        FETCHTOOL_READS.out.reads, 
+        ref_genome          // path(reference_genome)
+        ref_genome_index    // path(reference_genome_index
     )
 
-    ch_versions = ch_versions.mix(READS_QC.out.versions)
+    ch_versions = ch_versions.mix(PRE_ASSEMBLY_QC.out.versions)
 
     // Assembly //
     assembly = Channel.empty()
@@ -97,7 +98,7 @@ workflow MIASSEMBLER {
     if ( params.assembler == "metaspades" || params.assembler == "spades" ) {
 
         SPADES(
-            FETCHTOOL_READS.out.reads.map { meta, reads -> [meta, reads, [], []] },
+            PRE_ASSEMBLY_QC.out.reads.map { meta, reads -> [meta, reads, [], []] },
             params.assembler,
             [], // yml input parameters, which we don't use
             []  // hmm, not used
@@ -109,7 +110,7 @@ workflow MIASSEMBLER {
     } else if ( params.assembler == "megahit" ) {
 
         MEGAHIT(
-            FETCHTOOL_READS.out.reads
+            PRE_ASSEMBLY_QC.out.reads
         )
 
         assembly = MEGAHIT.out.contigs
@@ -121,9 +122,43 @@ workflow MIASSEMBLER {
 
     // Clean the assembly contigs //
 
-    reference = Channel.fromPath("$params.reference_genomes_folder/$params.reference_genome.*", checkIfExists: true).collect().map { db_files ->
-        [ ["id": params.reference_genome], db_files ]
-    }
+    // original
+    //reference = Channel.fromPath("$params.reference_genomes_folder/$params.reference_genome.*", 
+    //    checkIfExists: true).collect().map { db_files ->
+    //    [ ["id": params.reference_genome], db_files ]
+    //}
+
+    input_reference_genomes = params.default_reference_genomes + params.reference_genome
+
+    reference = Channel.fromPath("$params.reference_genomes_folder/")
+                  .flatMap { folder ->
+                      input_reference_genomes.collect { genome ->
+                          "$folder/$genome.*"
+                      }
+                  }
+                  .checkIfExists()
+                  .collect()
+                  .map { db_files ->
+                      input_reference_genomes.collect { genome ->
+                          Tuple(["id": genome], "files": db_files) // maybe list?
+                      }
+                  }
+
+    // suggestion
+    // reference = Channel.fromPath("$params.reference_genomes_folder/")
+    //               .flatMap { folder ->
+    //                   params.reference_genome.collect { genome ->
+    //                       "$folder/$genome.*"
+    //                   }
+    //               }
+    //               .checkIfExists()
+    //               .collect()
+    //               .map { db_files ->
+    //                   params.reference_genome.collect { genome ->
+    //                       ["id": genome, "files": db_files]
+    //                   }
+    //               }
+
 
     CLEAN_ASSEMBLY(
         assembly,
