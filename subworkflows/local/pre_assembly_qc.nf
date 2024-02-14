@@ -1,9 +1,10 @@
-include { FASTP } from '../../modules/nf-core/fastp/main
+include { FASTP } from '../../modules/nf-core/fastp/main'
 include { READS_QC } from 'reads_bwamem_decont/main'
 
 workflow PRE_ASSEMBLY_QC {
 
     take:          // reads? // from Kate: [[meta], [reads]]
+                   // and ref_genome+index
 
     main:
     ch_versions = Channel.empty()

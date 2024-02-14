@@ -34,6 +34,7 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
 include { FETCHTOOL_READS   } from '../modules/local/fetchtool_reads'
+include { READS_QC          } from '../subworkflows/local/pre_assembly_qc'
 include { CLEAN_ASSEMBLY    } from '../subworkflows/local/clean_assembly'
 include { ASSEMBLY_COVERAGE } from '../subworkflows/local/assembly_coverage'
 
@@ -74,10 +75,21 @@ workflow MIASSEMBLER {
 
     ch_versions = ch_versions.mix(FETCHTOOL_READS.out.versions)
 
+    // Perform first QC on downloaded reads // do we want it after filters?
+
     FASTQC (
         FETCHTOOL_READS.out.reads
     )
+
     ch_versions = ch_versions.mix(FASTQC.out.versions)
+
+    // Perform QC on reads //
+    READS_QC(
+        FETCHTOOL_READS.out.reads.map { meta, _, reads -> [meta, reads] } // taken from Kate
+                                                                          // need to add ref_genome+index
+    )
+
+    ch_versions = ch_versions.mix(READS_QC.out.versions)
 
     // Assembly //
     assembly = Channel.empty()
