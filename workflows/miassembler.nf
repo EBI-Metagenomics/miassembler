@@ -34,6 +34,7 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
 include { FETCHTOOL_READS   } from '../modules/local/fetchtool_reads'
+include { READS_BWAMEM2_DECONTAMINATION } from '../subworkflows/ebi-metagenomics/reads_bwamem2_decontamination/main'
 include { PRE_ASSEMBLY_QC          } from '../subworkflows/local/pre_assembly_qc'
 include { CLEAN_ASSEMBLY    } from '../subworkflows/local/clean_assembly'
 include { ASSEMBLY_COVERAGE } from '../subworkflows/local/assembly_coverage'
@@ -83,14 +84,19 @@ workflow MIASSEMBLER {
 
     ch_versions = ch_versions.mix(FASTQC.out.versions)
 
+    
+    ref_genomes_list = Channel.fromList( [ params.reference_genome ] + params.default_reference_genomes)
+    ch_ref_genomes = ref_genomes_list.map { ref_name ->
+                     [ [ "id": ref_name ], file("$params.reference_genomes_folder/$ref_name.*") ]
+                    }
+
     // Perform QC on reads //
-    PRE_ASSEMBLY_QC(
+    READS_BWAMEM2_DECONTAMINATION(
         FETCHTOOL_READS.out.reads, 
-        ref_genome          // path(reference_genome)
-        ref_genome_index    // path(reference_genome_index
+        ch_ref_genomes
     )
 
-    ch_versions = ch_versions.mix(PRE_ASSEMBLY_QC.out.versions)
+    ch_versions = ch_versions.mix(READS_BWAMEM2_DECONTAMINATION.out.versions)
 
     // Assembly //
     assembly = Channel.empty()
@@ -122,27 +128,21 @@ workflow MIASSEMBLER {
 
     // Clean the assembly contigs //
 
-    // original
-    //reference = Channel.fromPath("$params.reference_genomes_folder/$params.reference_genome.*", 
-    //    checkIfExists: true).collect().map { db_files ->
-    //    [ ["id": params.reference_genome], db_files ]
-    //}
+    // input_reference_genomes = params.default_reference_genomes + params.reference_genome
 
-    input_reference_genomes = params.default_reference_genomes + params.reference_genome
-
-    reference = Channel.fromPath("$params.reference_genomes_folder/")
-                  .flatMap { folder ->
-                      input_reference_genomes.collect { genome ->
-                          "$folder/$genome.*"
-                      }
-                  }
-                  .checkIfExists()
-                  .collect()
-                  .map { db_files ->
-                      input_reference_genomes.collect { genome ->
-                          Tuple(["id": genome], "files": db_files) // maybe list?
-                      }
-                  }
+    // reference = Channel.fromPath("$params.reference_genomes_folder/")
+    //               .flatMap { folder ->
+    //                   input_reference_genomes.collect { genome ->
+    //                       "$folder/$genome.*"
+    //                   }
+    //               }
+    //               .checkIfExists()
+    //               .collect()
+    //               .map { db_files ->
+    //                   input_reference_genomes.collect { genome ->
+    //                       Tuple(["id": genome], "files": db_files) // maybe list?
+    //                   }
+    //               }
 
     // suggestion
     // reference = Channel.fromPath("$params.reference_genomes_folder/")

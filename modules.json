@@ -2,107 +2,109 @@
     "name": "ebi-metagenomics/miassembler",
     "homePage": "https://github.com/ebi-metagenomics/miassembler",
     "repos": {
+        "git@github.com:EBI-Metagenomics/nf-modules.git": {
+            "modules": {
+                "ebi-metagenomics": {
+                    "bwamem2/mem": {
+                        "branch": "main",
+                        "git_sha": "75707538d91ddd27fb6007b4ac3710cb05154780",
+                        "installed_by": ["reads_bwamem2_decontamination"]
+                    },
+                    "samtools/bam2fq": {
+                        "branch": "main",
+                        "git_sha": "88f2bfbe6f0ba858d0833db590e647c4678656a7",
+                        "installed_by": ["reads_bwamem2_decontamination"]
+                    }
+                }
+            },
+            "subworkflows": {
+                "ebi-metagenomics": {
+                    "reads_bwamem2_decontamination": {
+                        "branch": "main",
+                        "git_sha": "0b40060df67681e0172aab145460618c08d99516",
+                        "installed_by": ["subworkflows"]
+                    }
+                }
+            }
+        },
         "https://github.com/nf-core/modules.git": {
             "modules": {
                 "nf-core": {
                     "blast/blastn": {
                         "branch": "master",
                         "git_sha": "209e5a3e2753c5e628736a662c877c20f341ee15",
-                        "installed_by": [
-                            "modules"
-                        ]
+                        "installed_by": ["modules"]
                     },
                     "bwamem2/index": {
                         "branch": "master",
                         "git_sha": "3f5420aa22e00bd030a2556dfdffc9e164ec0ec5",
-                        "installed_by": [
-                            "modules"
-                        ]
+                        "installed_by": ["modules"]
                     },
                     "bwamem2/mem": {
                         "branch": "master",
                         "git_sha": "a64788f5ad388f1d2ac5bd5f1f3f8fc81476148c",
-                        "installed_by": [
-                            "modules"
-                        ]
+                        "installed_by": ["modules"]
                     },
                     "custom/dumpsoftwareversions": {
                         "branch": "master",
                         "git_sha": "bba7e362e4afead70653f84d8700588ea28d0f9e",
-                        "installed_by": [
-                            "modules"
-                        ]
+                        "installed_by": ["modules"]
+                    },
+                    "fastp": {
+                        "branch": "master",
+                        "git_sha": "2c70c1c1951aaf884d2e8d8d9c871db79f7b35aa",
+                        "installed_by": ["modules"]
                     },
                     "fastqc": {
                         "branch": "master",
                         "git_sha": "65ad3e0b9a4099592e1102e92e10455dc661cf53",
-                        "installed_by": [
-                            "modules"
-                        ]
+                        "installed_by": ["modules"]
                     },
                     "megahit": {
                         "branch": "master",
                         "git_sha": "3f5420aa22e00bd030a2556dfdffc9e164ec0ec5",
-                        "installed_by": [
-                            "modules"
-                        ]
+                        "installed_by": ["modules"]
                     },
                     "metabat2/jgisummarizebamcontigdepths": {
                         "branch": "master",
                         "git_sha": "3f5420aa22e00bd030a2556dfdffc9e164ec0ec5",
-                        "installed_by": [
-                            "modules"
-                        ]
+                        "installed_by": ["modules"]
                     },
                     "multiqc": {
                         "branch": "master",
                         "git_sha": "4ab13872435962dadc239979554d13709e20bf29",
-                        "installed_by": [
-                            "modules"
-                        ]
+                        "installed_by": ["modules"]
                     },
                     "quast": {
                         "branch": "master",
                         "git_sha": "3f5420aa22e00bd030a2556dfdffc9e164ec0ec5",
-                        "installed_by": [
-                            "modules"
-                        ],
+                        "installed_by": ["modules"],
                         "patch": "modules/nf-core/quast/quast.diff"
                     },
                     "samtools/idxstats": {
                         "branch": "master",
                         "git_sha": "a64788f5ad388f1d2ac5bd5f1f3f8fc81476148c",
-                        "installed_by": [
-                            "modules"
-                        ]
+                        "installed_by": ["modules"]
                     },
                     "samtools/index": {
                         "branch": "master",
                         "git_sha": "a64788f5ad388f1d2ac5bd5f1f3f8fc81476148c",
-                        "installed_by": [
-                            "modules"
-                        ]
+                        "installed_by": ["modules"]
                     },
                     "seqkit/grep": {
                         "branch": "master",
                         "git_sha": "3f5420aa22e00bd030a2556dfdffc9e164ec0ec5",
-                        "installed_by": [
-                            "modules"
-                        ]
+                        "installed_by": ["modules"]
                     },
                     "seqkit/seq": {
                         "branch": "master",
                         "git_sha": "687ad41c14008d3d55cf7c2ffacebe6a057211a4",
-                        "installed_by": [
-                            "modules"
-                        ]
+                        "installed_by": ["modules"]
                     },
                     "spades": {
                         "branch": "master",
                         "git_sha": "3f5420aa22e00bd030a2556dfdffc9e164ec0ec5",
-                        "installed_by": [
-                            "modules"
-                        ],
+                        "installed_by": ["modules"],
                         "patch": "modules/nf-core/spades/spades.diff"
                     }
                 }
