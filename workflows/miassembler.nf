@@ -35,7 +35,6 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 //
 include { FETCHTOOL_READS   } from '../modules/local/fetchtool_reads'
 include { READS_BWAMEM2_DECONTAMINATION } from '../subworkflows/ebi-metagenomics/reads_bwamem2_decontamination/main'
-include { PRE_ASSEMBLY_QC          } from '../subworkflows/local/pre_assembly_qc'
 include { CLEAN_ASSEMBLY    } from '../subworkflows/local/clean_assembly'
 include { ASSEMBLY_COVERAGE } from '../subworkflows/local/assembly_coverage'
 
@@ -86,14 +85,14 @@ workflow MIASSEMBLER {
 
     
     ref_genomes_list = Channel.fromList( [ params.reference_genome ] + params.default_reference_genomes)
-    ch_ref_genomes = ref_genomes_list.map { ref_name ->
-                     [ [ "id": ref_name ], file("$params.reference_genomes_folder/$ref_name.*") ]
+    ch_bwa_ref_genomes = ref_genomes_list.map { ref_name ->
+                     [ [ "id": ref_name ], file("$params.bwa_reference_genomes_folder/$ref_name*") ]
                     }
 
     // Perform QC on reads //
     READS_BWAMEM2_DECONTAMINATION(
         FETCHTOOL_READS.out.reads, 
-        ch_ref_genomes
+        ch_bwa_ref_genomes
     )
 
     ch_versions = ch_versions.mix(READS_BWAMEM2_DECONTAMINATION.out.versions)

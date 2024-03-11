@@ -10,7 +10,7 @@
             "type": "object",
             "fa_icon": "fas fa-terminal",
             "description": "Define where the pipeline should find input data and save output data.",
-            "required": ["study_accession", "reads_accession", "assembler", "reference_genome", "outdir"],
+            "required": ["study_accession", "reads_accession", "assembler", "outdir"],
             "properties": {
                 "study_accession": {
                     "type": "string",
@@ -54,8 +54,7 @@
                         "soybean.fna",
                         "zebrafish.fna",
                         "phiX"
-                    ],
-                    "default": "human"
+                    ]
                 },
                 "reference_genomes_folder": {
                     "type": "string",
