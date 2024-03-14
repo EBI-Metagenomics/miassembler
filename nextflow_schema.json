@@ -56,10 +56,20 @@
                         "phiX"
                     ]
                 },
-                "reference_genomes_folder": {
+                "blast_reference_genomes_folder": {
                     "type": "string",
                     "description": "The folder with the reference genome blast indexes, defaults to the Microbiome Informatics internal directory",
                     "default": "/nfs/production/rdf/metagenomics/pipelines/prod/assembly-pipeline/blast_dbs/"
+                },
+                "bwa_reference_genomes_folder": {
+                    "type": "string",
+                    "description": "The folder with the reference genome bwa indexes, defaults to the Microbiome Informatics internal directory",
+                    "default": "/hps/nobackup/rdf/metagenomics/service-team/ref-dbs/bwa-mem2/"
+                },
+                "default_reference_genomes": {
+                    "type": "array",
+                    "description": "Genomes that will always be filtered from raw reads: human and PhiX",
+                    "default": ["phiX"]
                 },
                 "min_contig_length": {
                     "type": "integer",

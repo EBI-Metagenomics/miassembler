@@ -34,7 +34,7 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
 include { FETCHTOOL_READS   } from '../modules/local/fetchtool_reads'
-include { READS_BWAMEM2_DECONTAMINATION } from '../subworkflows/ebi-metagenomics/reads_bwamem2_decontamination/main'
+include { PRE_ASSEMBLY_QC   } from '../subworkflows/local/pre_assembly_qc'
 include { CLEAN_ASSEMBLY    } from '../subworkflows/local/clean_assembly'
 include { ASSEMBLY_COVERAGE } from '../subworkflows/local/assembly_coverage'
 
@@ -75,141 +75,139 @@ workflow MIASSEMBLER {
 
     ch_versions = ch_versions.mix(FETCHTOOL_READS.out.versions)
 
-    // Perform first QC on downloaded reads // do we want it after filters?
-
     FASTQC (
         FETCHTOOL_READS.out.reads
     )
 
     ch_versions = ch_versions.mix(FASTQC.out.versions)
-
     
     ref_genomes_list = Channel.fromList( [ params.reference_genome ] + params.default_reference_genomes)
     ch_bwa_ref_genomes = ref_genomes_list.map { ref_name ->
                      [ [ "id": ref_name ], file("$params.bwa_reference_genomes_folder/$ref_name*") ]
                     }
 
-    // Perform QC on reads //
-    READS_BWAMEM2_DECONTAMINATION(
+    // // Perform QC on reads //
+    PRE_ASSEMBLY_QC(
         FETCHTOOL_READS.out.reads, 
         ch_bwa_ref_genomes
     )
 
-    ch_versions = ch_versions.mix(READS_BWAMEM2_DECONTAMINATION.out.versions)
+    ch_versions = ch_versions.mix(PRE_ASSEMBLY_QC.out.versions)
+    PRE_ASSEMBLY_QC.out.cleaned_reads.view()
 
-    // Assembly //
-    assembly = Channel.empty()
+    // // Assembly //
+    // assembly = Channel.empty()
 
-    if ( params.assembler == "metaspades" || params.assembler == "spades" ) {
+    // if ( params.assembler == "metaspades" || params.assembler == "spades" ) {
 
-        SPADES(
-            PRE_ASSEMBLY_QC.out.reads.map { meta, reads -> [meta, reads, [], []] },
-            params.assembler,
-            [], // yml input parameters, which we don't use
-            []  // hmm, not used
-        )
+    //     SPADES(
+    //         PRE_ASSEMBLY_QC.out.reads.map { meta, reads -> [meta, reads, [], []] },
+    //         params.assembler,
+    //         [], // yml input parameters, which we don't use
+    //         []  // hmm, not used
+    //     )
 
-        assembly = SPADES.out.contigs
-        ch_versions = ch_versions.mix(SPADES.out.versions)
+    //     assembly = SPADES.out.contigs
+    //     ch_versions = ch_versions.mix(SPADES.out.versions)
 
-    } else if ( params.assembler == "megahit" ) {
+    // } else if ( params.assembler == "megahit" ) {
 
-        MEGAHIT(
-            PRE_ASSEMBLY_QC.out.reads
-        )
+    //     MEGAHIT(
+    //         PRE_ASSEMBLY_QC.out.reads
+    //     )
 
-        assembly = MEGAHIT.out.contigs
-        ch_versions = ch_versions.mix(MEGAHIT.out.versions)
+    //     assembly = MEGAHIT.out.contigs
+    //     ch_versions = ch_versions.mix(MEGAHIT.out.versions)
 
-    } else {
-        // TODO: raise ERROR, it shouldn't happen as the options are validated by nf-validation
-    }
+    // } else {
+    //     // TODO: raise ERROR, it shouldn't happen as the options are validated by nf-validation
+    // }
 
-    // Clean the assembly contigs //
+    // // Clean the assembly contigs //
 
-    // input_reference_genomes = params.default_reference_genomes + params.reference_genome
+    // // input_reference_genomes = params.default_reference_genomes + params.reference_genome
 
-    // reference = Channel.fromPath("$params.reference_genomes_folder/")
-    //               .flatMap { folder ->
-    //                   input_reference_genomes.collect { genome ->
-    //                       "$folder/$genome.*"
-    //                   }
-    //               }
-    //               .checkIfExists()
-    //               .collect()
-    //               .map { db_files ->
-    //                   input_reference_genomes.collect { genome ->
-    //                       Tuple(["id": genome], "files": db_files) // maybe list?
-    //                   }
-    //               }
+    // // reference = Channel.fromPath("$params.reference_genomes_folder/")
+    // //               .flatMap { folder ->
+    // //                   input_reference_genomes.collect { genome ->
+    // //                       "$folder/$genome.*"
+    // //                   }
+    // //               }
+    // //               .checkIfExists()
+    // //               .collect()
+    // //               .map { db_files ->
+    // //                   input_reference_genomes.collect { genome ->
+    // //                       Tuple(["id": genome], "files": db_files) // maybe list?
+    // //                   }
+    // //               }
 
-    // suggestion
-    // reference = Channel.fromPath("$params.reference_genomes_folder/")
-    //               .flatMap { folder ->
-    //                   params.reference_genome.collect { genome ->
-    //                       "$folder/$genome.*"
-    //                   }
-    //               }
-    //               .checkIfExists()
-    //               .collect()
-    //               .map { db_files ->
-    //                   params.reference_genome.collect { genome ->
-    //                       ["id": genome, "files": db_files]
-    //                   }
-    //               }
+    // // suggestion
+    // // reference = Channel.fromPath("$params.reference_genomes_folder/")
+    // //               .flatMap { folder ->
+    // //                   params.reference_genome.collect { genome ->
+    // //                       "$folder/$genome.*"
+    // //                   }
+    // //               }
+    // //               .checkIfExists()
+    // //               .collect()
+    // //               .map { db_files ->
+    // //                   params.reference_genome.collect { genome ->
+    // //                       ["id": genome, "files": db_files]
+    // //                   }
+    // //               }
 
 
-    CLEAN_ASSEMBLY(
-        assembly,
-        reference
-    )
+    // CLEAN_ASSEMBLY(
+    //     assembly,
+    //     reference
+    // )
 
-    ch_versions = ch_versions.mix(CLEAN_ASSEMBLY.out.versions)
+    // ch_versions = ch_versions.mix(CLEAN_ASSEMBLY.out.versions)
 
-    // Coverage //
-    ASSEMBLY_COVERAGE(
-        FETCHTOOL_READS.out.reads,
-        assembly
-    )
+    // // Coverage //
+    // ASSEMBLY_COVERAGE(
+    //     PRE_ASSEMBLY_QC.out.reads,
+    //     assembly
+    // )
 
-    ch_versions = ch_versions.mix(ASSEMBLY_COVERAGE.out.versions)
+    // ch_versions = ch_versions.mix(ASSEMBLY_COVERAGE.out.versions)
 
-    // Stats //
-    /* The QUAST module was modified to run metaQUAST instead */
-    QUAST(
-        CLEAN_ASSEMBLY.out.filtered_contigs,
-        [ [], [] ], // reference
-        [ [], [] ]  // gff
-    )
+    // // Stats //
+    // /* The QUAST module was modified to run metaQUAST instead */
+    // QUAST(
+    //     CLEAN_ASSEMBLY.out.filtered_contigs,
+    //     [ [], [] ], // reference
+    //     [ [], [] ]  // gff
+    // )
 
-    CUSTOM_DUMPSOFTWAREVERSIONS (
-        ch_versions.unique().collectFile(name: 'collated_versions.yml')
-    )
+    // CUSTOM_DUMPSOFTWAREVERSIONS (
+    //     ch_versions.unique().collectFile(name: 'collated_versions.yml')
+    // )
 
-    //
-    // MODULE: MultiQC
-    //
-    workflow_summary    = WorkflowMiassembler.paramsSummaryMultiqc(workflow, summary_params)
-    ch_workflow_summary = Channel.value(workflow_summary)
+    // //
+    // // MODULE: MultiQC
+    // //
+    // workflow_summary    = WorkflowMiassembler.paramsSummaryMultiqc(workflow, summary_params)
+    // ch_workflow_summary = Channel.value(workflow_summary)
 
-    methods_description    = WorkflowMiassembler.methodsDescriptionText(workflow, ch_multiqc_custom_methods_description, params)
-    ch_methods_description = Channel.value(methods_description)
+    // methods_description    = WorkflowMiassembler.methodsDescriptionText(workflow, ch_multiqc_custom_methods_description, params)
+    // ch_methods_description = Channel.value(methods_description)
 
-    ch_multiqc_files = Channel.empty()
-    ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
-    ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
-    ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
-    ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect{it[1]}.ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(ASSEMBLY_COVERAGE.out.samtools_idxstats.collect{ it[1] }.ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(QUAST.out.results.collect { it[1] }.ifEmpty([]))
+    // ch_multiqc_files = Channel.empty()
+    // ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
+    // ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
+    // ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
+    // ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect{it[1]}.ifEmpty([]))
+    // ch_multiqc_files = ch_multiqc_files.mix(ASSEMBLY_COVERAGE.out.samtools_idxstats.collect{ it[1] }.ifEmpty([]))
+    // ch_multiqc_files = ch_multiqc_files.mix(QUAST.out.results.collect { it[1] }.ifEmpty([]))
 
-    MULTIQC (
-        ch_multiqc_files.collect(),
-        ch_multiqc_config.toList(),
-        ch_multiqc_custom_config.toList(),
-        ch_multiqc_logo.toList()
-    )
-    multiqc_report = MULTIQC.out.report.toList()
+    // MULTIQC (
+    //     ch_multiqc_files.collect(),
+    //     ch_multiqc_config.toList(),
+    //     ch_multiqc_custom_config.toList(),
+    //     ch_multiqc_logo.toList()
+    // )
+    // multiqc_report = MULTIQC.out.report.toList()
 }
 
 /*
