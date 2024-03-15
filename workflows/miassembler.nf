@@ -81,19 +81,25 @@ workflow MIASSEMBLER {
 
     ch_versions = ch_versions.mix(FASTQC.out.versions)
     
-    ref_genomes_list = Channel.fromList( [ params.reference_genome ] + params.default_reference_genomes)
-    ch_bwa_ref_genomes = ref_genomes_list.map { ref_name ->
-                     [ [ "id": ref_name ], file("$params.bwa_reference_genomes_folder/$ref_name*") ]
-                    }
+    if ( params.reference_genome == null ) {
+        ch_bwa_ref_genomes = Channel.fromList( [ [ "id": params.default_reference_genomes[0] ], 
+            file("$params.bwa_reference_genomes_folder/" + params.default_reference_genomes[0] + "*") ] )
+    }
+    else {
+        ref_genomes_list = Channel.fromList( [ params.reference_genome ] + params.default_reference_genomes)
+        ch_bwa_ref_genomes = ref_genomes_list.map { ref_name ->
+            [ [ "id": ref_name ], file("$params.bwa_reference_genomes_folder/$ref_name*") ]
+        }
+    }
 
-    // // Perform QC on reads //
+    // Perform QC on reads //
     PRE_ASSEMBLY_QC(
         FETCHTOOL_READS.out.reads, 
         ch_bwa_ref_genomes
     )
 
-    ch_versions = ch_versions.mix(PRE_ASSEMBLY_QC.out.versions)
-    PRE_ASSEMBLY_QC.out.cleaned_reads.view()
+    // ch_versions = ch_versions.mix(PRE_ASSEMBLY_QC.out.versions)
+    // PRE_ASSEMBLY_QC.out.cleaned_reads.view()
 
     // // Assembly //
     // assembly = Channel.empty()

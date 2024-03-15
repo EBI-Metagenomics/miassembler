@@ -30,7 +30,7 @@ workflow PRE_ASSEMBLY_QC {
         //     false, 
         //     false 
         // )
-        // FASTP.out.reads.view()
+        // FASTP_2.out.reads.view()
 
         // ch_versions = ch_versions.mix(FASTP.out.versions)
 

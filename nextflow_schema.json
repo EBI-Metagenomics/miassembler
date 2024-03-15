@@ -41,6 +41,7 @@
                     "description": "The genome to be used to clean the assembly, the genome will be taken from the Microbiome Informatics internal directory",
                     "enum": [
                         "human",
+                        "hg38",
                         "chicken.fna",
                         "salmon.fna",
                         "cod.fna",
