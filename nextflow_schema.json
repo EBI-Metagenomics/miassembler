@@ -24,7 +24,7 @@
                 },
                 "single_end": {
                     "type": "boolean",
-                    "description": "True if the reads are sinlge end"
+                    "description": "True if the reads are single end"
                 },
                 "paired_end": {
                     "type": "boolean",
