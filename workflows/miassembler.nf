@@ -82,13 +82,22 @@ workflow MIASSEMBLER {
     ch_versions = ch_versions.mix(FASTQC.out.versions)
     
     if ( params.reference_genome == null ) {
-        ch_bwa_ref_genomes = Channel.fromList( [ [ "id": params.default_reference_genomes[0] ], 
-            file("$params.bwa_reference_genomes_folder/" + params.default_reference_genomes[0] + "*") ] )
+        ch_bwa_ref_genomes = Channel.fromPath( "$params.bwa_reference_genomes_folder/" + params.default_reference_genomes[0] + "*", 
+            checkIfExists: true).collect().map {
+                files -> [ ["id": params.default_reference_genomes[0]], files ]
+            }
+        ch_blast_ref_genomes = Channel.fromPath( "$params.blast_reference_genomes_folder/" + params.default_reference_genomes[0] + "*", 
+            checkIfExists: true).collect().map {
+                files -> [ ["id": params.default_reference_genomes[0]], files ]
+            }
     }
     else {
         ref_genomes_list = Channel.fromList( [ params.reference_genome ] + params.default_reference_genomes)
-        ch_bwa_ref_genomes = ref_genomes_list.map { ref_name ->
+        ch_bwa_ref_genomes = ref_genomes_list.collect().map { ref_name ->
             [ [ "id": ref_name ], file("$params.bwa_reference_genomes_folder/$ref_name*") ]
+        }
+        ch_blast_ref_genomes = ref_genomes_list.collect().map { ref_name ->
+            [ [ "id": ref_name ], file("$params.blast_reference_genomes_folder/$ref_name*") ]
         }
     }
 
@@ -97,123 +106,90 @@ workflow MIASSEMBLER {
         FETCHTOOL_READS.out.reads, 
         ch_bwa_ref_genomes
     )
+    
+    ch_versions = ch_versions.mix(PRE_ASSEMBLY_QC.out.versions)
 
-    // ch_versions = ch_versions.mix(PRE_ASSEMBLY_QC.out.versions)
-    // PRE_ASSEMBLY_QC.out.cleaned_reads.view()
+    // Assembly //
+    assembly = Channel.empty()
 
-    // // Assembly //
-    // assembly = Channel.empty()
+    if ( params.assembler == "metaspades" || params.assembler == "spades" ) {
 
-    // if ( params.assembler == "metaspades" || params.assembler == "spades" ) {
+        SPADES(
+            PRE_ASSEMBLY_QC.out.cleaned_reads.map { meta, reads -> [meta, reads, [], []] },
+            params.assembler,
+            [], // yml input parameters, which we don't use
+            []  // hmm, not used
+        )
 
-    //     SPADES(
-    //         PRE_ASSEMBLY_QC.out.reads.map { meta, reads -> [meta, reads, [], []] },
-    //         params.assembler,
-    //         [], // yml input parameters, which we don't use
-    //         []  // hmm, not used
-    //     )
+        assembly = SPADES.out.contigs
+        ch_versions = ch_versions.mix(SPADES.out.versions)
 
-    //     assembly = SPADES.out.contigs
-    //     ch_versions = ch_versions.mix(SPADES.out.versions)
+    } else if ( params.assembler == "megahit" ) {
 
-    // } else if ( params.assembler == "megahit" ) {
+        MEGAHIT(
+            PRE_ASSEMBLY_QC.out.cleaned_reads
+        )
 
-    //     MEGAHIT(
-    //         PRE_ASSEMBLY_QC.out.reads
-    //     )
+        assembly = MEGAHIT.out.contigs
+        ch_versions = ch_versions.mix(MEGAHIT.out.versions)
 
-    //     assembly = MEGAHIT.out.contigs
-    //     ch_versions = ch_versions.mix(MEGAHIT.out.versions)
+    } else {
+        // TODO: raise ERROR, it shouldn't happen as the options are validated by nf-validation
+    }
 
-    // } else {
-    //     // TODO: raise ERROR, it shouldn't happen as the options are validated by nf-validation
-    // }
+    // Clean the assembly contigs //
+    CLEAN_ASSEMBLY(
+        assembly,
+        ch_blast_ref_genomes
+    )
 
-    // // Clean the assembly contigs //
+    ch_versions = ch_versions.mix(CLEAN_ASSEMBLY.out.versions)
 
-    // // input_reference_genomes = params.default_reference_genomes + params.reference_genome
+    // Coverage //
+    ASSEMBLY_COVERAGE(
+        PRE_ASSEMBLY_QC.out.cleaned_reads,
+        CLEAN_ASSEMBLY.out.filtered_contigs
+    )
 
-    // // reference = Channel.fromPath("$params.reference_genomes_folder/")
-    // //               .flatMap { folder ->
-    // //                   input_reference_genomes.collect { genome ->
-    // //                       "$folder/$genome.*"
-    // //                   }
-    // //               }
-    // //               .checkIfExists()
-    // //               .collect()
-    // //               .map { db_files ->
-    // //                   input_reference_genomes.collect { genome ->
-    // //                       Tuple(["id": genome], "files": db_files) // maybe list?
-    // //                   }
-    // //               }
+    ch_versions = ch_versions.mix(ASSEMBLY_COVERAGE.out.versions)
 
-    // // suggestion
-    // // reference = Channel.fromPath("$params.reference_genomes_folder/")
-    // //               .flatMap { folder ->
-    // //                   params.reference_genome.collect { genome ->
-    // //                       "$folder/$genome.*"
-    // //                   }
-    // //               }
-    // //               .checkIfExists()
-    // //               .collect()
-    // //               .map { db_files ->
-    // //                   params.reference_genome.collect { genome ->
-    // //                       ["id": genome, "files": db_files]
-    // //                   }
-    // //               }
+    // Stats //
+    /* The QUAST module was modified to run metaQUAST instead */
+    QUAST(
+        CLEAN_ASSEMBLY.out.filtered_contigs,
+        [ [], [] ], // reference
+        [ [], [] ]  // gff
+    )
 
+    CUSTOM_DUMPSOFTWAREVERSIONS (
+        ch_versions.unique().collectFile(name: 'collated_versions.yml')
+    )
 
-    // CLEAN_ASSEMBLY(
-    //     assembly,
-    //     reference
-    // )
+    //
+    // MODULE: MultiQC
+    //
+    workflow_summary    = WorkflowMiassembler.paramsSummaryMultiqc(workflow, summary_params)
+    ch_workflow_summary = Channel.value(workflow_summary)
 
-    // ch_versions = ch_versions.mix(CLEAN_ASSEMBLY.out.versions)
+    methods_description    = WorkflowMiassembler.methodsDescriptionText(workflow, ch_multiqc_custom_methods_description, params)
+    ch_methods_description = Channel.value(methods_description)
 
-    // // Coverage //
-    // ASSEMBLY_COVERAGE(
-    //     PRE_ASSEMBLY_QC.out.reads,
-    //     assembly
-    // )
+    ch_multiqc_files = Channel.empty()
+    ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
+    ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
+    ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
+    ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect{it[1]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(ASSEMBLY_COVERAGE.out.samtools_idxstats.collect{ it[1] }.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(QUAST.out.results.collect { it[1] }.ifEmpty([]))
+    ch_multiqc_files.view()
 
-    // ch_versions = ch_versions.mix(ASSEMBLY_COVERAGE.out.versions)
-
-    // // Stats //
-    // /* The QUAST module was modified to run metaQUAST instead */
-    // QUAST(
-    //     CLEAN_ASSEMBLY.out.filtered_contigs,
-    //     [ [], [] ], // reference
-    //     [ [], [] ]  // gff
-    // )
-
-    // CUSTOM_DUMPSOFTWAREVERSIONS (
-    //     ch_versions.unique().collectFile(name: 'collated_versions.yml')
-    // )
-
-    // //
-    // // MODULE: MultiQC
-    // //
-    // workflow_summary    = WorkflowMiassembler.paramsSummaryMultiqc(workflow, summary_params)
-    // ch_workflow_summary = Channel.value(workflow_summary)
-
-    // methods_description    = WorkflowMiassembler.methodsDescriptionText(workflow, ch_multiqc_custom_methods_description, params)
-    // ch_methods_description = Channel.value(methods_description)
-
-    // ch_multiqc_files = Channel.empty()
-    // ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
-    // ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
-    // ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
-    // ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect{it[1]}.ifEmpty([]))
-    // ch_multiqc_files = ch_multiqc_files.mix(ASSEMBLY_COVERAGE.out.samtools_idxstats.collect{ it[1] }.ifEmpty([]))
-    // ch_multiqc_files = ch_multiqc_files.mix(QUAST.out.results.collect { it[1] }.ifEmpty([]))
-
-    // MULTIQC (
-    //     ch_multiqc_files.collect(),
-    //     ch_multiqc_config.toList(),
-    //     ch_multiqc_custom_config.toList(),
-    //     ch_multiqc_logo.toList()
-    // )
-    // multiqc_report = MULTIQC.out.report.toList()
+    MULTIQC (
+        ch_multiqc_files.collect(),
+        ch_multiqc_config.toList(),
+        ch_multiqc_custom_config.toList(),
+        ch_multiqc_logo.toList()
+    )
+    multiqc_report = MULTIQC.out.report.toList()
 }
 
 /*
