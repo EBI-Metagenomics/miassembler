@@ -1,12 +1,15 @@
-include { BLAST_BLASTN } from '../../modules/nf-core/blast/blastn/main'
-include { SEQKIT_GREP } from '../../modules/nf-core/seqkit/grep/main'
-include { SEQKIT_SEQ } from '../../modules/nf-core/seqkit/seq/main'
+include { BLAST_BLASTN as BLAST_BLASTN_HUMAN_PHIX } from '../../modules/nf-core/blast/blastn/main'
+include { BLAST_BLASTN as BLAST_BLASTN_HOST       } from '../../modules/nf-core/blast/blastn/main'
+include { SEQKIT_GREP                             } from '../../modules/nf-core/seqkit/grep/main'
+include { SEQKIT_SEQ                              } from '../../modules/nf-core/seqkit/seq/main'
+include { TXT_COMBINER                            } from '../../modules/local/text_file_combiner'
 
 workflow CLEAN_ASSEMBLY {
 
     take:
-    assembly         // [ val(meta), path(assembly_fasta) ]
-    reference_genome // [ val(meta2), path(reference_genome) ] | meta2 contains the name of the reference genome
+    assembly                   // [ val(meta), path(assembly_fasta) ]
+    humanPhiX_reference_genome // [ val(meta2), path(reference_genome) ] | meta2 contains the name of the reference genome
+    host_reference_genome      // [ val(meta2), path(reference_genome) ] | meta2 contains the name of the reference genome
 
     main:
 
@@ -19,22 +22,40 @@ workflow CLEAN_ASSEMBLY {
 
     ch_versions = ch_versions.mix(SEQKIT_SEQ.out.versions)
 
-    // TODO: handle multiple reference genomes, which our current system does
-    BLAST_BLASTN(
+    BLAST_BLASTN_HUMAN_PHIX(
         SEQKIT_SEQ.out.fastx,
-        reference_genome
+        humanPhiX_reference_genome
     )
 
-    ch_versions = ch_versions.mix(BLAST_BLASTN.out.versions.first())
+    ch_versions = ch_versions.mix(BLAST_BLASTN_HUMAN_PHIX.out.versions.first())
+
+    matched_contigs = Channel.empty()
+    if ( host_reference_genome != null) {
+        BLAST_BLASTN_HOST(
+            SEQKIT_SEQ.out.fastx,
+            host_reference_genome
+        )
+
+        ch_versions = ch_versions.mix(BLAST_BLASTN_HOST.out.versions.first())
+
+        TXT_COMBINER(
+            BLAST_BLASTN_HUMAN_PHIX.out.txt,
+            BLAST_BLASTN_HOST.out.txt
+        )
+        matched_contigs = TXT_COMBINER.out.txt_final
+        matched_contigs.view()
+    } else {
+        matched_contigs = BLAST_BLASTN_HUMAN_PHIX.out.txt
+    }
 
     SEQKIT_GREP(
         SEQKIT_SEQ.out.fastx,
-        BLAST_BLASTN.out.txt.map { meta, hits_txt -> hits_txt }
+        matched_contigs.map { meta, hits_txt -> {hits_txt }}
     )
 
     ch_versions = ch_versions.mix(SEQKIT_GREP.out.versions)
 
     emit:
-    filtered_contigs = SEQKIT_GREP.out.filter
+    filtered_contigs = assembly // SEQKIT_GREP.out.filter
     versions         = ch_versions
 }

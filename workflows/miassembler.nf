@@ -81,30 +81,35 @@ workflow MIASSEMBLER {
 
     ch_versions = ch_versions.mix(FASTQC.out.versions)
     
-    if ( params.reference_genome == null ) {
-        ch_bwa_ref_genomes = Channel.fromPath( "$params.bwa_reference_genomes_folder/" + params.default_reference_genomes[0] + "*", 
-            checkIfExists: true).collect().map {
-                files -> [ ["id": params.default_reference_genomes[0]], files ]
-            }
-        ch_blast_ref_genomes = Channel.fromPath( "$params.blast_reference_genomes_folder/" + params.default_reference_genomes[0] + "*", 
-            checkIfExists: true).collect().map {
-                files -> [ ["id": params.default_reference_genomes[0]], files ]
-            }
-    }
-    else {
-        ref_genomes_list = Channel.fromList( [ params.reference_genome ] + params.default_reference_genomes)
-        ch_bwa_ref_genomes = ref_genomes_list.collect().map { ref_name ->
-            [ [ "id": ref_name ], file("$params.bwa_reference_genomes_folder/$ref_name*") ]
+    // standard human+phiX genomes dbs
+    ch_bwa_humanPhiX_refs = Channel.fromPath( "$params.bwa_reference_genomes_folder/" + params.default_reference_genomes[0] + "*", 
+        checkIfExists: true).collect().map {
+            files -> [ ["id": params.default_reference_genomes[0]], files ]
         }
-        ch_blast_ref_genomes = ref_genomes_list.collect().map { ref_name ->
-            [ [ "id": ref_name ], file("$params.blast_reference_genomes_folder/$ref_name*") ]
+    ch_blast_humanPhiX_refs = Channel.fromPath( "$params.blast_reference_genomes_folder/" + params.default_reference_genomes[0] + "*", 
+        checkIfExists: true).collect().map {
+            files -> [ ["id": params.default_reference_genomes[0]], files ]
         }
-    }
 
+    // additional host genomes dbs
+    ch_bwa_host_refs = Channel.empty()
+    ch_blast_host_refs = Channel.empty()
+    if ( params.reference_genome != null ) {
+        ch_bwa_host_refs = Channel.fromPath( "$params.bwa_reference_genomes_folder/" + params.reference_genome + "*", 
+        checkIfExists: true).collect().map {
+            files -> [ ["id": params.reference_genome], files ]
+        }
+        ch_blast_host_refs = Channel.fromPath( "$params.blast_reference_genomes_folder/" + params.reference_genome + "*", 
+        checkIfExists: true).collect().map {
+            files -> [ ["id": params.reference_genome], files ]
+        }
+    }
+    
     // Perform QC on reads //
     PRE_ASSEMBLY_QC(
         FETCHTOOL_READS.out.reads, 
-        ch_bwa_ref_genomes
+        ch_bwa_humanPhiX_refs,
+        ch_bwa_host_refs
     )
     
     ch_versions = ch_versions.mix(PRE_ASSEMBLY_QC.out.versions)
@@ -137,10 +142,11 @@ workflow MIASSEMBLER {
         // TODO: raise ERROR, it shouldn't happen as the options are validated by nf-validation
     }
 
-    // Clean the assembly contigs //
+    // // Clean the assembly contigs //
     CLEAN_ASSEMBLY(
         assembly,
-        ch_blast_ref_genomes
+        ch_blast_humanPhiX_refs,
+        ch_blast_host_refs
     )
 
     ch_versions = ch_versions.mix(CLEAN_ASSEMBLY.out.versions)
@@ -181,7 +187,6 @@ workflow MIASSEMBLER {
     ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(ASSEMBLY_COVERAGE.out.samtools_idxstats.collect{ it[1] }.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(QUAST.out.results.collect { it[1] }.ifEmpty([]))
-    ch_multiqc_files.view()
 
     MULTIQC (
         ch_multiqc_files.collect(),
