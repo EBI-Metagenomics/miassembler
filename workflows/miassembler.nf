@@ -142,7 +142,7 @@ workflow MIASSEMBLER {
         // TODO: raise ERROR, it shouldn't happen as the options are validated by nf-validation
     }
 
-    // // Clean the assembly contigs //
+    // Clean the assembly contigs //
     CLEAN_ASSEMBLY(
         assembly,
         ch_blast_humanPhiX_refs,

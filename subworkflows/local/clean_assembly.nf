@@ -43,7 +43,6 @@ workflow CLEAN_ASSEMBLY {
             BLAST_BLASTN_HOST.out.txt
         )
         matched_contigs = TXT_COMBINER.out.txt_final
-        matched_contigs.view()
     } else {
         matched_contigs = BLAST_BLASTN_HUMAN_PHIX.out.txt
     }
@@ -56,6 +55,6 @@ workflow CLEAN_ASSEMBLY {
     ch_versions = ch_versions.mix(SEQKIT_GREP.out.versions)
 
     emit:
-    filtered_contigs = assembly // SEQKIT_GREP.out.filter
+    filtered_contigs = SEQKIT_GREP.out.filter
     versions         = ch_versions
 }
