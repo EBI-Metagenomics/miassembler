@@ -6,7 +6,8 @@ workflow PRE_ASSEMBLY_QC {
 
     take: 
         reads
-        ref_genomes
+        humanPhiX_ref_genomes
+        host_ref_genomes
 
     main:
         ch_versions = Channel.empty()
@@ -37,21 +38,20 @@ workflow PRE_ASSEMBLY_QC {
 
         PHIX_HUMAN(
             FASTP.out.reads, 
-            ref_genomes
+            humanPhiX_ref_genomes
         )
         
         ch_versions = ch_versions.mix(PHIX_HUMAN.out.versions)
+        
         decontaminated_reads = Channel.empty()
-
-        if (ref_genomes.count() == 2) {
+        if (host_ref_genomes != null) {
             HOST(
                 PHIX_HUMAN.out.decontaminated_reads, 
-                ref_genomes[1]
+                host_ref_genomes
             )
             
             ch_versions = ch_versions.mix(HOST.out.versions)
             decontaminated_reads = HOST.out.decontaminated_reads
-            HOST.out.decontaminated_reads.view()
         }
         else {
             decontaminated_reads = PHIX_HUMAN.out.decontaminated_reads
