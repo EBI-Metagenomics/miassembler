@@ -1,7 +1,5 @@
 include { BWAMEM2_INDEX                        } from '../../modules/nf-core/bwamem2/index/main'
 include { BWAMEM2_MEM                          } from '../../modules/ebi-metagenomics/bwamem2/mem/main'
-// include { BWAMEM2_MEM                          } from '../../modules/nf-core/bwamem2/mem/main'
-// include { SAMTOOLS_INDEX                       } from '../../modules/nf-core/samtools/index/main'
 include { SAMTOOLS_IDXSTATS                    } from '../../modules/nf-core/samtools/idxstats/main'
 include { METABAT2_JGISUMMARIZEBAMCONTIGDEPTHS } from '../../modules/nf-core/metabat2/jgisummarizebamcontigdepths/main'
 
