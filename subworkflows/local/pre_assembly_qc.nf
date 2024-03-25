@@ -1,13 +1,13 @@
-include { FASTP                                       } from '../../modules/nf-core/fastp/main'
-include { READS_BWAMEM2_DECONTAMINATION as PHIX_HUMAN } from '../ebi-metagenomics/reads_bwamem2_decontamination/main'
-include { READS_BWAMEM2_DECONTAMINATION as HOST       } from '../ebi-metagenomics/reads_bwamem2_decontamination/main'
+include { FASTP                                                       } from '../../modules/nf-core/fastp/main'
+include { READS_BWAMEM2_DECONTAMINATION as HUMAN_PHIX_DECONTAMINATION } from '../ebi-metagenomics/reads_bwamem2_decontamination/main'
+include { READS_BWAMEM2_DECONTAMINATION as HOST_DECONTAMINATION       } from '../ebi-metagenomics/reads_bwamem2_decontamination/main'
 
 workflow PRE_ASSEMBLY_QC {
 
     take: 
-        reads
-        humanPhiX_ref_genomes
-        host_ref_genomes
+        reads                      // [ val(meta), path(reads) ]
+        human_phix_reference_genome
+        host_reference_genome      // [ val(meta2), path(reference_genome) ] | meta2 contains the name of the reference genome
 
     main:
         ch_versions = Channel.empty()
@@ -36,26 +36,26 @@ workflow PRE_ASSEMBLY_QC {
         
         ch_versions = ch_versions.mix(FASTP.out.versions)
 
-        PHIX_HUMAN(
+        HUMAN_PHIX_DECONTAMINATION(
             FASTP.out.reads, 
-            humanPhiX_ref_genomes
+            human_phix_reference_genome
         )
         
-        ch_versions = ch_versions.mix(PHIX_HUMAN.out.versions)
+        ch_versions = ch_versions.mix(HUMAN_PHIX_DECONTAMINATION.out.versions)
         
-        decontaminated_reads = PHIX_HUMAN.out.decontaminated_reads
-        if ( host_ref_genomes != null ) {
-            ch_bwa_host_refs = Channel.fromPath( "$params.bwa_reference_genomes_folder/" + host_ref_genomes + "*", 
+        decontaminated_reads = HUMAN_PHIX_DECONTAMINATION.out.decontaminated_reads
+        if ( host_reference_genome != null ) {
+            ch_bwa_host_refs = Channel.fromPath( "$params.bwa_reference_genomes_folder/" + host_reference_genome + "*", 
             checkIfExists: true).collect().map {
-                files -> [ ["id": host_ref_genomes], files ]
+                files -> [ ["id": host_reference_genome], files ]
             }
-            HOST(
-                PHIX_HUMAN.out.decontaminated_reads, 
+            HOST_PHIX_DECONTAMINATION(
+                HUMAN_PHIX_DECONTAMINATION.out.decontaminated_reads, 
                 ch_bwa_host_refs
             )
             
-            ch_versions = ch_versions.mix(HOST.out.versions)
-            decontaminated_reads = HOST.out.decontaminated_reads
+            ch_versions = ch_versions.mix(HOST_PHIX_DECONTAMINATION.out.versions)
+            decontaminated_reads = HOST_PHIX_DECONTAMINATION.out.decontaminated_reads
         }
 
     emit:

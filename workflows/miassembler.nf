@@ -82,11 +82,11 @@ workflow MIASSEMBLER {
     ch_versions = ch_versions.mix(FASTQC.out.versions)
     
     // standard human+phiX genomes dbs
-    ch_bwa_humanPhiX_refs = Channel.fromPath( "$params.bwa_reference_genomes_folder/" + params.default_reference_genome + "*", 
+    ch_bwa_human_phix_refs = Channel.fromPath( "$params.bwa_reference_genomes_folder/${params.default_reference_genome}*", 
         checkIfExists: true).collect().map {
             files -> [ ["id": params.default_reference_genome], files ]
         }
-    ch_blast_humanPhiX_refs = Channel.fromPath( "$params.blast_reference_genomes_folder/" + params.default_reference_genome + "*", 
+    ch_blast_human_phix_refs = Channel.fromPath( "$params.blast_reference_genomes_folder/${params.default_reference_genome}*", 
         checkIfExists: true).collect().map {
             files -> [ ["id": params.default_reference_genome], files ]
         }
@@ -94,8 +94,7 @@ workflow MIASSEMBLER {
     // Perform QC on reads //
     PRE_ASSEMBLY_QC(
         FETCHTOOL_READS.out.reads, 
-        ch_bwa_humanPhiX_refs,
-        // ch_bwa_host_refs
+        ch_bwa_human_phix_refs,
         params.reference_genome
     )
     
@@ -132,8 +131,7 @@ workflow MIASSEMBLER {
     // Clean the assembly contigs //
     CLEAN_ASSEMBLY(
         assembly,
-        ch_blast_humanPhiX_refs,
-        // ch_blast_host_refs
+        ch_blast_human_phix_refs,
         params.reference_genome
     )
 
