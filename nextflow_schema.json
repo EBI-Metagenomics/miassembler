@@ -22,14 +22,6 @@
                     "description": "The ENA Run primary accession",
                     "fa_icon": "far fa-address-card"
                 },
-                "single_end": {
-                    "type": "boolean",
-                    "description": "True if the reads are single end"
-                },
-                "paired_end": {
-                    "type": "boolean",
-                    "description": "True if the reads are paired end"
-                },
                 "assembler": {
                     "type": "string",
                     "default": "metaspades",
