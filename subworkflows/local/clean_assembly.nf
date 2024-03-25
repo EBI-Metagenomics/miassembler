@@ -31,9 +31,14 @@ workflow CLEAN_ASSEMBLY {
 
     matched_contigs = Channel.empty()
     if ( host_reference_genome != null) {
+        ch_blast_host_refs = Channel.fromPath( "$params.blast_reference_genomes_folder/" + host_reference_genome + "*", 
+        checkIfExists: true).collect().map {
+            files -> [ ["id": host_reference_genome], files ]
+        }
+
         BLAST_BLASTN_HOST(
             SEQKIT_SEQ.out.fastx,
-            host_reference_genome
+            ch_blast_host_refs
         )
 
         ch_versions = ch_versions.mix(BLAST_BLASTN_HOST.out.versions.first())

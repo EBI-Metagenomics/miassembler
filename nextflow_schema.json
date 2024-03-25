@@ -67,10 +67,10 @@
                     "description": "The folder with the reference genome bwa indexes, defaults to the Microbiome Informatics internal directory",
                     "default": "/hps/nobackup/rdf/metagenomics/service-team/ref-dbs/bwa-mem2/"
                 },
-                "default_reference_genomes": {
-                    "type": "array",
+                "default_reference_genome": {
+                    "type": "string",
                     "description": "Genomes that will always be filtered from raw reads: human and PhiX",
-                    "default": ["phiX"]
+                    "default": "phiX"
                 },
                 "min_contig_length": {
                     "type": "integer",

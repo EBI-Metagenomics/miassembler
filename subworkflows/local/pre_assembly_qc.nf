@@ -43,18 +43,19 @@ workflow PRE_ASSEMBLY_QC {
         
         ch_versions = ch_versions.mix(PHIX_HUMAN.out.versions)
         
-        decontaminated_reads = Channel.empty()
-        if (host_ref_genomes != null) {
+        decontaminated_reads = PHIX_HUMAN.out.decontaminated_reads
+        if ( host_ref_genomes != null ) {
+            ch_bwa_host_refs = Channel.fromPath( "$params.bwa_reference_genomes_folder/" + host_ref_genomes + "*", 
+            checkIfExists: true).collect().map {
+                files -> [ ["id": host_ref_genomes], files ]
+            }
             HOST(
                 PHIX_HUMAN.out.decontaminated_reads, 
-                host_ref_genomes
+                ch_bwa_host_refs
             )
             
             ch_versions = ch_versions.mix(HOST.out.versions)
             decontaminated_reads = HOST.out.decontaminated_reads
-        }
-        else {
-            decontaminated_reads = PHIX_HUMAN.out.decontaminated_reads
         }
 
     emit:
