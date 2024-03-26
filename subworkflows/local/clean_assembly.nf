@@ -2,7 +2,6 @@ include { BLAST_BLASTN as BLAST_BLASTN_HUMAN_PHIX } from '../../modules/nf-core/
 include { BLAST_BLASTN as BLAST_BLASTN_HOST       } from '../../modules/nf-core/blast/blastn/main'
 include { SEQKIT_GREP                             } from '../../modules/nf-core/seqkit/grep/main'
 include { SEQKIT_SEQ                              } from '../../modules/nf-core/seqkit/seq/main'
-// include { TXT_COMBINER                            } from '../../modules/local/text_file_combiner'
 
 workflow CLEAN_ASSEMBLY {
 
@@ -45,12 +44,6 @@ workflow CLEAN_ASSEMBLY {
 
         contaminated_contigs = Channel.of( BLAST_BLASTN_HUMAN_PHIX.out.txt, BLAST_BLASTN_HOST.out.txt )
             .collectFile(storeDir: "${params.outdir}/decontamination/contaminated_contigs.txt", newLine: true)
-
-        // TXT_COMBINER(
-        //     BLAST_BLASTN_HUMAN_PHIX.out.txt,
-        //     BLAST_BLASTN_HOST.out.txt
-        // )
-        // contaminated_contigs = TXT_COMBINER.out.txt_final
     } else {
         contaminated_contigs = BLAST_BLASTN_HUMAN_PHIX.out.txt
     }
