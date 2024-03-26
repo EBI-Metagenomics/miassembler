@@ -4,11 +4,10 @@ include { SEQKIT_GREP                             } from '../../modules/nf-core/
 include { SEQKIT_SEQ                              } from '../../modules/nf-core/seqkit/seq/main'
 // include { TXT_COMBINER                            } from '../../modules/local/text_file_combiner'
 
-workflow CLEAN_ASSEMBLY {
+workflow ASSEMBLY_QC {
 
     take:
     assembly                    // [ val(meta), path(assembly_fasta) ]
-    human_phix_reference_genome // [ val(meta2), path(reference_genome) ] | meta2 contains the name of the reference genome
     host_reference_genome       // [ val(meta2), path(reference_genome) ] | meta2 contains the name of the reference genome
 
     main:
@@ -22,19 +21,31 @@ workflow CLEAN_ASSEMBLY {
 
     ch_versions = ch_versions.mix(SEQKIT_SEQ.out.versions)
 
-    BLAST_BLASTN_HUMAN_PHIX(
-        SEQKIT_SEQ.out.fastx,
-        human_phix_reference_genome
-    )
+    contaminated_contigs = channel.empty()
 
-    ch_versions = ch_versions.mix(BLAST_BLASTN_HUMAN_PHIX.out.versions.first())
+    if ( params.remove_human_phix ) {
 
-    contaminated_contigs = Channel.empty()
+        ch_blast_human_phix_refs = Channel.fromPath( "$params.blast_reference_genomes_folder/${params.human_phix_blast_index_name}*", checkIfExists: true)
+            .collect().map {
+                files -> [ ["id": params.human_phix_blast_index_name], files ]
+            }
+
+        BLAST_BLASTN_HUMAN_PHIX(
+            SEQKIT_SEQ.out.fastx,
+            ch_blast_human_phix_refs
+        )
+
+        ch_versions = ch_versions.mix(BLAST_BLASTN_HUMAN_PHIX.out.versions.first())
+
+        contaminated_contigs = BLAST_BLASTN_HUMAN_PHIX.out.txt
+    }
+
     if ( host_reference_genome != null) {
-        ch_blast_host_refs = Channel.fromPath( "$params.blast_reference_genomes_folder/" + host_reference_genome + "*", 
-        checkIfExists: true).collect().map {
-            files -> [ ["id": host_reference_genome], files ]
-        }
+
+        ch_blast_host_refs = Channel.fromPath( "${params.blast_reference_genomes_folder}/${host_reference_genome}*", checkIfExists: true)
+            .collect().map {
+                files -> [ ["id": host_reference_genome], files ]
+            }
 
         BLAST_BLASTN_HOST(
             SEQKIT_SEQ.out.fastx,
@@ -43,21 +54,15 @@ workflow CLEAN_ASSEMBLY {
 
         ch_versions = ch_versions.mix(BLAST_BLASTN_HOST.out.versions.first())
 
-        contaminated_contigs = Channel.of( BLAST_BLASTN_HUMAN_PHIX.out.txt, BLAST_BLASTN_HOST.out.txt )
-            .collectFile(storeDir: "${params.outdir}/decontamination/contaminated_contigs.txt", newLine: true)
+        contaminated_contigs = contaminated_contigs.mix( BLAST_BLASTN_HOST.out.txt )
 
-        // TXT_COMBINER(
-        //     BLAST_BLASTN_HUMAN_PHIX.out.txt,
-        //     BLAST_BLASTN_HOST.out.txt
-        // )
-        // contaminated_contigs = TXT_COMBINER.out.txt_final
-    } else {
-        contaminated_contigs = BLAST_BLASTN_HUMAN_PHIX.out.txt
     }
+
+    contaminated_contigs.map { _, hits_txt -> hits_txt }.collectFile(storeDir: "${params.outdir}/assembly_qc/contaminated_contigs.txt", newLine: true)
 
     SEQKIT_GREP(
         SEQKIT_SEQ.out.fastx,
-        contaminated_contigs.map { meta, hits_txt -> {hits_txt }}
+        contaminated_contigs.map { meta, hits_txt -> { hits_txt }}
     )
 
     ch_versions = ch_versions.mix(SEQKIT_GREP.out.versions)

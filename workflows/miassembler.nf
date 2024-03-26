@@ -34,8 +34,8 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
 include { FETCHTOOL_READS   } from '../modules/local/fetchtool_reads'
-include { PRE_ASSEMBLY_QC   } from '../subworkflows/local/pre_assembly_qc'
-include { CLEAN_ASSEMBLY    } from '../subworkflows/local/clean_assembly'
+include { READS_QC          } from '../subworkflows/local/reads_qc'
+include { ASSEMBLY_QC       } from '../subworkflows/local/assembly_qc'
 include { ASSEMBLY_COVERAGE } from '../subworkflows/local/assembly_coverage'
 
 /*
@@ -80,67 +80,65 @@ workflow MIASSEMBLER {
     )
 
     ch_versions = ch_versions.mix(FASTQC.out.versions)
-    
-    // standard human+phiX genomes dbs
-    ch_bwa_human_phix_refs = Channel.fromPath( "$params.bwa_reference_genomes_folder/${params.default_reference_genome}*", 
-        checkIfExists: true).collect().map {
-            files -> [ ["id": params.default_reference_genome], files ]
-        }
-    ch_blast_human_phix_refs = Channel.fromPath( "$params.blast_reference_genomes_folder/${params.default_reference_genome}*", 
-        checkIfExists: true).collect().map {
-            files -> [ ["id": params.default_reference_genome], files ]
-        }
-    
+
     // Perform QC on reads //
-    PRE_ASSEMBLY_QC(
-        FETCHTOOL_READS.out.reads, 
-        ch_bwa_human_phix_refs,
+    READS_QC(
+        FETCHTOOL_READS.out.reads,
         params.reference_genome
     )
-    
-    ch_versions = ch_versions.mix(PRE_ASSEMBLY_QC.out.versions)
 
-    // Assembly //
+    /*
+    Single end reads // paired end reads distinction
+        We need to split single-end and paired-end reads.
+        Single-end reads are always assembled with MEGAHIT.
+    */
+
+    READS_QC.out.qc_reads.branch { meta, reads ->
+        xspades: ["metaspades", "spades"].contains(params.assembler) && meta.single_end == false
+        megahit: params.assembler == "megahit" || meta.single_end == true
+    }.set { qc_reads }
+
+    ch_versions = ch_versions.mix(READS_QC.out.versions)
+
+    /* Assembly */
+    /* -- Clarification --
+        At the moment, the pipeline only processes one set of reads at a time.
+        Therefore, running Spades, metaSpades, or MEGAHIT are mutually exclusive.
+        In order to support multiple runs, we need to refactor the code slightly.
+        We will need to use `.join()` to keep assemblies together with their corresponding reads.
+    */
+
     assembly = Channel.empty()
 
-    if ( params.assembler == "metaspades" || params.assembler == "spades" ) {
+    SPADES(
+        qc_reads.xspades.map { meta, reads -> [meta, reads, [], []] },
+        params.assembler,
+        [], // yml input parameters, which we don't use
+        []  // hmm, not used
+    )
 
-        SPADES(
-            PRE_ASSEMBLY_QC.out.cleaned_reads.map { meta, reads -> [meta, reads, [], []] },
-            params.assembler,
-            [], // yml input parameters, which we don't use
-            []  // hmm, not used
-        )
+    assembly = SPADES.out.contigs
+    ch_versions = ch_versions.mix(SPADES.out.versions)
 
-        assembly = SPADES.out.contigs
-        ch_versions = ch_versions.mix(SPADES.out.versions)
+    MEGAHIT(
+        qc_reads.megahit
+    )
 
-    } else if ( params.assembler == "megahit" ) {
-
-        MEGAHIT(
-            PRE_ASSEMBLY_QC.out.cleaned_reads
-        )
-
-        assembly = MEGAHIT.out.contigs
-        ch_versions = ch_versions.mix(MEGAHIT.out.versions)
-
-    } else {
-        // TODO: raise ERROR, it shouldn't happen as the options are validated by nf-validation
-    }
+    assembly = MEGAHIT.out.contigs
+    ch_versions = ch_versions.mix(MEGAHIT.out.versions)
 
     // Clean the assembly contigs //
-    CLEAN_ASSEMBLY(
+    ASSEMBLY_QC(
         assembly,
-        ch_blast_human_phix_refs,
         params.reference_genome
     )
 
-    ch_versions = ch_versions.mix(CLEAN_ASSEMBLY.out.versions)
+    ch_versions = ch_versions.mix(ASSEMBLY_QC.out.versions)
 
     // Coverage //
     ASSEMBLY_COVERAGE(
-        PRE_ASSEMBLY_QC.out.cleaned_reads,
-        CLEAN_ASSEMBLY.out.filtered_contigs
+        READS_QC.out.qc_reads,
+        ASSEMBLY_QC.out.filtered_contigs
     )
 
     ch_versions = ch_versions.mix(ASSEMBLY_COVERAGE.out.versions)
@@ -148,7 +146,7 @@ workflow MIASSEMBLER {
     // Stats //
     /* The QUAST module was modified to run metaQUAST instead */
     QUAST(
-        CLEAN_ASSEMBLY.out.filtered_contigs,
+        ASSEMBLY_QC.out.filtered_contigs,
         [ [], [] ], // reference
         [ [], [] ]  // gff
     )

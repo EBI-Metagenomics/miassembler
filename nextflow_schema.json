@@ -10,7 +10,16 @@
             "type": "object",
             "fa_icon": "fas fa-terminal",
             "description": "Define where the pipeline should find input data and save output data.",
-            "required": ["study_accession", "reads_accession", "assembler", "outdir"],
+            "required": [
+                "study_accession",
+                "reads_accession",
+                "assembler",
+                "blast_reference_genomes_folder",
+                "bwamem2_reference_genomes_folder",
+                "outdir",
+                "human_phix_blast_index_name",
+                "human_phix_bwamem2_index_name"
+            ],
             "properties": {
                 "study_accession": {
                     "type": "string",
@@ -32,7 +41,6 @@
                     "type": "string",
                     "description": "The genome to be used to clean the assembly, the genome will be taken from the Microbiome Informatics internal directory",
                     "enum": [
-                        "human_phix",
                         "chicken.fna",
                         "salmon.fna",
                         "cod.fna",
@@ -44,25 +52,33 @@
                         "rat.fna",
                         "sheep.fna",
                         "soybean.fna",
-                        "zebrafish.fna",
-                        "phiX"
-                    ], 
-                    "default": "human_phix"
+                        "zebrafish.fna"
+                    ]
                 },
                 "blast_reference_genomes_folder": {
                     "type": "string",
                     "description": "The folder with the reference genome blast indexes, defaults to the Microbiome Informatics internal directory",
-                    "default": "/nfs/production/rdf/metagenomics/pipelines/prod/assembly-pipeline/blast_dbs/"
+                    "format": "directory-path"
                 },
-                "bwa_reference_genomes_folder": {
+                "bwamem2_reference_genomes_folder": {
                     "type": "string",
-                    "description": "The folder with the reference genome bwa indexes, defaults to the Microbiome Informatics internal directory",
-                    "default": "/hps/nobackup/rdf/metagenomics/service-team/ref-dbs/bwa-mem2/"
+                    "description": "The folder with the reference genome bwa-mem2 indexes, defaults to the Microbiome Informatics internal directory",
+                    "format": "directory-path"
                 },
-                "default_reference_genome": {
+                "remove_human_phix": {
+                    "type": "boolean",
+                    "description": "Remove human and phiX reads pre assembly, and contigs matching those genomes.",
+                    "default": true
+                },
+                "human_phix_blast_index_name": {
                     "type": "string",
-                    "description": "Genomes that will always be filtered from raw reads: human and PhiX",
-                    "default": "phiX"
+                    "description": "Combined Human and phiX BLAST db",
+                    "default": "human_phix"
+                },
+                "human_phix_bwamem2_index_name": {
+                    "type": "string",
+                    "description": "Combined Human and phiX bwa-mem2 index",
+                    "default": "human_phix"
                 },
                 "min_contig_length": {
                     "type": "integer",
@@ -71,8 +87,8 @@
                 },
                 "spades_only_assembler": {
                     "type": "boolean",
-                    "default": false,
-                    "description": "Run SPAdes/metaSPAdes without the error correction step."
+                    "description": "Run SPAdes/metaSPAdes without the error correction step.",
+                    "default": true
                 },
                 "outdir": {
                     "type": "string",
@@ -121,7 +137,7 @@
                 "max_time": {
                     "type": "string",
                     "description": "Maximum amount of time that can be requested for any single job.",
-                    "default": "240.h",
+                    "default": "168.h",
                     "fa_icon": "far fa-clock",
                     "pattern": "^(\\d+\\.?\\s*(s|m|h|d|day)\\s*)+$",
                     "hidden": true,

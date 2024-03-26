@@ -1,0 +1,5 @@
+- name: MEGAHIT end to end test
+  command: nextflow run main.nf -work-dir ./wd -profile docker,test --outdir ./results --assembler megahit
+  files:
+    - path: "results/megahit/megahit_out/SRR6180434.contigs.fa.gz"
+    - path: "results/assembly_qc/contaminated_contigs.txt/SRR6180434.txt"
