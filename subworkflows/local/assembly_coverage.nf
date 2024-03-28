@@ -1,6 +1,5 @@
 include { BWAMEM2_INDEX                        } from '../../modules/nf-core/bwamem2/index/main'
-include { BWAMEM2_MEM                          } from '../../modules/nf-core/bwamem2/mem/main'
-include { SAMTOOLS_INDEX                       } from '../../modules/nf-core/samtools/index/main'
+include { BWAMEM2_MEM                          } from '../../modules/ebi-metagenomics/bwamem2/mem/main'
 include { SAMTOOLS_IDXSTATS                    } from '../../modules/nf-core/samtools/idxstats/main'
 include { METABAT2_JGISUMMARIZEBAMCONTIGDEPTHS } from '../../modules/nf-core/metabat2/jgisummarizebamcontigdepths/main'
 
@@ -22,26 +21,19 @@ workflow ASSEMBLY_COVERAGE {
 
     BWAMEM2_MEM(
         reads,
-        BWAMEM2_INDEX.out.index,
-        true // sort BAM
+        BWAMEM2_INDEX.out.index
     )
-
+   
     ch_versions = ch_versions.mix(BWAMEM2_MEM.out.versions)
 
-    SAMTOOLS_INDEX(
-        BWAMEM2_MEM.out.bam
-    )
-
-    ch_versions = ch_versions.mix(SAMTOOLS_INDEX.out.versions)
-
     METABAT2_JGISUMMARIZEBAMCONTIGDEPTHS(
-        BWAMEM2_MEM.out.bam.join( SAMTOOLS_INDEX.out.bai )
+        BWAMEM2_MEM.out.bam
     )
 
     ch_versions = ch_versions.mix(METABAT2_JGISUMMARIZEBAMCONTIGDEPTHS.out.versions)
 
     SAMTOOLS_IDXSTATS(
-        BWAMEM2_MEM.out.bam.join( SAMTOOLS_INDEX.out.bai )
+        BWAMEM2_MEM.out.bam
     )
 
     ch_versions = ch_versions.mix(SAMTOOLS_IDXSTATS.out.versions)

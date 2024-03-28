@@ -1,0 +1,87 @@
+nextflow_workflow {
+
+    name "Test Subworkflow READS_BWAMEM2_DECONTAMINATION"
+    script "../main.nf"
+    workflow "READS_BWAMEM2_DECONTAMINATION"
+    config "subworkflows/ebi-metagenomics/reads_bwamem2_decontamination/tests/nextflow.config"
+
+    tag "subworkflows"
+    tag "subworkflows_nfcore"
+    tag "subworkflows/reads_bwamem2_decontamination"
+    tag "bwamem2/mem"
+    tag "samtools/bam2fq"
+
+    test("Illumina paired_end decontamination with MGYG000317500") {
+        when {
+            workflow {
+                """
+                // Define inputs of the workflow:
+                input[0] = Channel.of([
+                    [ id: "test", single_end: false ],
+                    [
+                        file("${baseDir}/subworkflows/ebi-metagenomics/reads_bwamem2_decontamination/tests/data/test_R1.fastq.gz", checkIfExists: true),
+                        file("${baseDir}/subworkflows/ebi-metagenomics/reads_bwamem2_decontamination/tests/data/test_R2.fastq.gz", checkIfExists: true)
+                    ]
+                ])
+                input[1] = Channel.of([
+                    [ id: "MGYG000317500" ],
+                    [
+                        file("${baseDir}/subworkflows/ebi-metagenomics/reads_bwamem2_decontamination/tests/data/MGYG000317500.fna", checkIfExists: true),
+                        file("${baseDir}/subworkflows/ebi-metagenomics/reads_bwamem2_decontamination/tests/data/MGYG000317500.fna.0123", checkIfExists: true),
+                        file("${baseDir}/subworkflows/ebi-metagenomics/reads_bwamem2_decontamination/tests/data/MGYG000317500.fna.amb", checkIfExists: true),
+                        file("${baseDir}/subworkflows/ebi-metagenomics/reads_bwamem2_decontamination/tests/data/MGYG000317500.fna.ann", checkIfExists: true),
+                        file("${baseDir}/subworkflows/ebi-metagenomics/reads_bwamem2_decontamination/tests/data/MGYG000317500.fna.bwt.2bit.64", checkIfExists: true),
+                        file("${baseDir}/subworkflows/ebi-metagenomics/reads_bwamem2_decontamination/tests/data/MGYG000317500.fna.pac", checkIfExists: true)
+                    ]
+                ])
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.success },
+                // gzip stores extra information in the header, which makes comparing checksums impossible between operating systems.
+                // that is why we use the sizes of files, and that sort of thing
+                { assert path(workflow.out.decontaminated_reads.get(0).get(1).get(0)).linesGzip.size() == 374028 },
+                { assert path(workflow.out.decontaminated_reads.get(0).get(1).get(1)).linesGzip.size() == 374028 }
+            )
+        }
+    }
+
+
+    test("Illumina single_end decontamination with MGYG000317500") {
+        when {
+            workflow {
+                """
+                // Define inputs of the workflow:
+                input[0] = Channel.of([
+                    [ id: "test", single_end: true ],
+                    [
+                        file("${baseDir}/subworkflows/ebi-metagenomics/reads_bwamem2_decontamination/tests/data/test_R1.fastq.gz", checkIfExists: true)
+                    ]
+                ])
+
+                input[1] = Channel.of([
+                    [ id: "MGYG000317500" ],
+                    [
+                        file("${baseDir}/subworkflows/ebi-metagenomics/reads_bwamem2_decontamination/tests/data/MGYG000317500.fna", checkIfExists: true),
+                        file("${baseDir}/subworkflows/ebi-metagenomics/reads_bwamem2_decontamination/tests/data/MGYG000317500.fna.0123", checkIfExists: true),
+                        file("${baseDir}/subworkflows/ebi-metagenomics/reads_bwamem2_decontamination/tests/data/MGYG000317500.fna.amb", checkIfExists: true),
+                        file("${baseDir}/subworkflows/ebi-metagenomics/reads_bwamem2_decontamination/tests/data/MGYG000317500.fna.ann", checkIfExists: true),
+                        file("${baseDir}/subworkflows/ebi-metagenomics/reads_bwamem2_decontamination/tests/data/MGYG000317500.fna.bwt.2bit.64", checkIfExists: true),
+                        file("${baseDir}/subworkflows/ebi-metagenomics/reads_bwamem2_decontamination/tests/data/MGYG000317500.fna.pac", checkIfExists: true)
+                    ]
+                ])
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.success },
+                { assert path(workflow.out.decontaminated_reads.get(0).get(1)).linesGzip.size() == 378312 }
+            )
+        }
+    }
+}
