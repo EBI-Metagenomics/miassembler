@@ -2,7 +2,6 @@ include { BLAST_BLASTN as BLAST_BLASTN_HUMAN_PHIX } from '../../modules/nf-core/
 include { BLAST_BLASTN as BLAST_BLASTN_HOST       } from '../../modules/nf-core/blast/blastn/main'
 include { SEQKIT_GREP                             } from '../../modules/nf-core/seqkit/grep/main'
 include { SEQKIT_SEQ                              } from '../../modules/nf-core/seqkit/seq/main'
-// include { TXT_COMBINER                            } from '../../modules/local/text_file_combiner'
 
 workflow ASSEMBLY_QC {
 
@@ -54,8 +53,10 @@ workflow ASSEMBLY_QC {
 
         ch_versions = ch_versions.mix(BLAST_BLASTN_HOST.out.versions.first())
 
-        contaminated_contigs = contaminated_contigs.mix( BLAST_BLASTN_HOST.out.txt )
-
+        contaminated_contigs = Channel.of( BLAST_BLASTN_HUMAN_PHIX.out.txt, BLAST_BLASTN_HOST.out.txt )
+            .collectFile(storeDir: "${params.outdir}/decontamination/contaminated_contigs.txt", newLine: true)
+    } else {
+        contaminated_contigs = BLAST_BLASTN_HUMAN_PHIX.out.txt
     }
 
     contaminated_contigs.map { _, hits_txt -> hits_txt }.collectFile(storeDir: "${params.outdir}/assembly_qc/contaminated_contigs.txt", newLine: true)
