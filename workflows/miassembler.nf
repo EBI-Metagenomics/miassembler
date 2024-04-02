@@ -124,7 +124,11 @@ workflow MIASSEMBLER {
         qc_reads.megahit
     )
 
-    assembly = MEGAHIT.out.contigs
+    SPADES.out.contigs.ifEmpty("EMPTY").view()
+    if ( SPADES.out.contigs == "EMPTY" ) {
+        assembly = MEGAHIT.out.contigs
+    }
+
     ch_versions = ch_versions.mix(MEGAHIT.out.versions)
 
     // Clean the assembly contigs //
