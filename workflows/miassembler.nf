@@ -124,7 +124,6 @@ workflow MIASSEMBLER {
         qc_reads.megahit
     )
 
-    SPADES.out.contigs.ifEmpty("EMPTY").view()
     if ( SPADES.out.contigs == "EMPTY" ) {
         assembly = MEGAHIT.out.contigs
     }

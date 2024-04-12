@@ -3,7 +3,6 @@ nextflow_workflow {
     name "Test Subworkflow READS_BWAMEM2_DECONTAMINATION"
     script "../main.nf"
     workflow "READS_BWAMEM2_DECONTAMINATION"
-    config "subworkflows/ebi-metagenomics/reads_bwamem2_decontamination/tests/nextflow.config"
 
     tag "subworkflows"
     tag "subworkflows_nfcore"
