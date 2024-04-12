@@ -124,7 +124,7 @@ workflow MIASSEMBLER {
         qc_reads.megahit
     )
 
-    if ( SPADES.out.contigs == "EMPTY" ) {
+    if ( SPADES.out.contigs.toList().isEmpty() ) {
         assembly = MEGAHIT.out.contigs
     }
 
