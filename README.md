@@ -13,7 +13,7 @@ This pipeline is still in early development. It's mostly a direct port of the mi
 ## Usage
 
 > [!WARNING]
-> It only runs in Codon using Slurm ATM, feel free to add the LSF profile.
+> It only runs in Codon using Slurm ATM.
 
 Pipeline help:
 
@@ -23,12 +23,10 @@ nextflow run ebi-metagenomics/miassembler --help
 Input/output options
   --study_accession                  [string]  The ENA Study secondary accession
   --reads_accession                  [string]  The ENA Run primary accession
-  --single_end                       [boolean] True if the reads are sinlge end
-  --paired_end                       [boolean] True if the reads are paired end
-  --assembler                        [string]  The short reads assembler (accepted: spades, metaspades, megahit) [default: metaspades]
+  --assembler                        [string]  The short reads assembler (accepted: spades, metaspades, megahit) [default: metaspades for PE, megahit for SE]
   --reference_genome                 [string]  The genome to be used to clean the assembly, the genome will be taken from the Microbiome Informatics internal
-                                               directory (accepted: human, chicken.fna, salmon.fna, cod.fna, pig.fna, cow.fna, mouse.fna, honeybee.fna,
-                                               rainbow_trout.fna, ...) [default: human]
+                                               directory (accepted: chicken.fna, salmon.fna, cod.fna, pig.fna, cow.fna, mouse.fna, honeybee.fna,
+                                               rainbow_trout.fna, ...) [default: human+phiX]
   --reference_genomes_folder         [string]  The folder with the reference genome blast indexes, defaults to the Microbiome Informatics internal directory
                                                [default: /nfs/production/rdf/metagenomics/pipelines/prod/assembly-pipeline/blast_dbs/]
   --outdir                           [string]  The output directory where the results will be saved. You have to use absolute paths to storage on Cloud
@@ -40,15 +38,19 @@ Generic options
   --multiqc_methods_description      [string]  Custom MultiQC yaml file containing HTML including a methods description.
 ```
 
-Example rn:
+Example:
 
 ```bash
 nextflow run ebi-metagenomics/miassembler \
   -profile codon_slurm \
   --assembler metaspades \
-  --paired_end true \
   --reference_genome human \
   --outdir testing_results \
   --study_accession SRP002480 \
   --reads_accession SRR1631361
+```
+
+Two end-to-end tests can be launched (with megahit and metaspades) with the following command:
+```bash
+/hps/software/users/rdf/metagenomics/service-team/software/micromamba/envs/pytest/bin/pytest tests/workflows/ --verbose
 ```
