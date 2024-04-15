@@ -34,7 +34,8 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
 include { FETCHTOOL_READS   } from '../modules/local/fetchtool_reads'
-include { CLEAN_ASSEMBLY    } from '../subworkflows/local/clean_assembly'
+include { READS_QC          } from '../subworkflows/local/reads_qc'
+include { ASSEMBLY_QC       } from '../subworkflows/local/assembly_qc'
 include { ASSEMBLY_COVERAGE } from '../subworkflows/local/assembly_coverage'
 
 /*
@@ -62,6 +63,21 @@ include { QUAST                       } from '../modules/nf-core/quast/main'
 // Info required for completion email and summary
 def multiqc_report = []
 
+def metaSorter = { a, b ->
+    // Check if both a and b are LinkedHashMap
+    if (a instanceof LinkedHashMap && b instanceof LinkedHashMap) {
+        // Compare the lengths
+        return b.size() <=> a.size()
+    } else if (a instanceof LinkedHashMap) {
+        // LinkedHashMaps (like meta) is considered bigger than value
+        return 1
+    } else if (b instanceof LinkedHashMap) {
+        return -1
+    } else {
+        return a <=> b
+    }
+}
+
 workflow MIASSEMBLER {
 
     ch_versions = Channel.empty()
@@ -77,53 +93,67 @@ workflow MIASSEMBLER {
     FASTQC (
         FETCHTOOL_READS.out.reads
     )
+
     ch_versions = ch_versions.mix(FASTQC.out.versions)
 
-    // Assembly //
-    assembly = Channel.empty()
-
-    if ( params.assembler == "metaspades" || params.assembler == "spades" ) {
-
-        SPADES(
-            FETCHTOOL_READS.out.reads.map { meta, reads -> [meta, reads, [], []] },
-            params.assembler,
-            [], // yml input parameters, which we don't use
-            []  // hmm, not used
-        )
-
-        assembly = SPADES.out.contigs
-        ch_versions = ch_versions.mix(SPADES.out.versions)
-
-    } else if ( params.assembler == "megahit" ) {
-
-        MEGAHIT(
-            FETCHTOOL_READS.out.reads
-        )
-
-        assembly = MEGAHIT.out.contigs
-        ch_versions = ch_versions.mix(MEGAHIT.out.versions)
-
-    } else {
-        // TODO: raise ERROR, it shouldn't happen as the options are validated by nf-validation
-    }
-
-    // Clean the assembly contigs //
-
-    reference = Channel.fromPath("$params.reference_genomes_folder/$params.reference_genome.*", checkIfExists: true).collect().map { db_files ->
-        [ ["id": params.reference_genome], db_files ]
-    }
-
-    CLEAN_ASSEMBLY(
-        assembly,
-        reference
+    // Perform QC on reads //
+    READS_QC(
+        FETCHTOOL_READS.out.reads,
+        params.reference_genome
     )
 
-    ch_versions = ch_versions.mix(CLEAN_ASSEMBLY.out.versions)
+    /*
+    Single end reads // paired end reads distinction
+        We need to split single-end and paired-end reads.
+        Single-end reads are always assembled with MEGAHIT.
+    */
+
+    READS_QC.out.qc_reads.branch { meta, reads ->
+        xspades: ["metaspades", "spades"].contains(params.assembler) && meta.single_end == false
+        megahit: params.assembler == "megahit" || meta.single_end == true
+    }.set { qc_reads }
+
+    ch_versions = ch_versions.mix(READS_QC.out.versions)
+
+    /* Assembly */
+    /* -- Clarification --
+        At the moment, the pipeline only processes one set of reads at a time.
+        Therefore, running Spades, metaSpades, or MEGAHIT are mutually exclusive.
+        In order to support multiple runs, we need to refactor the code slightly.
+        We will need to use `.join()` to keep assemblies together with their corresponding reads.
+    */
+
+    SPADES(
+        qc_reads.xspades.map { meta, reads -> [meta, reads, [], []] },
+        params.assembler,
+        [], // yml input parameters, which we don't use
+        []  // hmm, not used
+    )
+
+    ch_versions = ch_versions.mix(SPADES.out.versions)
+
+    MEGAHIT(
+        qc_reads.megahit
+    )
+    
+    assembly = SPADES.out.contigs.join(MEGAHIT.out.contigs, remainder: true)
+                .collect(sort: metaSorter)
+                .map { nothing, contigs, meta -> [meta, contigs] }
+    
+    ch_versions = ch_versions.mix(MEGAHIT.out.versions)
+
+    // Clean the assembly contigs //
+    ASSEMBLY_QC(
+        assembly,
+        params.reference_genome
+    )
+
+    ch_versions = ch_versions.mix(ASSEMBLY_QC.out.versions)
 
     // Coverage //
     ASSEMBLY_COVERAGE(
-        FETCHTOOL_READS.out.reads,
-        assembly
+        READS_QC.out.qc_reads,
+        ASSEMBLY_QC.out.filtered_contigs
     )
 
     ch_versions = ch_versions.mix(ASSEMBLY_COVERAGE.out.versions)
@@ -131,7 +161,7 @@ workflow MIASSEMBLER {
     // Stats //
     /* The QUAST module was modified to run metaQUAST instead */
     QUAST(
-        CLEAN_ASSEMBLY.out.filtered_contigs,
+        ASSEMBLY_QC.out.filtered_contigs,
         [ [], [] ], // reference
         [ [], [] ]  // gff
     )
