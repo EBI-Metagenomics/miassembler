@@ -63,6 +63,21 @@ include { QUAST                       } from '../modules/nf-core/quast/main'
 // Info required for completion email and summary
 def multiqc_report = []
 
+def metaSorter = { a, b ->
+    // Check if both a and b are LinkedHashMap
+    if (a instanceof LinkedHashMap && b instanceof LinkedHashMap) {
+        // Compare the lengths
+        return b.size() <=> a.size()
+    } else if (a instanceof LinkedHashMap) {
+        // LinkedHashMaps (like meta) is considered bigger than value
+        return 1
+    } else if (b instanceof LinkedHashMap) {
+        return -1
+    } else {
+        return a <=> b
+    }
+}
+
 workflow MIASSEMBLER {
 
     ch_versions = Channel.empty()
@@ -108,8 +123,6 @@ workflow MIASSEMBLER {
         We will need to use `.join()` to keep assemblies together with their corresponding reads.
     */
 
-    assembly = Channel.empty()
-
     SPADES(
         qc_reads.xspades.map { meta, reads -> [meta, reads, [], []] },
         params.assembler,
@@ -117,17 +130,16 @@ workflow MIASSEMBLER {
         []  // hmm, not used
     )
 
-    assembly = SPADES.out.contigs
     ch_versions = ch_versions.mix(SPADES.out.versions)
 
     MEGAHIT(
         qc_reads.megahit
     )
-
-    if ( SPADES.out.contigs.toList().isEmpty() ) {
-        assembly = MEGAHIT.out.contigs
-    }
-
+    
+    assembly = SPADES.out.contigs.join(MEGAHIT.out.contigs, remainder: true)
+                .collect(sort: metaSorter)
+                .map { nothing, contigs, meta -> [meta, contigs] }
+    
     ch_versions = ch_versions.mix(MEGAHIT.out.versions)
 
     // Clean the assembly contigs //

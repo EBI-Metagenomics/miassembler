@@ -14,13 +14,15 @@ process SPADES {
     path hmm
 
     output:
-    tuple val(meta), path('*.scaffolds.fa.gz')    , optional:true, emit: scaffolds
-    tuple val(meta), path('*.contigs.fa.gz')      , optional:true, emit: contigs
-    tuple val(meta), path('*.transcripts.fa.gz')  , optional:true, emit: transcripts
-    tuple val(meta), path('*.gene_clusters.fa.gz'), optional:true, emit: gene_clusters
-    tuple val(meta), path('*.assembly.gfa.gz')    , optional:true, emit: gfa
-    tuple val(meta), path('*.log')                , emit: log
-    path  "versions.yml"                          , emit: versions
+    tuple val(meta), path('*.scaffolds.fa.gz')                     , optional:true, emit: scaffolds
+    tuple val(meta), path('*.contigs.fa.gz')                       , optional:true, emit: contigs
+    tuple val(meta), path('*.transcripts.fa.gz')                   , optional:true, emit: transcripts
+    tuple val(meta), path('*.gene_clusters.fa.gz')                 , optional:true, emit: gene_clusters
+    tuple val(meta), path('*.assembly_graph_with_scaffolds.gfa.gz'), optional:true, emit: gfa
+    tuple val(meta), path('*.assembly_graph.fastg.gz')             , optional:true, emit: fastg
+    tuple val(meta), path('*.params.txt')                          , optional:true, emit: params
+    tuple val(meta), path('*.log')                                 , emit: log
+    path  "versions.yml"                                           , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -69,10 +71,13 @@ process SPADES {
         gzip -n ${prefix}.transcripts.fa
     fi
     if [ -f assembly_graph_with_scaffolds.gfa ]; then
-        mv assembly_graph_with_scaffolds.gfa ${prefix}.assembly.gfa
-        gzip -n ${prefix}.assembly.gfa
+        mv assembly_graph_with_scaffolds.gfa ${prefix}.assembly_graph_with_scaffolds.gfa
+        gzip -n ${prefix}.assembly_graph_with_scaffolds.gfa
     fi
-
+    if [ -f assembly_graph.fastg ]; then
+        mv assembly_graph.fastg ${prefix}.assembly_graph.fastg
+        gzip -n ${prefix}.assembly_graph.fastg
+    fi
     if [ -f gene_clusters.fasta ]; then
         mv gene_clusters.fasta ${prefix}.gene_clusters.fa
         gzip -n ${prefix}.gene_clusters.fa
