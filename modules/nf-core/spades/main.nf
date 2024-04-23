@@ -1,6 +1,5 @@
 process SPADES {
     tag "$meta.id"
-    label 'process_high_memory'
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
@@ -20,7 +19,7 @@ process SPADES {
     tuple val(meta), path('*.gene_clusters.fa.gz')                 , optional:true, emit: gene_clusters
     tuple val(meta), path('*.assembly_graph_with_scaffolds.gfa.gz'), optional:true, emit: gfa
     tuple val(meta), path('*.assembly_graph.fastg.gz')             , optional:true, emit: fastg
-    tuple val(meta), path('*.params.txt')                          , optional:true, emit: params
+    tuple val(meta), path('params.txt')                            , optional:true, emit: params
     tuple val(meta), path('*.log')                                 , emit: log
     path  "versions.yml"                                           , emit: versions
 
