@@ -52,5 +52,5 @@ nextflow run ebi-metagenomics/miassembler \
 
 Two end-to-end tests can be launched (with megahit and metaspades) with the following command:
 ```bash
-/hps/software/users/rdf/metagenomics/service-team/software/micromamba/envs/pytest/bin/pytest tests/workflows/ --verbose
+pytest tests/workflows/ --verbose
 ```
