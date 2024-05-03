@@ -124,8 +124,8 @@ workflow MIASSEMBLER {
 
     READS_QC.out.reads.branch { meta, reads ->
         xspades: ["metaspades", "spades"].contains(params.assembler)
-            && meta.single_end == false
-            || FETCHTOOL_METADATA.out.lib_strategy.contains("METATRANSCRIPTOMIC")
+                && meta.single_end == false
+                || FETCHTOOL_METADATA.out.lib_strategy.contains("METATRANSCRIPTOMIC")
         megahit: params.assembler == "megahit" || meta.single_end == true
     }.set { qc_reads }
 
