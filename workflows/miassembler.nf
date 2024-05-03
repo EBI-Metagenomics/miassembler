@@ -33,10 +33,11 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
-include { FETCHTOOL_READS   } from '../modules/local/fetchtool_reads'
-include { READS_QC          } from '../subworkflows/local/reads_qc'
-include { ASSEMBLY_QC       } from '../subworkflows/local/assembly_qc'
-include { ASSEMBLY_COVERAGE } from '../subworkflows/local/assembly_coverage'
+include { FETCHTOOL_READS    } from '../modules/local/fetchtool_reads'
+include { FETCHTOOL_METADATA } from '../modules/local/fetchtool_metadata'
+include { READS_QC           } from '../subworkflows/local/reads_qc'
+include { ASSEMBLY_QC        } from '../subworkflows/local/assembly_qc'
+include { ASSEMBLY_COVERAGE  } from '../subworkflows/local/assembly_coverage'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -82,6 +83,14 @@ workflow MIASSEMBLER {
 
     ch_versions = Channel.empty()
 
+    // Download project metadata //
+    FETCHTOOL_METADATA(
+        [ [id: params.reads_accession], params.study_accession, params.reads_accession ],
+        file("$projectDir/assets/fetch_tool_anonymous.json")
+    )
+    
+    ch_versions = ch_versions.mix(FETCHTOOL_METADATA.out.versions)
+    
     // Download reads //
     FETCHTOOL_READS(
         [ [id: params.reads_accession], params.study_accession, params.reads_accession ],
@@ -108,8 +117,10 @@ workflow MIASSEMBLER {
         Single-end reads are always assembled with MEGAHIT.
     */
 
-    READS_QC.out.qc_reads.branch { meta, reads ->
-        xspades: ["metaspades", "spades"].contains(params.assembler) && meta.single_end == false
+    READS_QC.out.reads.branch { meta, reads ->
+        xspades: ["metaspades", "spades"].contains(params.assembler)
+            && meta.single_end == false
+            || FETCHTOOL_METADATA.out.lib_strategy.contains("METATRANSCRIPTOMIC")
         megahit: params.assembler == "megahit" || meta.single_end == true
     }.set { qc_reads }
 
