@@ -82,11 +82,16 @@ def metaSorter = { a, b ->
 workflow MIASSEMBLER {
 
     ch_versions = Channel.empty()
+    
+    fetch_tool_config = file("$projectDir/assets/fetch_tool_anonymous.json")
+    if ( params.private_study ) {
+        fetch_tool_config = file("$projectDir/assets/fetch_tool_credentials.json")
+    }
 
     // Download project metadata //
     FETCHTOOL_METADATA(
         [ [id: params.reads_accession], params.study_accession, params.reads_accession ],
-        file("$projectDir/assets/fetch_tool_anonymous.json")
+        fetch_tool_config
     )
     
     ch_versions = ch_versions.mix(FETCHTOOL_METADATA.out.versions)
@@ -94,7 +99,7 @@ workflow MIASSEMBLER {
     // Download reads //
     FETCHTOOL_READS(
         [ [id: params.reads_accession], params.study_accession, params.reads_accession ],
-        file("$projectDir/assets/fetch_tool_anonymous.json")
+        fetch_tool_config
     )
 
     ch_versions = ch_versions.mix(FETCHTOOL_READS.out.versions)

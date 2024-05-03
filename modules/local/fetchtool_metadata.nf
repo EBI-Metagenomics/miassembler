@@ -20,17 +20,17 @@ process FETCHTOOL_METADATA {
     script:
     def args = task.ext.args ?: ''
     def library_strategy = ''
+    def private_study = params.private_study ? "--private" : ""
+
     """
     fetch-read-tool -d download_folder/ \\
     -p $study_accession \\
     --fix-desc-file \\
     -c $fetchtool_config \\
-    -v $args
+    -v $private_study $args
 
-    grep $reads_accession download_folder/$study_accession/${study_accession}.txt | cut -f 7
     library_strategy=\$(grep $reads_accession download_folder/$study_accession/${study_accession}.txt | cut -f 7)
-    echo "Library Strategy: $library_strategy"
-
+    
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         fetch-tool: \$(fetch-read-tool --version)

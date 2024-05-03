@@ -31,6 +31,11 @@
                     "description": "The ENA Run primary accession",
                     "fa_icon": "far fa-address-card"
                 },
+                "private_study": {
+                    "type": "boolean",
+                    "description": "To use if the ENA study is private",
+                    "default": false
+                },
                 "assembler": {
                     "type": "string",
                     "default": "metaspades",

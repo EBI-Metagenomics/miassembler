@@ -19,12 +19,13 @@ process FETCHTOOL_READS {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "$reads_accession"
+    def private_study = params.private_study ? "--private" : ""
     """
     fetch-read-tool -d download_folder/ \\
     -p $study_accession \\
     -ru $reads_accession \\
     -c $fetchtool_config \\
-    -v $args
+    -v $private_study $args
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
