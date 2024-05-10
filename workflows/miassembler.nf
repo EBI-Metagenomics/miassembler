@@ -109,11 +109,13 @@ workflow MIASSEMBLER {
     )
 
     ch_versions = ch_versions.mix(FASTQC.out.versions)
+    isMetatranscriptomic = FETCHTOOL_METADATA.out.lib_strategy.contains("METATRANSCRIPTOMIC")
 
     // Perform QC on reads //
     READS_QC(
         FETCHTOOL_READS.out.reads,
-        params.reference_genome
+        params.reference_genome,
+        isMetatranscriptomic
     )
 
     /*
@@ -122,10 +124,10 @@ workflow MIASSEMBLER {
         Single-end reads are always assembled with MEGAHIT.
     */
 
-    READS_QC.out.reads.branch { meta, reads ->
+    READS_QC.out.qc_reads.branch { meta, reads ->
         xspades: ["metaspades", "spades"].contains(params.assembler)
                 && meta.single_end == false
-                || FETCHTOOL_METADATA.out.lib_strategy.contains("METATRANSCRIPTOMIC")
+                || isMetatranscriptomic
         megahit: params.assembler == "megahit" || meta.single_end == true
     }.set { qc_reads }
 
