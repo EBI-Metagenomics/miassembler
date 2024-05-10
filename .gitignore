@@ -9,3 +9,5 @@ testing*
 results/
 
 *.pyc
+
+assets/fetch_tool_credentials.json

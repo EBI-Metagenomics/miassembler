@@ -7,6 +7,7 @@ workflow READS_QC {
     take:
     reads                 // [ val(meta), path(reads) ]
     host_reference_genome // [ val(meta2), path(reference_genome) ] | meta2 contains the name of the reference genome
+    isMetatranscriptomic  // true/false
 
     main:
     ch_versions = Channel.empty()
@@ -30,7 +31,8 @@ workflow READS_QC {
         formatted_reads,
         [],
         false,
-        false
+        false,
+        isMetatranscriptomic
     )
 
     ch_versions = ch_versions.mix(FASTP.out.versions)

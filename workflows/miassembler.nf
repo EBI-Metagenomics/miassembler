@@ -33,10 +33,11 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
-include { FETCHTOOL_READS   } from '../modules/local/fetchtool_reads'
-include { READS_QC          } from '../subworkflows/local/reads_qc'
-include { ASSEMBLY_QC       } from '../subworkflows/local/assembly_qc'
-include { ASSEMBLY_COVERAGE } from '../subworkflows/local/assembly_coverage'
+include { FETCHTOOL_READS    } from '../modules/local/fetchtool_reads'
+include { FETCHTOOL_METADATA } from '../modules/local/fetchtool_metadata'
+include { READS_QC           } from '../subworkflows/local/reads_qc'
+include { ASSEMBLY_QC        } from '../subworkflows/local/assembly_qc'
+include { ASSEMBLY_COVERAGE  } from '../subworkflows/local/assembly_coverage'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -81,11 +82,24 @@ def metaSorter = { a, b ->
 workflow MIASSEMBLER {
 
     ch_versions = Channel.empty()
+    
+    fetch_tool_config = file("$projectDir/assets/fetch_tool_anonymous.json")
+    if ( params.private_study ) {
+        fetch_tool_config = file("$projectDir/assets/fetch_tool_credentials.json")
+    }
 
+    // Download project metadata //
+    FETCHTOOL_METADATA(
+        [ [id: params.reads_accession], params.study_accession, params.reads_accession ],
+        fetch_tool_config
+    )
+    
+    ch_versions = ch_versions.mix(FETCHTOOL_METADATA.out.versions)
+    
     // Download reads //
     FETCHTOOL_READS(
         [ [id: params.reads_accession], params.study_accession, params.reads_accession ],
-        file("$projectDir/assets/fetch_tool_anonymous.json")
+        fetch_tool_config
     )
 
     ch_versions = ch_versions.mix(FETCHTOOL_READS.out.versions)
@@ -95,11 +109,13 @@ workflow MIASSEMBLER {
     )
 
     ch_versions = ch_versions.mix(FASTQC.out.versions)
+    isMetatranscriptomic = FETCHTOOL_METADATA.out.lib_strategy.contains("METATRANSCRIPTOMIC")
 
     // Perform QC on reads //
     READS_QC(
         FETCHTOOL_READS.out.reads,
-        params.reference_genome
+        params.reference_genome,
+        isMetatranscriptomic
     )
 
     /*
@@ -109,7 +125,9 @@ workflow MIASSEMBLER {
     */
 
     READS_QC.out.qc_reads.branch { meta, reads ->
-        xspades: ["metaspades", "spades"].contains(params.assembler) && meta.single_end == false
+        xspades: ["metaspades", "spades"].contains(params.assembler)
+                && meta.single_end == false
+                || isMetatranscriptomic
         megahit: params.assembler == "megahit" || meta.single_end == true
     }.set { qc_reads }
 
