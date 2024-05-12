@@ -16,6 +16,7 @@ process MEGAHIT {
     tuple val(meta), path("megahit_out/intermediate_contigs/k*.addi.fa.gz")         , emit: addi_contigs
     tuple val(meta), path("megahit_out/intermediate_contigs/k*.local.fa.gz")        , emit: local_contigs
     tuple val(meta), path("megahit_out/intermediate_contigs/k*.final.contigs.fa.gz"), emit: kfinal_contigs
+    tuple val(meta), path("megahit_out/*.log")                                      , emit: log
     path "versions.yml"                                                             , emit: versions
 
     when:

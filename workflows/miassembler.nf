@@ -38,6 +38,7 @@ include { FETCHTOOL_METADATA } from '../modules/local/fetchtool_metadata'
 include { READS_QC           } from '../subworkflows/local/reads_qc'
 include { ASSEMBLY_QC        } from '../subworkflows/local/assembly_qc'
 include { ASSEMBLY_COVERAGE  } from '../subworkflows/local/assembly_coverage'
+include { ASSEMBLY_STATS     } from '../subworkflows/local/assembly_stats'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -53,7 +54,6 @@ include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 include { SPADES                      } from '../modules/nf-core/spades/main'
 include { MEGAHIT                     } from '../modules/nf-core/megahit/main'
-include { QUAST                       } from '../modules/nf-core/quast/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -125,10 +125,9 @@ workflow MIASSEMBLER {
     */
 
     READS_QC.out.qc_reads.branch { meta, reads ->
-        xspades: ["metaspades", "spades"].contains(params.assembler)
-                && meta.single_end == false
+        megahit: ["megahit"].contains(params.assembler) || meta.single_end == true
+        xspades: (["metaspades", "spades"].contains(params.assembler) && (meta.single_end == false))
                 || isMetatranscriptomic
-        megahit: params.assembler == "megahit" || meta.single_end == true
     }.set { qc_reads }
 
     ch_versions = ch_versions.mix(READS_QC.out.versions)
@@ -158,6 +157,10 @@ workflow MIASSEMBLER {
                 .collect(sort: metaSorter)
                 .map { nothing, contigs, meta -> [meta, contigs] }
     
+    assembler_log = SPADES.out.log.join(MEGAHIT.out.log, remainder: true)
+                .collect(sort: metaSorter)
+                .map { nothing, logFile, meta -> [meta, logFile] }
+    
     ch_versions = ch_versions.mix(MEGAHIT.out.versions)
 
     // Clean the assembly contigs //
@@ -177,41 +180,39 @@ workflow MIASSEMBLER {
     ch_versions = ch_versions.mix(ASSEMBLY_COVERAGE.out.versions)
 
     // Stats //
-    /* The QUAST module was modified to run metaQUAST instead */
-    QUAST(
-        ASSEMBLY_QC.out.filtered_contigs,
-        [ [], [] ], // reference
-        [ [], [] ]  // gff
+    ASSEMBLY_STATS (
+        ASSEMBLY_QC.out.filtered_contigs, 
+        assembler_log
     )
 
-    CUSTOM_DUMPSOFTWAREVERSIONS (
-        ch_versions.unique().collectFile(name: 'collated_versions.yml')
-    )
+    // CUSTOM_DUMPSOFTWAREVERSIONS (
+    //     ch_versions.unique().collectFile(name: 'collated_versions.yml')
+    // )
 
-    //
-    // MODULE: MultiQC
-    //
-    workflow_summary    = WorkflowMiassembler.paramsSummaryMultiqc(workflow, summary_params)
-    ch_workflow_summary = Channel.value(workflow_summary)
+    // //
+    // // MODULE: MultiQC
+    // //
+    // workflow_summary    = WorkflowMiassembler.paramsSummaryMultiqc(workflow, summary_params)
+    // ch_workflow_summary = Channel.value(workflow_summary)
 
-    methods_description    = WorkflowMiassembler.methodsDescriptionText(workflow, ch_multiqc_custom_methods_description, params)
-    ch_methods_description = Channel.value(methods_description)
+    // methods_description    = WorkflowMiassembler.methodsDescriptionText(workflow, ch_multiqc_custom_methods_description, params)
+    // ch_methods_description = Channel.value(methods_description)
 
-    ch_multiqc_files = Channel.empty()
-    ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
-    ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
-    ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
-    ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect{it[1]}.ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(ASSEMBLY_COVERAGE.out.samtools_idxstats.collect{ it[1] }.ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(QUAST.out.results.collect { it[1] }.ifEmpty([]))
+    // ch_multiqc_files = Channel.empty()
+    // ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
+    // ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
+    // ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
+    // ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect{it[1]}.ifEmpty([]))
+    // ch_multiqc_files = ch_multiqc_files.mix(ASSEMBLY_COVERAGE.out.samtools_idxstats.collect{ it[1] }.ifEmpty([]))
+    // ch_multiqc_files = ch_multiqc_files.mix(ASSEMBLY_STATS.out.quast_results.collect { it[1] }.ifEmpty([]))
 
-    MULTIQC (
-        ch_multiqc_files.collect(),
-        ch_multiqc_config.toList(),
-        ch_multiqc_custom_config.toList(),
-        ch_multiqc_logo.toList()
-    )
-    multiqc_report = MULTIQC.out.report.toList()
+    // MULTIQC (
+    //     ch_multiqc_files.collect(),
+    //     ch_multiqc_config.toList(),
+    //     ch_multiqc_custom_config.toList(),
+    //     ch_multiqc_logo.toList()
+    // )
+    // multiqc_report = MULTIQC.out.report.toList()
 }
 
 /*
