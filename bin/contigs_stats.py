@@ -22,12 +22,12 @@ import json
 
 def parse_args():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        description="")
+        description="Get contigs stats")
     parser.add_argument('-f', '--fasta', required=True, help="Contigs file")
     parser.add_argument('-c', '--coverage', required=True, help="Coverage file")
     parser.add_argument('-p', '--fastp-json', required=True, help="Fastp json report")
     parser.add_argument('-o', '--output', type=str, required=False, help="Name of output file",
-                        default="fasta_stats.json")
+                        default="assembly_stats.json")
     return parser.parse_args()
 
 

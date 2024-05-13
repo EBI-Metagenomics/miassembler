@@ -1,12 +1,10 @@
-include { ASSEMBLER_VERSION     } from '../../modules/local/assembler_version'
-include { COLLECT_CONTIGS_STATS } from '../../modules/local/collect_contigs_stats'
-include { QUAST                 } from '../../modules/nf-core/quast/main'
+include { COLLECT_CONTIGS_STATS  } from '../../modules/local/collect_contigs_stats'
+include { QUAST                  } from '../../modules/nf-core/quast/main'
 
 workflow ASSEMBLY_STATS {
 
     take:
-    input_data        // [ val(meta), path(contigs), path(coverage), path(fastp_log) ]
-    assembler_log
+    input_data        // [ val(meta), path(contigs), path(coverage), path(fastp_json) ]
 
     main:
     ch_versions = Channel.empty()
@@ -32,10 +30,6 @@ workflow ASSEMBLY_STATS {
     */
     COLLECT_CONTIGS_STATS( input.contigs_stats )
     ch_versions = ch_versions.mix(COLLECT_CONTIGS_STATS.out.versions)
-
-    ASSEMBLER_VERSION(
-        assembler_log
-    )
 
     /* The QUAST module was modified to run metaQUAST instead */
     QUAST(

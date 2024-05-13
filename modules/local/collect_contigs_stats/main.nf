@@ -16,7 +16,7 @@ process COLLECT_CONTIGS_STATS {
 
     script:
     """
-    contigs_stats.py -f $contigs -c $coverage -p $fastp_json -o "${meta.id}_contig_stats.json"
+    contigs_stats.py -f $contigs -c $coverage -p $fastp_json -o "assembly_stats.json"
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

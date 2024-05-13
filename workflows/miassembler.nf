@@ -162,11 +162,6 @@ workflow MIASSEMBLER {
                 .collect(sort: metaSorter)
                 .map { nothing, contigs, meta -> [meta, contigs] }
 
-    assembler_log = SPADES.out.log.join(MEGAHIT.out.log, remainder: true)
-                .collect(sort: metaSorter)
-                .map { nothing, logFile, meta -> [meta, logFile] }
-
-
     // Clean the assembly contigs //
     ASSEMBLY_QC(
         assembly,
@@ -187,11 +182,8 @@ workflow MIASSEMBLER {
     input_for_stats = ASSEMBLY_QC.out.filtered_contigs.join(
                                                    ASSEMBLY_COVERAGE.out.coverage_depth).join(
                                                    READS_QC.out.fastp_json
-                                                   )
-    ASSEMBLY_STATS (
-        input_for_stats,
-        assembler_log
-    )
+    ASSEMBLY_STATS ( input_for_stats )
+    ch_versions = ch_versions.mix(ASSEMBLY_STATS.out.versions)
 
     // CUSTOM_DUMPSOFTWAREVERSIONS (
     //     ch_versions.unique().collectFile(name: 'collated_versions.yml')
