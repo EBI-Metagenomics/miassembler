@@ -33,12 +33,13 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
-include { FETCHTOOL_READS    } from '../modules/local/fetchtool_reads'
-include { FETCHTOOL_METADATA } from '../modules/local/fetchtool_metadata'
-include { READS_QC           } from '../subworkflows/local/reads_qc'
-include { ASSEMBLY_QC        } from '../subworkflows/local/assembly_qc'
-include { ASSEMBLY_COVERAGE  } from '../subworkflows/local/assembly_coverage'
-include { ASSEMBLY_STATS     } from '../subworkflows/local/assembly_stats'
+include { FETCHTOOL_READS        } from '../modules/local/fetchtool_reads'
+include { FETCHTOOL_METADATA     } from '../modules/local/fetchtool_metadata'
+include { RENAME_MEGAHIT_HEADERS } from '../modules/local/rename_megahit_headers'
+include { READS_QC               } from '../subworkflows/local/reads_qc'
+include { ASSEMBLY_QC            } from '../subworkflows/local/assembly_qc'
+include { ASSEMBLY_COVERAGE      } from '../subworkflows/local/assembly_coverage'
+include { ASSEMBLY_STATS         } from '../subworkflows/local/assembly_stats'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -82,7 +83,7 @@ def metaSorter = { a, b ->
 workflow MIASSEMBLER {
 
     ch_versions = Channel.empty()
-    
+
     fetch_tool_config = file("$projectDir/assets/fetch_tool_anonymous.json")
     if ( params.private_study ) {
         fetch_tool_config = file("$projectDir/assets/fetch_tool_credentials.json")
@@ -93,9 +94,9 @@ workflow MIASSEMBLER {
         [ [id: params.reads_accession], params.study_accession, params.reads_accession ],
         fetch_tool_config
     )
-    
+
     ch_versions = ch_versions.mix(FETCHTOOL_METADATA.out.versions)
-    
+
     // Download reads //
     FETCHTOOL_READS(
         [ [id: params.reads_accession], params.study_accession, params.reads_accession ],
@@ -152,16 +153,19 @@ workflow MIASSEMBLER {
     MEGAHIT(
         qc_reads.megahit
     )
-    
-    assembly = SPADES.out.contigs.join(MEGAHIT.out.contigs, remainder: true)
+    ch_versions = ch_versions.mix(MEGAHIT.out.versions)
+
+    RENAME_MEGAHIT_HEADERS(MEGAHIT.out.contigs)
+    ch_versions = ch_versions.mix(RENAME_MEGAHIT_HEADERS.out.versions)
+
+    assembly = SPADES.out.contigs.join(RENAME_MEGAHIT_HEADERS.out.contigs_renamed_headers, remainder: true)
                 .collect(sort: metaSorter)
                 .map { nothing, contigs, meta -> [meta, contigs] }
-    
+
     assembler_log = SPADES.out.log.join(MEGAHIT.out.log, remainder: true)
                 .collect(sort: metaSorter)
                 .map { nothing, logFile, meta -> [meta, logFile] }
-    
-    ch_versions = ch_versions.mix(MEGAHIT.out.versions)
+
 
     // Clean the assembly contigs //
     ASSEMBLY_QC(
@@ -181,7 +185,7 @@ workflow MIASSEMBLER {
 
     // Stats //
     ASSEMBLY_STATS (
-        ASSEMBLY_QC.out.filtered_contigs, 
+        ASSEMBLY_QC.out.filtered_contigs,
         assembler_log
     )
 

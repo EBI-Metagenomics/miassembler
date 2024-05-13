@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# Copyright 2018-2023 EMBL - European Bioinformatics Institute
+# Copyright 2018-2024 EMBL - European Bioinformatics Institute
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -65,8 +65,8 @@ if __name__ == "__main__":
 
     argv=sys.argv[1:]
     args = parser.parse_args(argv)
-    
+
     name, version = get_assembler_and_version(args.file)
-    
+
     print(f'{{"assembler_name": "{name}", ')
     print(f'"assembler_version": "{version}", ')
