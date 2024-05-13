@@ -184,8 +184,12 @@ workflow MIASSEMBLER {
     ch_versions = ch_versions.mix(ASSEMBLY_COVERAGE.out.versions)
 
     // Stats //
+    input_for_stats = ASSEMBLY_QC.out.filtered_contigs.join(
+                                                   ASSEMBLY_COVERAGE.out.coverage_depth).join(
+                                                   READS_QC.out.fastp_json
+                                                   )
     ASSEMBLY_STATS (
-        ASSEMBLY_QC.out.filtered_contigs,
+        input_for_stats,
         assembler_log
     )
 
