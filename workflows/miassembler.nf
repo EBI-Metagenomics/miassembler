@@ -48,7 +48,8 @@ include { ASSEMBLY_COVERAGE  } from '../subworkflows/local/assembly_coverage'
 //
 // MODULE: Installed directly from nf-core/modules
 //
-include { FASTQC                      } from '../modules/nf-core/fastqc/main'
+include { FASTQC as FASTQC_BEFORE      } from '../modules/nf-core/fastqc/main'
+include { FASTQC as FASTQC_AFTER       } from '../modules/nf-core/fastqc/main'
 include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 include { SPADES                      } from '../modules/nf-core/spades/main'
@@ -82,7 +83,7 @@ def metaSorter = { a, b ->
 workflow MIASSEMBLER {
 
     ch_versions = Channel.empty()
-    
+
     fetch_tool_config = file("$projectDir/assets/fetch_tool_anonymous.json")
     if ( params.private_study ) {
         fetch_tool_config = file("$projectDir/assets/fetch_tool_credentials.json")
@@ -93,9 +94,9 @@ workflow MIASSEMBLER {
         [ [id: params.reads_accession], params.study_accession, params.reads_accession ],
         fetch_tool_config
     )
-    
+
     ch_versions = ch_versions.mix(FETCHTOOL_METADATA.out.versions)
-    
+
     // Download reads //
     FETCHTOOL_READS(
         [ [id: params.reads_accession], params.study_accession, params.reads_accession ],
@@ -104,11 +105,11 @@ workflow MIASSEMBLER {
 
     ch_versions = ch_versions.mix(FETCHTOOL_READS.out.versions)
 
-    FASTQC (
+    FASTQC_BEFORE (
         FETCHTOOL_READS.out.reads
     )
 
-    ch_versions = ch_versions.mix(FASTQC.out.versions)
+    ch_versions = ch_versions.mix(FASTQC_BEFORE.out.versions)
     isMetatranscriptomic = FETCHTOOL_METADATA.out.lib_strategy.contains("METATRANSCRIPTOMIC")
 
     // Perform QC on reads //
@@ -133,6 +134,10 @@ workflow MIASSEMBLER {
 
     ch_versions = ch_versions.mix(READS_QC.out.versions)
 
+    FASTQC_AFTER (
+        READS_QC.out.qc_reads
+    )
+
     /* Assembly */
     /* -- Clarification --
         At the moment, the pipeline only processes one set of reads at a time.
@@ -153,11 +158,11 @@ workflow MIASSEMBLER {
     MEGAHIT(
         qc_reads.megahit
     )
-    
+
     assembly = SPADES.out.contigs.join(MEGAHIT.out.contigs, remainder: true)
                 .collect(sort: metaSorter)
                 .map { nothing, contigs, meta -> [meta, contigs] }
-    
+
     ch_versions = ch_versions.mix(MEGAHIT.out.versions)
 
     // Clean the assembly contigs //
@@ -201,7 +206,8 @@ workflow MIASSEMBLER {
     ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
     ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
     ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
-    ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect{it[1]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(FASTQC_BEFORE.out.zip.collect{it[1]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(FASTQC_AFTER.out.zip.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(ASSEMBLY_COVERAGE.out.samtools_idxstats.collect{ it[1] }.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(QUAST.out.results.collect { it[1] }.ifEmpty([]))
 
