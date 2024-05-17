@@ -131,7 +131,7 @@ workflow MIASSEMBLER {
                 || isMetatranscriptomic
         megahit: params.assembler == "megahit" || meta.single_end == true
     }.set { qc_reads }
-
+    print(qc_reads)
     ch_versions = ch_versions.mix(READS_QC.out.versions)
 
     FASTQC_AFTER (
