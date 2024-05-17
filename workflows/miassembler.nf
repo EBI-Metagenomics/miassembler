@@ -119,6 +119,10 @@ workflow MIASSEMBLER {
         isMetatranscriptomic
     )
 
+    FASTQC_AFTER (
+        READS_QC.out.qc_reads
+    )
+
     /*
     Single end reads // paired end reads distinction
         We need to split single-end and paired-end reads.
@@ -133,10 +137,6 @@ workflow MIASSEMBLER {
     }.set { qc_reads }
     print(qc_reads)
     ch_versions = ch_versions.mix(READS_QC.out.versions)
-
-    FASTQC_AFTER (
-        READS_QC.out.qc_reads
-    )
 
     /* Assembly */
     /* -- Clarification --
