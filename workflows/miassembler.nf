@@ -130,10 +130,11 @@ workflow MIASSEMBLER {
     */
 
     READS_QC.out.qc_reads.branch { meta, reads ->
+        megahit: params.assembler == "megahit" 
+                || meta.single_end == true
         xspades: ["metaspades", "spades"].contains(params.assembler)
-                && meta.single_end == false
+                || meta.single_end == false
                 || isMetatranscriptomic
-        megahit: params.assembler == "megahit" || meta.single_end == true
     }.set { qc_reads }
     ch_versions = ch_versions.mix(READS_QC.out.versions)
 
