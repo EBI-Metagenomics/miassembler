@@ -7,6 +7,23 @@ process QUAST {
         'https://depot.galaxyproject.org/singularity/quast:5.2.0--py39pl5321h2add14b_1' :
         'biocontainers/quast:5.2.0--py39pl5321h2add14b_1' }"
 
+    publishDir(
+        path: "${params.outdir}",
+        mode: params.publish_dir_mode,
+        failOnError: true,
+        saveAs: {
+            filename -> {
+                if ( filename.equals('versions.yml') ) {
+                    return null;
+                }
+                def output_file = new File(filename);
+                def studyAccessionPrefix = params.study_accession.substring(0, 7);
+                def readsAccessionPrefix = params.reads_accession.substring(0, 7);
+                return "${studyAccessionPrefix}/${params.study_accession}/${readsAccessionPrefix}/${params.reads_accession}/assembly/${meta.assembler}/${meta.assembler_version}/qc/quast/${output_file.name}";
+            }
+        }
+    )
+
     input:
     tuple val(meta) , path(consensus)
     tuple val(meta2), path(fasta)

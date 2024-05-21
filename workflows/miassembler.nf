@@ -115,7 +115,21 @@ workflow MIASSEMBLER {
         Single-end reads are always assembled with MEGAHIT.
     */
 
-    READS_QC.out.qc_reads.branch { meta, reads ->
+    qc_reads_extended = READS_QC.out.qc_reads.map{ meta, reads ->
+        if (params.assembler == "megahit" || meta.single_end == true) {
+            return [ meta + [assembler: "megahit", assembler_version: params.megahit_version], reads]
+        }
+        else {
+            if (["metaspades", "spades"].contains(params.assembler) || meta.single_end == false || isMetatranscriptomic) {
+               return [ meta + [assembler: params.assembler, assembler_version: params.spades_version], reads]
+            }
+            else {
+               println('ERROR')
+               return [meta, reads]
+            }
+        }
+    }
+    qc_reads_extended.branch { meta, reads ->
         megahit: params.assembler == "megahit"
                 || meta.single_end == true
         xspades: ["metaspades", "spades"].contains(params.assembler)
@@ -159,7 +173,7 @@ workflow MIASSEMBLER {
 
     // Coverage //
     ASSEMBLY_COVERAGE(
-        READS_QC.out.qc_reads,
+        qc_reads_extended,
         ASSEMBLY_QC.out.filtered_contigs
     )
 
@@ -199,7 +213,8 @@ workflow MIASSEMBLER {
         ch_multiqc_files.collect(),
         ch_multiqc_config.toList(),
         ch_multiqc_custom_config.toList(),
-        ch_multiqc_logo.toList()
+        ch_multiqc_logo.toList(),
+        QUAST.out.results.map{meta, _ -> meta}
     )
     multiqc_report = MULTIQC.out.report.toList()
 }

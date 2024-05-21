@@ -7,6 +7,21 @@ process MEGAHIT {
         'https://depot.galaxyproject.org/singularity/mulled-v2-0f92c152b180c7cd39d9b0e6822f8c89ccb59c99:8ec213d21e5d03f9db54898a2baeaf8ec729b447-0' :
         'biocontainers/mulled-v2-0f92c152b180c7cd39d9b0e6822f8c89ccb59c99:8ec213d21e5d03f9db54898a2baeaf8ec729b447-0' }"
 
+    publishDir(
+        path: "${params.outdir}",
+        mode: params.publish_dir_mode,
+        failOnError: true,
+        pattern: "megahit_out/*.fa*.gz",
+        saveAs: {
+            filename -> {
+                def output_file = new File(filename);
+                def studyAccessionPrefix = params.study_accession.substring(0, 7);
+                def readsAccessionPrefix = params.reads_accession.substring(0, 7);
+                return "${studyAccessionPrefix}/${params.study_accession}/${readsAccessionPrefix}/${params.reads_accession}/assembly/${meta.assembler}/${meta.assembler_version}/${output_file.name}";
+                }
+        }
+    )
+
     input:
     tuple val(meta), path(reads)
 
@@ -25,12 +40,20 @@ process MEGAHIT {
     def args = task.ext.args ?: ''
     def args2 = task.ext.args2 ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
+
+    def restart = ""
+    if (task.attempt > 1) {
+        // Set of extra flags to restart the assembly process
+        restart = "--continue"
+    }
+
     if (meta.single_end) {
         """
         megahit \\
             -r ${reads} \\
             -t $task.cpus \\
             $args \\
+            $restart \\
             --out-prefix $prefix
 
         pigz \\
@@ -52,6 +75,7 @@ process MEGAHIT {
             -2 ${reads[1]} \\
             -t $task.cpus \\
             $args \\
+            $restart \\
             --out-prefix $prefix
 
         pigz \\

@@ -6,11 +6,29 @@ process MULTIQC {
         'https://depot.galaxyproject.org/singularity/multiqc:1.18--pyhdfd78af_0' :
         'biocontainers/multiqc:1.18--pyhdfd78af_0' }"
 
+    publishDir(
+        path: "${params.outdir}",
+        mode: params.publish_dir_mode,
+        failOnError: true,
+        saveAs: {
+            filename -> {
+                if ( filename.equals('versions.yml') ) {
+                    return null;
+                }
+                def output_file = new File(filename);
+                def studyAccessionPrefix = params.study_accession.substring(0, 7);
+                def readsAccessionPrefix = params.reads_accession.substring(0, 7);
+                return "${studyAccessionPrefix}/${params.study_accession}/${readsAccessionPrefix}/${params.reads_accession}/assembly/${meta.assembler}/${meta.assembler_version}/qc/multiqc/${output_file.name}";
+            }
+        }
+    )
+
     input:
     path  multiqc_files, stageAs: "?/*"
     path(multiqc_config)
     path(extra_multiqc_config)
     path(multiqc_logo)
+    val(meta)
 
     output:
     path "*multiqc_report.html", emit: report

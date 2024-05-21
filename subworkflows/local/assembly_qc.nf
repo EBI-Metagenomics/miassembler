@@ -2,6 +2,7 @@ include { BLAST_BLASTN as BLAST_BLASTN_HUMAN_PHIX } from '../../modules/nf-core/
 include { BLAST_BLASTN as BLAST_BLASTN_HOST       } from '../../modules/nf-core/blast/blastn/main'
 include { SEQKIT_GREP                             } from '../../modules/nf-core/seqkit/grep/main'
 include { SEQKIT_SEQ                              } from '../../modules/nf-core/seqkit/seq/main'
+include { PUBLISH_FILE                            } from '../../modules/local/publish_file'
 
 workflow ASSEMBLY_QC {
 
@@ -59,7 +60,9 @@ workflow ASSEMBLY_QC {
         contaminated_contigs = BLAST_BLASTN_HUMAN_PHIX.out.txt
     }
 
-    contaminated_contigs.map { _, hits_txt -> hits_txt }.collectFile(storeDir: "${params.outdir}/assembly/decontamination", newLine: true)
+    collected_contigs = contaminated_contigs.map { meta, hits_txt -> hits_txt }.collectFile(name: "decontaminated.txt", newLine: true)
+    output_path = contaminated_contigs.map { meta, _ -> "assembly/$meta.assembler/$meta.assembler_version/decontamination/"}
+    PUBLISH_FILE(collected_contigs, output_path)
 
     SEQKIT_GREP(
         SEQKIT_SEQ.out.fastx,

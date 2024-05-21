@@ -6,6 +6,33 @@ process SPADES {
         'https://depot.galaxyproject.org/singularity/spades:3.15.5--h95f258a_1' :
         'biocontainers/spades:3.15.5--h95f258a_1' }"
 
+    publishDir(
+        path: "${params.outdir}",
+        mode: params.publish_dir_mode,
+        failOnError: true,
+        saveAs: {
+            filename -> {
+                if ( filename.equals('versions.yml') ) {
+                      return null;
+                }
+                def studyAccessionPrefix = params.study_accession.substring(0, 7);
+                def readsAccessionPrefix = params.reads_accession.substring(0, 7);
+                def file_patterns_to_publish = [
+                        'params.txt',
+                        'graph.fastg',
+                        'contigs.fa.gz',
+                        'scaffolds.fa.gz',
+                        'graph_with_scaffolds.gfa.gz'
+                ]
+                def output_file = new File(filename);
+                if ( file_patterns_to_publish.any { output_file.name.contains(it) } ) {
+                    return "${studyAccessionPrefix}/${params.study_accession}/${readsAccessionPrefix}/${params.reads_accession}/assembly/${meta.assembler}/${meta.assembler_version}/${output_file.name}";
+                }
+                return null;
+            }
+        }
+    )
+
     input:
     tuple val(meta), path(illumina), path(pacbio), path(nanopore)
     val(metaspades)

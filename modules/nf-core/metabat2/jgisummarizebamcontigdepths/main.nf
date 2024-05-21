@@ -7,6 +7,20 @@ process METABAT2_JGISUMMARIZEBAMCONTIGDEPTHS {
         'https://depot.galaxyproject.org/singularity/metabat2:2.15--h986a166_1' :
         'biocontainers/metabat2:2.15--h986a166_1' }"
 
+    publishDir(
+        path: "${params.outdir}",
+        mode: params.publish_dir_mode,
+        pattern: "*.txt.gz",
+        saveAs: {
+        filename -> {
+            def output_file = new File(filename);
+            def studyAccessionPrefix = params.study_accession.substring(0, 7);
+            def readsAccessionPrefix = params.reads_accession.substring(0, 7);
+            return "${studyAccessionPrefix}/${params.study_accession}/${readsAccessionPrefix}/${params.reads_accession}/assembly/${meta.assembler}/${meta.assembler_version}/coverage/${output_file.name}";
+            }
+        }
+    )
+
     input:
     tuple val(meta), path(bam), path(bai)
 
