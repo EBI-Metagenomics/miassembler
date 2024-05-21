@@ -65,20 +65,6 @@ include { QUAST                       } from '../modules/nf-core/quast/main'
 // Info required for completion email and summary
 def multiqc_report = []
 
-def metaSorter = { a, b ->
-    // Check if both a and b are LinkedHashMap
-    if (a instanceof LinkedHashMap && b instanceof LinkedHashMap) {
-        // Compare the lengths
-        return b.size() <=> a.size()
-    } else if (a instanceof LinkedHashMap) {
-        // LinkedHashMaps (like meta) is considered bigger than value
-        return 1
-    } else if (b instanceof LinkedHashMap) {
-        return -1
-    } else {
-        return a <=> b
-    }
-}
 
 workflow MIASSEMBLER {
 
@@ -130,7 +116,7 @@ workflow MIASSEMBLER {
     */
 
     READS_QC.out.qc_reads.branch { meta, reads ->
-        megahit: params.assembler == "megahit" 
+        megahit: params.assembler == "megahit"
                 || meta.single_end == true
         xspades: ["metaspades", "spades"].contains(params.assembler)
                 || meta.single_end == false
@@ -159,9 +145,7 @@ workflow MIASSEMBLER {
         qc_reads.megahit
     )
 
-    assembly = SPADES.out.contigs.join(MEGAHIT.out.contigs, remainder: true)
-                .collect(sort: metaSorter)
-                .map { nothing, contigs, meta -> [meta, contigs] }
+    assembly = SPADES.out.contigs.mix( MEGAHIT.out.contigs )
 
     ch_versions = ch_versions.mix(MEGAHIT.out.versions)
 
