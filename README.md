@@ -51,6 +51,7 @@ nextflow run ebi-metagenomics/miassembler \
 ```
 
 Two end-to-end tests can be launched (with megahit and metaspades) with the following command:
+
 ```bash
 pytest tests/workflows/ --verbose
 ```
