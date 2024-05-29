@@ -129,7 +129,7 @@ workflow MIASSEMBLER {
         }
     }
     qc_reads_extended.branch { meta, reads ->
-        megahit: meta.assember == "megahit"
+        megahit: meta.assembler == "megahit"
         xspades: ["metaspades", "spades"].contains(meta.assembler)
     }.set { qc_reads }
     ch_versions = ch_versions.mix(READS_QC.out.versions)
