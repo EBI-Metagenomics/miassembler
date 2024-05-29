@@ -124,17 +124,13 @@ workflow MIASSEMBLER {
                return [ meta + [assembler: params.assembler, assembler_version: params.spades_version], reads]
             }
             else {
-               println('ERROR')
-               return [meta, reads]
+                error "Incompatible assembler and/or reads layout."
             }
         }
     }
     qc_reads_extended.branch { meta, reads ->
-        megahit: params.assembler == "megahit"
-                || meta.single_end == true
-        xspades: ["metaspades", "spades"].contains(params.assembler)
-                || meta.single_end == false
-                || isMetatranscriptomic
+        megahit: meta.assember == "megahit"
+        xspades: ["metaspades", "spades"].contains(meta.assembler)
     }.set { qc_reads }
     ch_versions = ch_versions.mix(READS_QC.out.versions)
 

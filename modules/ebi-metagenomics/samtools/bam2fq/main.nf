@@ -21,7 +21,7 @@ process SAMTOOLS_BAM2FQ {
 
     script:
     def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ? "decontaminated_${meta.id}": "${meta.id}"
+    def prefix = task.ext.prefix ? "${task.ext.prefix}_${meta.id}": "${meta.id}"
 
     if (split) {
         """
