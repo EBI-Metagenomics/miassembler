@@ -8,7 +8,8 @@
                     "bwamem2/mem": {
                         "branch": "main",
                         "git_sha": "75707538d91ddd27fb6007b4ac3710cb05154780",
-                        "installed_by": ["reads_bwamem2_decontamination"]
+                        "installed_by": ["reads_bwamem2_decontamination"],
+                        "patch": "modules/ebi-metagenomics/bwamem2/mem/bwamem2-mem.diff"
                     },
                     "samtools/bam2fq": {
                         "branch": "main",
