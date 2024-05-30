@@ -96,6 +96,7 @@ workflow MIASSEMBLER {
     )
 
     ch_versions = ch_versions.mix(FASTQC_BEFORE.out.versions)
+    // TODO: we need to refactor this, the metaT info should be part of the meta
     isMetatranscriptomic = FETCHTOOL_METADATA.out.lib_strategy.contains("METATRANSCRIPTOMIC")
 
     // Perform QC on reads //
@@ -109,23 +110,24 @@ workflow MIASSEMBLER {
         READS_QC.out.qc_reads
     )
 
+    /***************************/
+    /* Selecting the assembler */
+    /***************************/
     /*
-    Single end reads // paired end reads distinction
-        We need to split single-end and paired-end reads.
-        Single-end reads are always assembled with MEGAHIT.
+        The selection process ensures that:
+        - The user selected assembler is always used.
+        - Single-end reads are assembled with MEGAHIT, unless specified otherwise.
+        - Paired-end reads are assembled with MetaSPAdes, unless specified otherwise
+        - An error is raised if the assembler and read layout are incompatible (shouldn't happen...)
     */
-
     qc_reads_extended = READS_QC.out.qc_reads.map{ meta, reads ->
-        if (params.assembler == "megahit" || meta.single_end == true) {
+        if ( params.assembler == "megahit" || meta.single_end ) {
             return [ meta + [assembler: "megahit", assembler_version: params.megahit_version], reads]
-        }
-        else {
-            if (["metaspades", "spades"].contains(params.assembler) || meta.single_end == false || isMetatranscriptomic) {
-               return [ meta + [assembler: params.assembler, assembler_version: params.spades_version], reads]
-            }
-            else {
-                error "Incompatible assembler and/or reads layout."
-            }
+        } else if ( ["metaspades", "spades"].contains(params.assembler) || !meta.single_end ) {
+            def xspades_assembler = params.assembler ?: "metaspades" // Default to "metaspades" if the user didn't select one
+            return [ meta + [assembler: xspades_assembler, assembler_version: params.spades_version], reads]
+        } else {
+            error "Incompatible assembler and/or reads layout. We can't assembly data that is. Reads - single end value: ${meta.single_end}."
         }
     }
     qc_reads_extended.branch { meta, reads ->
@@ -134,8 +136,11 @@ workflow MIASSEMBLER {
     }.set { qc_reads }
     ch_versions = ch_versions.mix(READS_QC.out.versions)
 
-    /* Assembly */
-    /* -- Clarification --
+    /******************/
+    /*     Assembly   */
+    /******************/
+    /* -- Clarification -- */
+    /*
         At the moment, the pipeline only processes one set of reads at a time.
         Therefore, running Spades, metaSpades, or MEGAHIT are mutually exclusive.
         In order to support multiple runs, we need to refactor the code slightly.

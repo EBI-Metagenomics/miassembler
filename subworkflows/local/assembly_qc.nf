@@ -2,7 +2,7 @@ include { BLAST_BLASTN as BLAST_BLASTN_HUMAN_PHIX } from '../../modules/nf-core/
 include { BLAST_BLASTN as BLAST_BLASTN_HOST       } from '../../modules/nf-core/blast/blastn/main'
 include { SEQKIT_GREP                             } from '../../modules/nf-core/seqkit/grep/main'
 include { SEQKIT_SEQ                              } from '../../modules/nf-core/seqkit/seq/main'
-include { PUBLISH_FILE                            } from '../../modules/local/publish_file'
+include { PUBLISH_DECONTAMINATED                  } from '../../modules/local/publish_decontaminated'
 
 workflow ASSEMBLY_QC {
 
@@ -25,7 +25,7 @@ workflow ASSEMBLY_QC {
 
     if ( params.remove_human_phix ) {
 
-        ch_blast_human_phix_refs = Channel.fromPath( "$params.blast_reference_genomes_folder/${params.human_phix_blast_index_name}*", checkIfExists: true)
+        ch_blast_human_phix_refs = Channel.fromPath( "${params.blast_reference_genomes_folder}/${params.human_phix_blast_index_name}*", checkIfExists: true)
             .collect().map {
                 files -> [ ["id": params.human_phix_blast_index_name], files ]
             }
@@ -60,9 +60,8 @@ workflow ASSEMBLY_QC {
         contaminated_contigs = BLAST_BLASTN_HUMAN_PHIX.out.txt
     }
 
-    collected_contigs = contaminated_contigs.map { meta, hits_txt -> hits_txt }.collectFile(name: "decontaminated.txt", newLine: true)
-    output_path = contaminated_contigs.map { meta, _ -> "assembly/$meta.assembler/$meta.assembler_version/decontamination/"}
-    PUBLISH_FILE(collected_contigs, output_path)
+    // TODO: this process only function is to publish the decontaminated contigs txt file
+    PUBLISH_DECONTAMINATED( contaminated_contigs )
 
     SEQKIT_GREP(
         SEQKIT_SEQ.out.fastx,

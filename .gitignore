@@ -9,5 +9,6 @@ testing*
 results/
 
 *.pyc
+.pytest_cache/
 
 assets/fetch_tool_credentials.json
