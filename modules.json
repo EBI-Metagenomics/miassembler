@@ -2,7 +2,7 @@
     "name": "ebi-metagenomics/miassembler",
     "homePage": "https://github.com/ebi-metagenomics/miassembler",
     "repos": {
-        "git@github.com:EBI-Metagenomics/nf-modules.git": {
+        "https://github.com/EBI-Metagenomics/nf-modules": {
             "modules": {
                 "ebi-metagenomics": {
                     "bwamem2/mem": {
@@ -13,7 +13,8 @@
                     "samtools/bam2fq": {
                         "branch": "main",
                         "git_sha": "88f2bfbe6f0ba858d0833db590e647c4678656a7",
-                        "installed_by": ["reads_bwamem2_decontamination"]
+                        "installed_by": ["reads_bwamem2_decontamination"],
+                        "patch": "modules/ebi-metagenomics/samtools/bam2fq/samtools-bam2fq.diff"
                     }
                 }
             },
