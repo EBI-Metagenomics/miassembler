@@ -4,10 +4,10 @@ process PUBLISH_DECONTAMINATED {
     tuple val(meta), path(decontaminated_contigs)
 
     output:
-    path("decontaminated.txt")
+    path("${meta.id}.txt")
 
     script:
     """
-    mv ${decontaminated_contigs} decontaminated.txt
+    mv ${decontaminated_contigs} ${meta.id}.txt
     """
 }

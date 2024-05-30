@@ -8,8 +8,8 @@ on:
     types: [published]
 
 env:
-    NXF_ANSI_LOG: false
-    NFTEST_VER: "0.8.4"
+  NXF_ANSI_LOG: false
+  NFTEST_VER: "0.8.4"
 
 jobs:
   test:
