@@ -1,5 +1,5 @@
-include { BWAMEM2_MEM     } from '../../../modules/ebi-metagenomics/bwamem2/mem/main'
-include { SAMTOOLS_BAM2FQ } from '../../../modules/ebi-metagenomics/samtools/bam2fq/main'
+include { BWAMEM2_MEM as BWAMEM2_MEM_DECONT } from '../../../modules/ebi-metagenomics/bwamem2/mem/main'
+include { SAMTOOLS_BAM2FQ                   } from '../../../modules/ebi-metagenomics/samtools/bam2fq/main'
 
 
 workflow READS_BWAMEM2_DECONTAMINATION {
