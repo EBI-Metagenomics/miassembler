@@ -1,0 +1,34 @@
+Changes in module 'nf-core/megahit'
+--- modules/nf-core/megahit/main.nf
++++ modules/nf-core/megahit/main.nf
+@@ -25,12 +25,20 @@
+     def args = task.ext.args ?: ''
+     def args2 = task.ext.args2 ?: ''
+     def prefix = task.ext.prefix ?: "${meta.id}"
++
++    def restart = ""
++    if (task.attempt > 1) {
++        // Set of extra flags to restart the assembly process
++        restart = "--continue"
++    }
++
+     if (meta.single_end) {
+         """
+         megahit \\
+             -r ${reads} \\
+             -t $task.cpus \\
+             $args \\
++            $restart \\
+             --out-prefix $prefix
+ 
+         pigz \\
+@@ -52,6 +60,7 @@
+             -2 ${reads[1]} \\
+             -t $task.cpus \\
+             $args \\
++            $restart \\
+             --out-prefix $prefix
+ 
+         pigz \\
+
+************************************************************

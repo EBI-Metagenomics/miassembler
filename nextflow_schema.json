@@ -13,7 +13,6 @@
             "required": [
                 "study_accession",
                 "reads_accession",
-                "assembler",
                 "blast_reference_genomes_folder",
                 "bwamem2_reference_genomes_folder",
                 "outdir",
@@ -33,14 +32,20 @@
                 },
                 "private_study": {
                     "type": "boolean",
-                    "description": "To use if the ENA study is private",
-                    "default": false
+                    "description": "To use if the ENA study is private"
                 },
                 "assembler": {
                     "type": "string",
-                    "default": "metaspades",
                     "enum": ["spades", "metaspades", "megahit"],
                     "description": "The short reads assembler"
+                },
+                "spades_version": {
+                    "type": "string",
+                    "default": "3.15.5"
+                },
+                "megahit_version": {
+                    "type": "string",
+                    "default": "1.2.9"
                 },
                 "reference_genome": {
                     "type": "string",
@@ -104,7 +109,8 @@
                     "type": "string",
                     "format": "directory-path",
                     "description": "The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure.",
-                    "fa_icon": "fas fa-folder-open"
+                    "fa_icon": "fas fa-folder-open",
+                    "default": "results"
                 },
                 "email": {
                     "type": "string",
