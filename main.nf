@@ -15,7 +15,7 @@ nextflow.enable.dsl = 2
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { validateParameters; paramsHelp; paramsSummaryLog; paramsSummaryMap; } from 'plugin/nf-validation'
+include { validateParameters; paramsHelp; paramsSummaryLog; paramsSummaryMap; } from 'plugin/nf-schema'
 
 def summary_params = paramsSummaryMap(workflow)
 

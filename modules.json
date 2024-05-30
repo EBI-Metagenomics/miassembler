@@ -2,7 +2,7 @@
     "name": "ebi-metagenomics/miassembler",
     "homePage": "https://github.com/ebi-metagenomics/miassembler",
     "repos": {
-        "git@github.com:EBI-Metagenomics/nf-modules.git": {
+        "https://github.com/EBI-Metagenomics/nf-modules": {
             "modules": {
                 "ebi-metagenomics": {
                     "bwamem2/mem": {
@@ -13,7 +13,8 @@
                     "samtools/bam2fq": {
                         "branch": "main",
                         "git_sha": "88f2bfbe6f0ba858d0833db590e647c4678656a7",
-                        "installed_by": ["reads_bwamem2_decontamination"]
+                        "installed_by": ["reads_bwamem2_decontamination"],
+                        "patch": "modules/ebi-metagenomics/samtools/bam2fq/samtools-bam2fq.diff"
                     }
                 }
             },
@@ -58,12 +59,14 @@
                     "fastqc": {
                         "branch": "master",
                         "git_sha": "65ad3e0b9a4099592e1102e92e10455dc661cf53",
-                        "installed_by": ["modules"]
+                        "installed_by": ["modules"],
+                        "patch": "modules/nf-core/fastqc/fastqc.diff"
                     },
                     "megahit": {
                         "branch": "master",
                         "git_sha": "3f5420aa22e00bd030a2556dfdffc9e164ec0ec5",
-                        "installed_by": ["modules"]
+                        "installed_by": ["modules"],
+                        "patch": "modules/nf-core/megahit/megahit.diff"
                     },
                     "metabat2/jgisummarizebamcontigdepths": {
                         "branch": "master",
@@ -73,7 +76,8 @@
                     "multiqc": {
                         "branch": "master",
                         "git_sha": "4ab13872435962dadc239979554d13709e20bf29",
-                        "installed_by": ["modules"]
+                        "installed_by": ["modules"],
+                        "patch": "modules/nf-core/multiqc/multiqc.diff"
                     },
                     "quast": {
                         "branch": "master",

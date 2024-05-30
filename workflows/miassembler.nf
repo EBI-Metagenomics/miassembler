@@ -4,7 +4,7 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { paramsSummaryLog; paramsSummaryMap } from 'plugin/nf-validation'
+include { paramsSummaryLog; paramsSummaryMap } from 'plugin/nf-schema'
 
 def logo = NfcoreTemplate.logo(workflow, params.monochrome_logs)
 def citation = '\n' + WorkflowMain.citation(workflow) + '\n'
@@ -21,7 +21,7 @@ log.info logo + paramsSummaryLog(workflow) + citation
 
 ch_multiqc_config          = Channel.fromPath("$projectDir/assets/multiqc_config.yml", checkIfExists: true)
 ch_multiqc_custom_config   = params.multiqc_config ? Channel.fromPath( params.multiqc_config, checkIfExists: true ) : Channel.empty()
-ch_multiqc_logo            = params.multiqc_logo   ? Channel.fromPath( params.multiqc_logo, checkIfExists: true ) : Channel.empty()
+ch_multiqc_logo            = params.multiqc_logo   ? Channel.fromPath( params.multiqc_logo, checkIfExists: true ) : Channel.fromPath("$projectDir/assets/mgnify_logo.png")
 ch_multiqc_custom_methods_description = params.multiqc_methods_description ? file(params.multiqc_methods_description, checkIfExists: true) : file("$projectDir/assets/methods_description_template.yml", checkIfExists: true)
 
 /*
@@ -48,12 +48,13 @@ include { ASSEMBLY_COVERAGE  } from '../subworkflows/local/assembly_coverage'
 //
 // MODULE: Installed directly from nf-core/modules
 //
-include { FASTQC                      } from '../modules/nf-core/fastqc/main'
-include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
-include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
-include { SPADES                      } from '../modules/nf-core/spades/main'
-include { MEGAHIT                     } from '../modules/nf-core/megahit/main'
-include { QUAST                       } from '../modules/nf-core/quast/main'
+include { FASTQC as FASTQC_BEFORE      } from '../modules/nf-core/fastqc/main'
+include { FASTQC as FASTQC_AFTER       } from '../modules/nf-core/fastqc/main'
+include { MULTIQC                      } from '../modules/nf-core/multiqc/main'
+include { CUSTOM_DUMPSOFTWAREVERSIONS  } from '../modules/nf-core/custom/dumpsoftwareversions/main'
+include { SPADES                       } from '../modules/nf-core/spades/main'
+include { MEGAHIT                      } from '../modules/nf-core/megahit/main'
+include { QUAST                        } from '../modules/nf-core/quast/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -64,25 +65,11 @@ include { QUAST                       } from '../modules/nf-core/quast/main'
 // Info required for completion email and summary
 def multiqc_report = []
 
-def metaSorter = { a, b ->
-    // Check if both a and b are LinkedHashMap
-    if (a instanceof LinkedHashMap && b instanceof LinkedHashMap) {
-        // Compare the lengths
-        return b.size() <=> a.size()
-    } else if (a instanceof LinkedHashMap) {
-        // LinkedHashMaps (like meta) is considered bigger than value
-        return 1
-    } else if (b instanceof LinkedHashMap) {
-        return -1
-    } else {
-        return a <=> b
-    }
-}
 
 workflow MIASSEMBLER {
 
     ch_versions = Channel.empty()
-    
+
     fetch_tool_config = file("$projectDir/assets/fetch_tool_anonymous.json")
     if ( params.private_study ) {
         fetch_tool_config = file("$projectDir/assets/fetch_tool_credentials.json")
@@ -93,9 +80,9 @@ workflow MIASSEMBLER {
         [ [id: params.reads_accession], params.study_accession, params.reads_accession ],
         fetch_tool_config
     )
-    
+
     ch_versions = ch_versions.mix(FETCHTOOL_METADATA.out.versions)
-    
+
     // Download reads //
     FETCHTOOL_READS(
         [ [id: params.reads_accession], params.study_accession, params.reads_accession ],
@@ -104,11 +91,12 @@ workflow MIASSEMBLER {
 
     ch_versions = ch_versions.mix(FETCHTOOL_READS.out.versions)
 
-    FASTQC (
+    FASTQC_BEFORE (
         FETCHTOOL_READS.out.reads
     )
 
-    ch_versions = ch_versions.mix(FASTQC.out.versions)
+    ch_versions = ch_versions.mix(FASTQC_BEFORE.out.versions)
+    // TODO: we need to refactor this, the metaT info should be part of the meta
     isMetatranscriptomic = FETCHTOOL_METADATA.out.lib_strategy.contains("METATRANSCRIPTOMIC")
 
     // Perform QC on reads //
@@ -118,23 +106,41 @@ workflow MIASSEMBLER {
         isMetatranscriptomic
     )
 
+    FASTQC_AFTER (
+        READS_QC.out.qc_reads
+    )
+
+    /***************************/
+    /* Selecting the assembler */
+    /***************************/
     /*
-    Single end reads // paired end reads distinction
-        We need to split single-end and paired-end reads.
-        Single-end reads are always assembled with MEGAHIT.
+        The selection process ensures that:
+        - The user selected assembler is always used.
+        - Single-end reads are assembled with MEGAHIT, unless specified otherwise.
+        - Paired-end reads are assembled with MetaSPAdes, unless specified otherwise
+        - An error is raised if the assembler and read layout are incompatible (shouldn't happen...)
     */
-
-    READS_QC.out.qc_reads.branch { meta, reads ->
-        xspades: ["metaspades", "spades"].contains(params.assembler)
-                && meta.single_end == false
-                || isMetatranscriptomic
-        megahit: params.assembler == "megahit" || meta.single_end == true
+    qc_reads_extended = READS_QC.out.qc_reads.map{ meta, reads ->
+        if ( params.assembler == "megahit" || meta.single_end ) {
+            return [ meta + [assembler: "megahit", assembler_version: params.megahit_version], reads]
+        } else if ( ["metaspades", "spades"].contains(params.assembler) || !meta.single_end ) {
+            def xspades_assembler = params.assembler ?: "metaspades" // Default to "metaspades" if the user didn't select one
+            return [ meta + [assembler: xspades_assembler, assembler_version: params.spades_version], reads]
+        } else {
+            error "Incompatible assembler and/or reads layout. We can't assembly data that is. Reads - single end value: ${meta.single_end}."
+        }
+    }
+    qc_reads_extended.branch { meta, reads ->
+        megahit: meta.assembler == "megahit"
+        xspades: ["metaspades", "spades"].contains(meta.assembler)
     }.set { qc_reads }
-
     ch_versions = ch_versions.mix(READS_QC.out.versions)
 
-    /* Assembly */
-    /* -- Clarification --
+    /******************/
+    /*     Assembly   */
+    /******************/
+    /* -- Clarification -- */
+    /*
         At the moment, the pipeline only processes one set of reads at a time.
         Therefore, running Spades, metaSpades, or MEGAHIT are mutually exclusive.
         In order to support multiple runs, we need to refactor the code slightly.
@@ -143,7 +149,7 @@ workflow MIASSEMBLER {
 
     SPADES(
         qc_reads.xspades.map { meta, reads -> [meta, reads, [], []] },
-        params.assembler,
+        params.assembler ?: "metaspades",
         [], // yml input parameters, which we don't use
         []  // hmm, not used
     )
@@ -153,11 +159,9 @@ workflow MIASSEMBLER {
     MEGAHIT(
         qc_reads.megahit
     )
-    
-    assembly = SPADES.out.contigs.join(MEGAHIT.out.contigs, remainder: true)
-                .collect(sort: metaSorter)
-                .map { nothing, contigs, meta -> [meta, contigs] }
-    
+
+    assembly = SPADES.out.contigs.mix( MEGAHIT.out.contigs )
+
     ch_versions = ch_versions.mix(MEGAHIT.out.versions)
 
     // Clean the assembly contigs //
@@ -170,7 +174,7 @@ workflow MIASSEMBLER {
 
     // Coverage //
     ASSEMBLY_COVERAGE(
-        READS_QC.out.qc_reads,
+        qc_reads_extended,
         ASSEMBLY_QC.out.filtered_contigs
     )
 
@@ -201,7 +205,8 @@ workflow MIASSEMBLER {
     ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
     ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
     ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
-    ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect{it[1]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(FASTQC_BEFORE.out.zip.collect{it[1]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(FASTQC_AFTER.out.zip.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(ASSEMBLY_COVERAGE.out.samtools_idxstats.collect{ it[1] }.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(QUAST.out.results.collect { it[1] }.ifEmpty([]))
 
@@ -209,7 +214,8 @@ workflow MIASSEMBLER {
         ch_multiqc_files.collect(),
         ch_multiqc_config.toList(),
         ch_multiqc_custom_config.toList(),
-        ch_multiqc_logo.toList()
+        ch_multiqc_logo.toList(),
+        QUAST.out.results.map{meta, _ -> meta}
     )
     multiqc_report = MULTIQC.out.report.toList()
 }
