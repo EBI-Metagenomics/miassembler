@@ -1,0 +1,13 @@
+Changes in module 'nf-core/multiqc'
+--- modules/nf-core/multiqc/main.nf
++++ modules/nf-core/multiqc/main.nf
+@@ -11,6 +11,7 @@
+     path(multiqc_config)
+     path(extra_multiqc_config)
+     path(multiqc_logo)
++    val(meta)
+ 
+     output:
+     path "*multiqc_report.html", emit: report
+
+************************************************************

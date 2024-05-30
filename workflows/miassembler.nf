@@ -4,7 +4,7 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { paramsSummaryLog; paramsSummaryMap } from 'plugin/nf-validation'
+include { paramsSummaryLog; paramsSummaryMap } from 'plugin/nf-schema'
 
 def logo = NfcoreTemplate.logo(workflow, params.monochrome_logs)
 def citation = '\n' + WorkflowMain.citation(workflow) + '\n'
@@ -21,7 +21,7 @@ log.info logo + paramsSummaryLog(workflow) + citation
 
 ch_multiqc_config          = Channel.fromPath("$projectDir/assets/multiqc_config.yml", checkIfExists: true)
 ch_multiqc_custom_config   = params.multiqc_config ? Channel.fromPath( params.multiqc_config, checkIfExists: true ) : Channel.empty()
-ch_multiqc_logo            = params.multiqc_logo   ? Channel.fromPath( params.multiqc_logo, checkIfExists: true ) : Channel.empty()
+ch_multiqc_logo            = params.multiqc_logo   ? Channel.fromPath( params.multiqc_logo, checkIfExists: true ) : Channel.fromPath("$projectDir/assets/mgnify_logo.png")
 ch_multiqc_custom_methods_description = params.multiqc_methods_description ? file(params.multiqc_methods_description, checkIfExists: true) : file("$projectDir/assets/methods_description_template.yml", checkIfExists: true)
 
 /*
@@ -50,11 +50,11 @@ include { ASSEMBLY_COVERAGE  } from '../subworkflows/local/assembly_coverage'
 //
 include { FASTQC as FASTQC_BEFORE      } from '../modules/nf-core/fastqc/main'
 include { FASTQC as FASTQC_AFTER       } from '../modules/nf-core/fastqc/main'
-include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
-include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
-include { SPADES                      } from '../modules/nf-core/spades/main'
-include { MEGAHIT                     } from '../modules/nf-core/megahit/main'
-include { QUAST                       } from '../modules/nf-core/quast/main'
+include { MULTIQC                      } from '../modules/nf-core/multiqc/main'
+include { CUSTOM_DUMPSOFTWAREVERSIONS  } from '../modules/nf-core/custom/dumpsoftwareversions/main'
+include { SPADES                       } from '../modules/nf-core/spades/main'
+include { MEGAHIT                      } from '../modules/nf-core/megahit/main'
+include { QUAST                        } from '../modules/nf-core/quast/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -96,6 +96,7 @@ workflow MIASSEMBLER {
     )
 
     ch_versions = ch_versions.mix(FASTQC_BEFORE.out.versions)
+    // TODO: we need to refactor this, the metaT info should be part of the meta
     isMetatranscriptomic = FETCHTOOL_METADATA.out.lib_strategy.contains("METATRANSCRIPTOMIC")
 
     // Perform QC on reads //
@@ -109,23 +110,24 @@ workflow MIASSEMBLER {
         READS_QC.out.qc_reads
     )
 
+    /***************************/
+    /* Selecting the assembler */
+    /***************************/
     /*
-    Single end reads // paired end reads distinction
-        We need to split single-end and paired-end reads.
-        Single-end reads are always assembled with MEGAHIT.
+        The selection process ensures that:
+        - The user selected assembler is always used.
+        - Single-end reads are assembled with MEGAHIT, unless specified otherwise.
+        - Paired-end reads are assembled with MetaSPAdes, unless specified otherwise
+        - An error is raised if the assembler and read layout are incompatible (shouldn't happen...)
     */
-
     qc_reads_extended = READS_QC.out.qc_reads.map{ meta, reads ->
-        if (params.assembler == "megahit" || meta.single_end == true) {
+        if ( params.assembler == "megahit" || meta.single_end ) {
             return [ meta + [assembler: "megahit", assembler_version: params.megahit_version], reads]
-        }
-        else {
-            if (["metaspades", "spades"].contains(params.assembler) || meta.single_end == false || isMetatranscriptomic) {
-               return [ meta + [assembler: params.assembler, assembler_version: params.spades_version], reads]
-            }
-            else {
-                error "Incompatible assembler and/or reads layout."
-            }
+        } else if ( ["metaspades", "spades"].contains(params.assembler) || !meta.single_end ) {
+            def xspades_assembler = params.assembler ?: "metaspades" // Default to "metaspades" if the user didn't select one
+            return [ meta + [assembler: xspades_assembler, assembler_version: params.spades_version], reads]
+        } else {
+            error "Incompatible assembler and/or reads layout. We can't assembly data that is. Reads - single end value: ${meta.single_end}."
         }
     }
     qc_reads_extended.branch { meta, reads ->
@@ -134,8 +136,11 @@ workflow MIASSEMBLER {
     }.set { qc_reads }
     ch_versions = ch_versions.mix(READS_QC.out.versions)
 
-    /* Assembly */
-    /* -- Clarification --
+    /******************/
+    /*     Assembly   */
+    /******************/
+    /* -- Clarification -- */
+    /*
         At the moment, the pipeline only processes one set of reads at a time.
         Therefore, running Spades, metaSpades, or MEGAHIT are mutually exclusive.
         In order to support multiple runs, we need to refactor the code slightly.
@@ -144,7 +149,7 @@ workflow MIASSEMBLER {
 
     SPADES(
         qc_reads.xspades.map { meta, reads -> [meta, reads, [], []] },
-        params.assembler,
+        params.assembler ?: "metaspades",
         [], // yml input parameters, which we don't use
         []  // hmm, not used
     )

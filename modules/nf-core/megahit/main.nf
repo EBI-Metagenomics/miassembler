@@ -7,21 +7,6 @@ process MEGAHIT {
         'https://depot.galaxyproject.org/singularity/mulled-v2-0f92c152b180c7cd39d9b0e6822f8c89ccb59c99:8ec213d21e5d03f9db54898a2baeaf8ec729b447-0' :
         'biocontainers/mulled-v2-0f92c152b180c7cd39d9b0e6822f8c89ccb59c99:8ec213d21e5d03f9db54898a2baeaf8ec729b447-0' }"
 
-    publishDir(
-        path: "${params.outdir}",
-        mode: params.publish_dir_mode,
-        failOnError: true,
-        pattern: "megahit_out/*.fa*.gz",
-        saveAs: {
-            filename -> {
-                def output_file = new File(filename);
-                def studyAccessionPrefix = params.study_accession.substring(0, 7);
-                def readsAccessionPrefix = params.reads_accession.substring(0, 7);
-                return "${studyAccessionPrefix}/${params.study_accession}/${readsAccessionPrefix}/${params.reads_accession}/assembly/${meta.assembler}/${meta.assembler_version}/${output_file.name}";
-                }
-        }
-    )
-
     input:
     tuple val(meta), path(reads)
 
