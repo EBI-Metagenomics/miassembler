@@ -4,7 +4,7 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { paramsSummaryLog; paramsSummaryMap } from 'plugin/nf-validation'
+include { paramsSummaryLog; paramsSummaryMap } from 'plugin/nf-schema'
 
 def logo = NfcoreTemplate.logo(workflow, params.monochrome_logs)
 def citation = '\n' + WorkflowMain.citation(workflow) + '\n'
@@ -21,7 +21,7 @@ log.info logo + paramsSummaryLog(workflow) + citation
 
 ch_multiqc_config          = Channel.fromPath("$projectDir/assets/multiqc_config.yml", checkIfExists: true)
 ch_multiqc_custom_config   = params.multiqc_config ? Channel.fromPath( params.multiqc_config, checkIfExists: true ) : Channel.empty()
-ch_multiqc_logo            = params.multiqc_logo   ? Channel.fromPath( params.multiqc_logo, checkIfExists: true ) : Channel.empty()
+ch_multiqc_logo            = params.multiqc_logo   ? Channel.fromPath( params.multiqc_logo, checkIfExists: true ) : Channel.fromPath("$projectDir/assets/mgnify_logo.png")
 ch_multiqc_custom_methods_description = params.multiqc_methods_description ? file(params.multiqc_methods_description, checkIfExists: true) : file("$projectDir/assets/methods_description_template.yml", checkIfExists: true)
 
 /*
@@ -50,11 +50,11 @@ include { ASSEMBLY_COVERAGE  } from '../subworkflows/local/assembly_coverage'
 //
 include { FASTQC as FASTQC_BEFORE      } from '../modules/nf-core/fastqc/main'
 include { FASTQC as FASTQC_AFTER       } from '../modules/nf-core/fastqc/main'
-include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
-include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
-include { SPADES                      } from '../modules/nf-core/spades/main'
-include { MEGAHIT                     } from '../modules/nf-core/megahit/main'
-include { QUAST                       } from '../modules/nf-core/quast/main'
+include { MULTIQC                      } from '../modules/nf-core/multiqc/main'
+include { CUSTOM_DUMPSOFTWAREVERSIONS  } from '../modules/nf-core/custom/dumpsoftwareversions/main'
+include { SPADES                       } from '../modules/nf-core/spades/main'
+include { MEGAHIT                      } from '../modules/nf-core/megahit/main'
+include { QUAST                        } from '../modules/nf-core/quast/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -149,7 +149,7 @@ workflow MIASSEMBLER {
 
     SPADES(
         qc_reads.xspades.map { meta, reads -> [meta, reads, [], []] },
-        params.assembler,
+        params.assembler ?: "metaspades",
         [], // yml input parameters, which we don't use
         []  // hmm, not used
     )

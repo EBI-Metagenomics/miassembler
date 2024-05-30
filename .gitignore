@@ -12,3 +12,5 @@ results/
 .pytest_cache/
 
 assets/fetch_tool_credentials.json
+.nf-test.log
+.nf-test/
