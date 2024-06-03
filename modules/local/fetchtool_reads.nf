@@ -30,7 +30,7 @@ process FETCHTOOL_READS {
     -v ${private_study} ${args}
 
     library_strategy=\$(grep ${reads_accession} download_folder/${study_accession}/${study_accession}.txt | cut -f 7)
-    library_layout=\$(grep ${reads_accession} download_folder/${study_accession}/${study_accession}.txt | cut -f 6)
+    library_layout=\$(grep ${reads_accession} download_folder/${study_accession}/${study_accession}.txt | cut -f 5)
 
     cp download_folder/${study_accession}/${study_accession}.txt download_folder/${study_accession}/fetch_tool_mqc.tsv
 

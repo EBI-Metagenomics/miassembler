@@ -87,7 +87,7 @@ workflow MIASSEMBLER {
                 "library_strategy": library_strategy,
                 "library_layout": library_layout,
                 //  The user defined single_end is preferred over the metadata
-                "single_end": params.single_end ?: meta.library_layout == "SINGLE"
+                "single_end": params.single_end ?: library_layout == "SINGLE"
             ], reads ]
         }
     }

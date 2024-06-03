@@ -3,11 +3,38 @@ nextflow_pipeline {
     name "Test Workflow EBIMETAGENOMICS_MIASSEMBLER"
     script "main.nf"
 
-    test("Should run without failures") {
+    test("metaSPAdes - paired end") {
+
+        when {
+
+            params {
+                outdir = "tests/results"
+                bwamem2_reference_genomes_folder = "${projectDir}/tests/human_phix/bwa2mem"
+                blast_reference_genomes_folder   = "${projectDir}/tests/human_phix/blast"
+                study_accession                  = "SRP115494"
+                reads_accession                  = "SRR6180434"
+            }
+        }
+
+        then {
+            with (workflow) {
+                assert success
+                assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 1
+                assert trace.succeeded().count{ task -> task.name.contains("MEGAHIT") } == 0
+                assert trace.succeeded().size() == 17
+            }
+        }
+
+    }
+
+    test("MEGAHIT - paired end") {
 
         when {
             params {
-                outdir = "tests/results"
+                outdir                           = "tests/results"
+                assembler                        = "megahit"
+                study_accession                  = "SRP115494"
+                reads_accession                  = "SRR6180434"
                 bwamem2_reference_genomes_folder = "${projectDir}/tests/human_phix/bwa2mem"
                 blast_reference_genomes_folder   = "${projectDir}/tests/human_phix/blast"
             }
@@ -16,6 +43,78 @@ nextflow_pipeline {
         then {
             with(workflow) {
                 assert success
+                assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 0
+                assert trace.succeeded().count{ task -> task.name.contains("MEGAHIT") } == 1
+                assert trace.tasks().size() == 17
+            }
+        }
+
+    }
+
+    // test("metaSPAdes - single end") {
+
+    //     when {
+    //         params {
+    //             outdir = "tests/results"
+    //             assembler = "metaspades"
+    //             bwamem2_reference_genomes_folder = "${projectDir}/tests/human_phix/bwa2mem"
+    //             blast_reference_genomes_folder   = "${projectDir}/tests/human_phix/blast"
+    //             study_accession                  = "ERP012810"
+    //             reads_accession                  = "ERR1076564"
+    //         }
+    //     }
+
+    //     then {
+    //         with(workflow) {
+    //             assert success
+    //             assert trace.succeeded().contains("SPADES")
+    //             assert !trace.succeeded().contains("MEGAHIT")
+    //             assert trace.tasks().size() == 17
+    //         }
+    //     }
+
+    // }
+
+    // test("MEGAHIT - single end") {
+
+    //     when {
+    //         params {
+    //             outdir = "tests/results"
+    //             bwamem2_reference_genomes_folder = "${projectDir}/tests/human_phix/bwa2mem"
+    //             blast_reference_genomes_folder   = "${projectDir}/tests/human_phix/blast"
+    //             study_accession                  = "ERP012810"
+    //             reads_accession                  = "ERR1076564"
+    //         }
+    //     }
+
+    //     then {
+    //         with(workflow) {
+    //             assert success
+    //             assert trace.succeeded().contains("MEGAHIT")
+    //             assert !trace.succeeded().contains("SPADES")
+    //             assert trace.tasks().size() == 17
+    //         }
+    //     }
+
+    // }
+
+    test("MEGAHIT - metaT - single") {
+
+        when {
+            params {
+                outdir = "tests/results"
+                bwamem2_reference_genomes_folder = "${projectDir}/tests/human_phix/bwa2mem"
+                blast_reference_genomes_folder   = "${projectDir}/tests/human_phix/blast"
+                study_accession                  = "DRP007622"
+                reads_accession                  = "DRR280712"
+            }
+        }
+
+        then {
+            with(workflow) {
+                assert success
+                assert trace.succeeded().contains("MEGAHIT")
+                assert !trace.succeeded().contains("SPADES")
                 assert trace.tasks().size() == 17
             }
         }
