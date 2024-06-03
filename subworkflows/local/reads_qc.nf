@@ -1,6 +1,6 @@
-include { FASTP                                                       } from '../../modules/nf-core/fastp/main'
-include { READS_BWAMEM2_DECONTAMINATION as HUMAN_PHIX_DECONTAMINATION } from '../ebi-metagenomics/reads_bwamem2_decontamination/main'
-include { READS_BWAMEM2_DECONTAMINATION as HOST_DECONTAMINATION       } from '../ebi-metagenomics/reads_bwamem2_decontamination/main'
+include { FASTP                                             } from '../../modules/nf-core/fastp/main'
+include { BWAMEM2DECONTNOBAMS as HUMAN_PHIX_DECONTAMINATION } from '../../modules/ebi-metagenomics/bwamem2decontnobams/main'
+include { BWAMEM2DECONTNOBAMS as HOST_DECONTAMINATION       } from '../../modules/ebi-metagenomics/bwamem2decontnobams/main'
 
 workflow READS_QC {
 
@@ -53,7 +53,7 @@ workflow READS_QC {
 
         ch_versions = ch_versions.mix(HUMAN_PHIX_DECONTAMINATION.out.versions)
 
-        decontaminated_reads = HUMAN_PHIX_DECONTAMINATION.out.decontaminated_reads
+        decontaminated_reads = HUMAN_PHIX_DECONTAMINATION.out.decont_reads
 
     } else {
         decontaminated_reads = FASTP.out.reads
@@ -67,13 +67,13 @@ workflow READS_QC {
             }
 
         HOST_DECONTAMINATION(
-            HUMAN_PHIX_DECONTAMINATION.out.decontaminated_reads,
+            HUMAN_PHIX_DECONTAMINATION.out.decont_reads,
             ch_bwamem2_host_refs
         )
 
         ch_versions = ch_versions.mix(HOST_DECONTAMINATION.out.versions)
 
-        decontaminated_reads = HOST_DECONTAMINATION.out.decontaminated_reads
+        decontaminated_reads = HOST_DECONTAMINATION.out.decont_reads
     }
 
     emit:

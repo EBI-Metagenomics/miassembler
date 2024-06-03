@@ -120,7 +120,7 @@ workflow MIASSEMBLER {
         - Paired-end reads are assembled with MetaSPAdes, unless specified otherwise
         - An error is raised if the assembler and read layout are incompatible (shouldn't happen...)
     */
-    qc_reads_extended = READS_QC.out.qc_reads.map{ meta, reads ->
+    qc_reads_extended = READS_QC.out.qc_reads.map { meta, reads ->
         if ( params.assembler == "megahit" || meta.single_end ) {
             return [ meta + [assembler: "megahit", assembler_version: params.megahit_version], reads]
         } else if ( ["metaspades", "spades"].contains(params.assembler) || !meta.single_end ) {
@@ -134,11 +134,12 @@ workflow MIASSEMBLER {
         megahit: meta.assembler == "megahit"
         xspades: ["metaspades", "spades"].contains(meta.assembler)
     }.set { qc_reads }
+
     ch_versions = ch_versions.mix(READS_QC.out.versions)
 
-    /******************/
-    /*     Assembly   */
-    /******************/
+    /*********************/
+    /*     Assembly     */
+    /********************/
     /* -- Clarification -- */
     /*
         At the moment, the pipeline only processes one set of reads at a time.

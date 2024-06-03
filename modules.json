@@ -8,22 +8,12 @@
                     "bwamem2/mem": {
                         "branch": "main",
                         "git_sha": "75707538d91ddd27fb6007b4ac3710cb05154780",
-                        "installed_by": ["reads_bwamem2_decontamination"]
+                        "installed_by": ["modules"]
                     },
-                    "samtools/bam2fq": {
+                    "bwamem2decontnobams": {
                         "branch": "main",
-                        "git_sha": "88f2bfbe6f0ba858d0833db590e647c4678656a7",
-                        "installed_by": ["reads_bwamem2_decontamination"],
-                        "patch": "modules/ebi-metagenomics/samtools/bam2fq/samtools-bam2fq.diff"
-                    }
-                }
-            },
-            "subworkflows": {
-                "ebi-metagenomics": {
-                    "reads_bwamem2_decontamination": {
-                        "branch": "main",
-                        "git_sha": "0b40060df67681e0172aab145460618c08d99516",
-                        "installed_by": ["subworkflows"]
+                        "git_sha": "32049180387cf2406254acf57882fc55915cb52e",
+                        "installed_by": ["modules"]
                     }
                 }
             }
