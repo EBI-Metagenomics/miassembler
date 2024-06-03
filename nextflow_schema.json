@@ -39,6 +39,10 @@
                     "enum": ["spades", "metaspades", "megahit"],
                     "description": "The short reads assembler"
                 },
+                "single_end": {
+                    "type": "boolean",
+                    "description": "Force the single_end value for the study / reads"
+                },
                 "spades_version": {
                     "type": "string",
                     "default": "3.15.5"
@@ -94,6 +98,11 @@
                     "type": "integer",
                     "default": 500,
                     "description": "Minimum contig length filter."
+                },
+                "min_contig_length_metatranscriptomics": {
+                    "type": "integer",
+                    "default": 200,
+                    "description": "Minimum contig length filter for metaT."
                 },
                 "assembly_memory": {
                     "type": "integer",

@@ -8,15 +8,15 @@ nextflow_pipeline {
         when {
             params {
                 outdir = "tests/results"
-                bwamem2_reference_genomes_folder = "$projectDir/tests/human_phix/bwa2mem"
-                blast_reference_genomes_folder   = "$projectDir/tests/human_phix/blast"
+                bwamem2_reference_genomes_folder = "${projectDir}/tests/human_phix/bwa2mem"
+                blast_reference_genomes_folder   = "${projectDir}/tests/human_phix/blast"
             }
         }
 
         then {
             with(workflow) {
                 assert success
-                assert trace.tasks().size() == 18
+                assert trace.tasks().size() == 17
             }
         }
 

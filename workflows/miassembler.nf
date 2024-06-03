@@ -34,7 +34,6 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
 include { FETCHTOOL_READS    } from '../modules/local/fetchtool_reads'
-include { FETCHTOOL_METADATA } from '../modules/local/fetchtool_metadata'
 include { READS_QC           } from '../subworkflows/local/reads_qc'
 include { ASSEMBLY_QC        } from '../subworkflows/local/assembly_qc'
 include { ASSEMBLY_COVERAGE  } from '../subworkflows/local/assembly_coverage'
@@ -70,20 +69,11 @@ workflow MIASSEMBLER {
 
     ch_versions = Channel.empty()
 
-    fetch_tool_config = file("$projectDir/assets/fetch_tool_anonymous.json")
+    fetch_tool_config = file("${projectDir}/assets/fetch_tool_anonymous.json")
     if ( params.private_study ) {
-        fetch_tool_config = file("$projectDir/assets/fetch_tool_credentials.json")
+        fetch_tool_config = file("${projectDir}/assets/fetch_tool_credentials.json")
     }
 
-    // Download project metadata //
-    FETCHTOOL_METADATA(
-        [ [id: params.reads_accession], params.study_accession, params.reads_accession ],
-        fetch_tool_config
-    )
-
-    ch_versions = ch_versions.mix(FETCHTOOL_METADATA.out.versions)
-
-    // Download reads //
     FETCHTOOL_READS(
         [ [id: params.reads_accession], params.study_accession, params.reads_accession ],
         fetch_tool_config
@@ -91,19 +81,26 @@ workflow MIASSEMBLER {
 
     ch_versions = ch_versions.mix(FETCHTOOL_READS.out.versions)
 
+    // Push the library strategy into the meta of the reads, this is to make it easier to handle downstream
+    fetch_reads_transformed = FETCHTOOL_READS.out.reads.map { meta, reads, library_strategy, library_layout -> {
+            [ meta + [
+                "library_strategy": library_strategy,
+                "library_layout": library_layout,
+                //  The user defined single_end is preferred over the metadata
+                "single_end": params.single_end ?: meta.library_layout == "SINGLE"
+            ], reads ]
+        }
+    }
+
     FASTQC_BEFORE (
-        FETCHTOOL_READS.out.reads
+        fetch_reads_transformed
     )
 
     ch_versions = ch_versions.mix(FASTQC_BEFORE.out.versions)
-    // TODO: we need to refactor this, the metaT info should be part of the meta
-    isMetatranscriptomic = FETCHTOOL_METADATA.out.lib_strategy.contains("METATRANSCRIPTOMIC")
 
-    // Perform QC on reads //
     READS_QC(
-        FETCHTOOL_READS.out.reads,
-        params.reference_genome,
-        isMetatranscriptomic
+        fetch_reads_transformed,
+        params.reference_genome
     )
 
     FASTQC_AFTER (
@@ -206,6 +203,7 @@ workflow MIASSEMBLER {
     ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
     ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
     ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
+    ch_multiqc_files = ch_multiqc_files.mix(FETCHTOOL_READS.out.metadata_tsv.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(FASTQC_BEFORE.out.zip.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(FASTQC_AFTER.out.zip.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(ASSEMBLY_COVERAGE.out.samtools_idxstats.collect{ it[1] }.ifEmpty([]))
