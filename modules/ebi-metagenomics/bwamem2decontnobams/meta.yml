@@ -1,0 +1,56 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+name: "bwamem2decontnobams"
+description: Decontamination module using bwamem2 and samtools that generates fastq files on the fly
+keywords:
+  - alignment
+  - decontamination
+  - fastq
+tools:
+  - bwamem2:
+      description: "Mapping DNA sequences against a large reference genome"
+      tool_dev_url: "https://github.com/bwa-mem2/bwa-mem2"
+  - samtools:
+      description: "Tools for dealing with SAM, BAM and CRAM files"
+      documentation: "http://www.htslib.org/doc/1.1/samtools.html"
+
+input:
+  - meta:
+      type: map
+      description: |
+        Groovy Map containing sample information
+        e.g. `[ id:'sample1', single_end:false ]`
+  - reads:
+      type: file
+      description: |
+        List of input FastQ files of size 1 and 2
+        for single-end and paired-end data, respectively
+  - meta2:
+      type: map
+      description: |
+        Groovy Map containing reference genome information
+        e.g. [ id:'ref_name' ]
+  - index:
+      type: file
+      description: |
+        A list of BWA index files
+
+output:
+  - meta:
+      type: map
+      description: |
+        Groovy Map containing sample information
+        e.g. `[ id:'sample1', single_end:false ]`
+  - versions:
+      type: file
+      description: File containing software versions
+      pattern: "versions.yml"
+  - decont_reads:
+      type: file
+      description: |
+        List of fastq files. Two files for paired-end reads and one file for single-end reads
+
+authors:
+  - "@EBI-metagenomics"
+maintainers:
+  - "@EBI-metagenomics"

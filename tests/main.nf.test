@@ -16,7 +16,7 @@ nextflow_pipeline {
         then {
             with(workflow) {
                 assert success
-                assert trace.tasks().size() == 19
+                assert trace.tasks().size() == 18
             }
         }
 

@@ -137,9 +137,9 @@ workflow MIASSEMBLER {
 
     ch_versions = ch_versions.mix(READS_QC.out.versions)
 
-    /******************/
-    /*     Assembly   */
-    /******************/
+    /*********************/
+    /*     Assembly     */
+    /********************/
     /* -- Clarification -- */
     /*
         At the moment, the pipeline only processes one set of reads at a time.

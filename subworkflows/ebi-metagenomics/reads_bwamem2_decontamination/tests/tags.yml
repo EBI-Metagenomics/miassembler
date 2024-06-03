@@ -1,2 +1,0 @@
-subworkflows/reads_bwamem2_decontamination:
-  - subworkflows/ebi-metagenomics/reads_bwamem2_decontamination/**

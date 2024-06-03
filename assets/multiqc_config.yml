@@ -20,3 +20,6 @@ top_modules:
 sp:
   quast_config:
     fn: "*.tsv"
+
+section_comments:
+  Samtools: Assembly coverage
