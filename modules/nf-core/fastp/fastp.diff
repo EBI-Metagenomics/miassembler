@@ -10,7 +10,7 @@ Changes in module 'nf-core/fastp'
      container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
          'https://depot.galaxyproject.org/singularity/fastp:0.23.4--h5f740d0_0' :
          'biocontainers/fastp:0.23.4--h5f740d0_0' }"
-@@ -12,24 +12,28 @@
+@@ -12,26 +12,29 @@
      path  adapter_fasta
      val   save_trimmed_fail
      val   save_merged
@@ -40,9 +40,11 @@ Changes in module 'nf-core/fastp'
 -    def fail_fastq = save_trimmed_fail && meta.single_end ? "--failed_out ${prefix}.fail.fastq.gz" : save_trimmed_fail && !meta.single_end ? "--failed_out ${prefix}.paired.fail.fastq.gz --unpaired1 ${prefix}_1.fail.fastq.gz --unpaired2 ${prefix}_2.fail.fastq.gz" : ''
 +    def fail_fastq = save_trimmed_fail && single_end ? "--failed_out ${prefix}.fail.fastq.gz" : save_trimmed_fail && !single_end ? "--unpaired1 ${prefix}_1.fail.fastq.gz --unpaired2 ${prefix}_2.fail.fastq.gz" : ''
      // Added soft-links to original fastqs for consistent naming in MultiQC
-     // Use single ended for interleaved. Add --interleaved_in in config.
+-    // Use single ended for interleaved. Add --interleaved_in in config.
      if ( task.ext.args?.contains('--interleaved_in') ) {
-@@ -44,8 +48,9 @@
+         """
+         [ ! -f  ${prefix}.fastq.gz ] && ln -sf $reads ${prefix}.fastq.gz
+@@ -44,8 +47,9 @@
              --html ${prefix}.fastp.html \\
              $adapter_list \\
              $fail_fastq \\
@@ -53,7 +55,7 @@ Changes in module 'nf-core/fastp'
          | gzip -c > ${prefix}.fastp.fastq.gz
  
          cat <<-END_VERSIONS > versions.yml
-@@ -53,7 +58,7 @@
+@@ -53,7 +57,7 @@
              fastp: \$(fastp --version 2>&1 | sed -e "s/fastp //g")
          END_VERSIONS
          """
@@ -62,7 +64,7 @@ Changes in module 'nf-core/fastp'
          """
          [ ! -f  ${prefix}.fastq.gz ] && ln -sf $reads ${prefix}.fastq.gz
  
-@@ -65,8 +70,9 @@
+@@ -65,8 +69,9 @@
              --html ${prefix}.fastp.html \\
              $adapter_list \\
              $fail_fastq \\
@@ -73,7 +75,7 @@ Changes in module 'nf-core/fastp'
  
          cat <<-END_VERSIONS > versions.yml
          "${task.process}":
-@@ -87,11 +93,12 @@
+@@ -87,11 +92,12 @@
              --html ${prefix}.fastp.html \\
              $adapter_list \\
              $fail_fastq \\
@@ -87,7 +89,7 @@ Changes in module 'nf-core/fastp'
  
          cat <<-END_VERSIONS > versions.yml
          "${task.process}":
-@@ -101,20 +108,19 @@
+@@ -101,20 +107,19 @@
      }
  
      stub:
