@@ -21,33 +21,42 @@ This pipeline is still in early development. It's mostly a direct port of the mi
 Pipeline help:
 
 ```bash
-nextflow run ebi-metagenomics/miassembler --help
+Typical pipeline command:
+
+  nextflow run ebi-metagenomics/miassembler --help
 
 Input/output options
-  --study_accession                  [string]  The ENA Study secondary accession
-  --reads_accession                  [string]  The ENA Run primary accession
-  --private_study                    [boolean] To use if the ENA study is private [default: false]
-  --assembler                        [string]  The short reads assembler (accepted: spades, metaspades, megahit) [default: metaspades]
-  --reference_genome                 [string]  The genome to be used to clean the assembly, the genome will be taken from the Microbiome Informatics internal
-                                               directory (accepted: chicken.fna, salmon.fna, cod.fna, pig.fna, cow.fna, mouse.fna, honeybee.fna,
-                                               rainbow_trout.fna, rat.fna, ...)
-  --blast_reference_genomes_folder   [string]  The folder with the reference genome blast indexes, defaults to the Microbiome Informatics internal
-                                               directory.
-  --bwamem2_reference_genomes_folder [string]  The folder with the reference genome bwa-mem2 indexes, defaults to the Microbiome Informatics internal
-                                               directory.
-  --remove_human_phix                [boolean] Remove human and phiX reads pre assembly, and contigs matching those genomes. [default: true]
-  --human_phix_blast_index_name      [string]  Combined Human and phiX BLAST db. [default: human_phix]
-  --human_phix_bwamem2_index_name    [string]  Combined Human and phiX bwa-mem2 index. [default: human_phix]
-  --min_contig_length                [integer] Minimum contig length filter. [default: 500]
-  --assembly_memory                  [integer] Default memory allocated for the assembly process. [default: 100]
-  --spades_only_assembler            [boolean] Run SPAdes/metaSPAdes without the error correction step. [default: true]
-  --outdir                           [string]  The output directory where the results will be saved. You have to use absolute paths to storage on Cloud
-                                               infrastructure.
-  --email                            [string]  Email address for completion summary.
-  --multiqc_title                    [string]  MultiQC report title. Printed as page header, used for filename if not otherwise specified.
+  --study_accession                       [string]  The ENA Study secondary accession
+  --reads_accession                       [string]  The ENA Run primary accession
+  --private_study                         [boolean] To use if the ENA study is private
+  --assembler                             [string]  The short reads assembler (accepted: spades, metaspades, megahit)
+  --single_end                            [boolean] Force the single_end value for the study / reads
+  --library_strategy                      [string]  Force the library_strategy value for the study / reads (accepted: metagenomic, metatranscriptomic,
+                                                    genomic, transcriptomic, other)
+  --library_layout                        [string]  Force the library_layout value for the study / reads (accepted: single, paired)
+  --spades_version                        [string]  null [default: 3.15.5]
+  --megahit_version                       [string]  null [default: 1.2.9]
+  --reference_genome                      [string]  The genome to be used to clean the assembly, the genome will be taken from the Microbiome Informatics
+                                                    internal directory (accepted: chicken.fna, salmon.fna, cod.fna, pig.fna, cow.fna, mouse.fna,
+                                                    honeybee.fna, rainbow_trout.fna, ...)
+  --blast_reference_genomes_folder        [string]  The folder with the reference genome blast indexes, defaults to the Microbiome Informatics internal
+                                                    directory.
+  --bwamem2_reference_genomes_folder      [string]  The folder with the reference genome bwa-mem2 indexes, defaults to the Microbiome Informatics internal
+                                                    directory.
+  --remove_human_phix                     [boolean] Remove human and phiX reads pre assembly, and contigs matching those genomes. [default: true]
+  --human_phix_blast_index_name           [string]  Combined Human and phiX BLAST db. [default: human_phix]
+  --human_phix_bwamem2_index_name         [string]  Combined Human and phiX bwa-mem2 index. [default: human_phix]
+  --min_contig_length                     [integer] Minimum contig length filter. [default: 500]
+  --min_contig_length_metatranscriptomics [integer] Minimum contig length filter for metaT. [default: 200]
+  --assembly_memory                       [integer] Default memory allocated for the assembly process. [default: 100]
+  --spades_only_assembler                 [boolean] Run SPAdes/metaSPAdes without the error correction step. [default: true]
+  --outdir                                [string]  The output directory where the results will be saved. You have to use absolute paths to storage on Cloud
+                                                    infrastructure. [default: results]
+  --email                                 [string]  Email address for completion summary.
+  --multiqc_title                         [string]  MultiQC report title. Printed as page header, used for filename if not otherwise specified.
 
 Generic options
-  --multiqc_methods_description      [string]  Custom MultiQC yaml file containing HTML including a methods description.
+  --multiqc_methods_description           [string]  Custom MultiQC yaml file containing HTML including a methods description.
 ```
 
 Example:

@@ -26,6 +26,10 @@ process QUAST {
     script:
     def args      = task.ext.args   ?: ''
     prefix        = task.ext.prefix ?: "${meta.id}"
+    def min_contig_len = "--min-contig ${params.min_contig_length}"
+    if ( meta.library_strategy == "metatranscriptomics" ) {
+        min_contig_len = "--min-contig ${params.min_contig_length_metatranscriptomics}"
+    } 
     def features  = gff             ?  "--features $gff" : ''
     def reference = fasta           ?  "-r $fasta"       : ''
     """
@@ -34,7 +38,7 @@ process QUAST {
         $reference \\
         $features \\
         --threads $task.cpus \\
-        $args \\
+        $args $min_contig_len \\
         ${consensus.join(' ')}
 
     ln -s ${prefix}/report.tsv ${prefix}.tsv

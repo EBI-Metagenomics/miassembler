@@ -51,54 +51,50 @@ nextflow_pipeline {
 
     }
 
-    // test("metaSPAdes - single end") {
+    test("metaSPAdes - single end - should fail") {
 
-    //     when {
-    //         params {
-    //             outdir = "tests/results"
-    //             assembler = "metaspades"
-    //             bwamem2_reference_genomes_folder = "${projectDir}/tests/human_phix/bwa2mem"
-    //             blast_reference_genomes_folder   = "${projectDir}/tests/human_phix/blast"
-    //             study_accession                  = "ERP012810"
-    //             reads_accession                  = "ERR1076564"
-    //         }
-    //     }
+        when {
+            params {
+                outdir                           = "tests/results"
+                assembler                        = "metaspades"
+                bwamem2_reference_genomes_folder = "${projectDir}/tests/human_phix/bwa2mem"
+                blast_reference_genomes_folder   = "${projectDir}/tests/human_phix/blast"
+                study_accession                  = "ERP012810"
+                reads_accession                  = "ERR1076564"
+            }
+        }
 
-    //     then {
-    //         with(workflow) {
-    //             assert success
-    //             assert trace.succeeded().contains("SPADES")
-    //             assert !trace.succeeded().contains("MEGAHIT")
-    //             assert trace.tasks().size() == 17
-    //         }
-    //     }
+        then {
+            with(workflow) {
+                // No contigs
+                assert !success
+                assert trace.failed().count{ task -> task.name.contains("SPADES") } == 1
+            }
+        }
 
-    // }
+    }
 
-    // test("MEGAHIT - single end") {
+    test("MEGAHIT - single end - should fail") {
 
-    //     when {
-    //         params {
-    //             outdir = "tests/results"
-    //             bwamem2_reference_genomes_folder = "${projectDir}/tests/human_phix/bwa2mem"
-    //             blast_reference_genomes_folder   = "${projectDir}/tests/human_phix/blast"
-    //             study_accession                  = "ERP012810"
-    //             reads_accession                  = "ERR1076564"
-    //         }
-    //     }
+        when {
+            params {
+                outdir = "tests/results"
+                bwamem2_reference_genomes_folder = "${projectDir}/tests/human_phix/bwa2mem"
+                blast_reference_genomes_folder   = "${projectDir}/tests/human_phix/blast"
+                study_accession                  = "ERP012810"
+                reads_accession                  = "ERR1076564"
+            }
+        }
 
-    //     then {
-    //         with(workflow) {
-    //             assert success
-    //             assert trace.succeeded().contains("MEGAHIT")
-    //             assert !trace.succeeded().contains("SPADES")
-    //             assert trace.tasks().size() == 17
-    //         }
-    //     }
+        then {
+            with(workflow) {
+                assert !success
+                assert trace.failed().count{ task -> task.name.contains("MEGAHIT") } == 1
+            }
+        }
+    }
 
-    // }
-
-    test("MEGAHIT - metaT - single") {
+    test("MEGAHIT - metaT - single end") {
 
         when {
             params {
@@ -116,6 +112,28 @@ nextflow_pipeline {
                 assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 0
                 assert trace.succeeded().count{ task -> task.name.contains("MEGAHIT") } == 1
                 assert trace.tasks().size() == 17
+            }
+        }
+
+    }
+
+    test("Spades - metaT - single end should fail") {
+
+        when {
+            params {
+                outdir = "tests/results"
+                assembler = "spades"
+                bwamem2_reference_genomes_folder = "${projectDir}/tests/human_phix/bwa2mem"
+                blast_reference_genomes_folder   = "${projectDir}/tests/human_phix/blast"
+                study_accession                  = "DRP007622"
+                reads_accession                  = "DRR280712"
+            }
+        }
+
+        then {
+            with(workflow) {
+                assert !success
+                assert trace.failed().count{ task -> task.name.contains("SPADES") } == 1
             }
         }
 

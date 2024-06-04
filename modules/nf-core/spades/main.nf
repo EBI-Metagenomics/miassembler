@@ -35,7 +35,7 @@ process SPADES {
     def nanopore_reads = nanopore ? "--nanopore $nanopore" : ""
     def custom_hmms = hmm ? "--custom-hmms $hmm" : ""
     def reads = yml ? "--dataset $yml" : "$illumina_reads $pacbio_reads $nanopore_reads"
-    def metaspades_arg = metaspades ? "--meta" : ""
+    def metaspades_arg = metaspades == "metaspades" ? "--meta" : ""
 
     // Handle retries
     def restart = ""

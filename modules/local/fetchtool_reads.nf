@@ -12,8 +12,8 @@ process FETCHTOOL_READS {
     output:
     tuple val(meta), path("download_folder/${study_accession}/raw/${reads_accession}*.fastq.gz"), env(library_strategy), env(library_layout), emit: reads
     // The '_mqc.' is for multiQC
-    tuple val(meta), path("download_folder/${study_accession}/fetch_tool_mqc.tsv")                                     , emit: metadata_tsv
-    path "versions.yml"                                                                                                , emit: versions
+    tuple val(meta), path("download_folder/${study_accession}/${study_accession}.txt")                                     , emit: metadata_tsv
+    path "versions.yml"                                                                                                    , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -29,10 +29,8 @@ process FETCHTOOL_READS {
     -c ${fetchtool_config} \\
     -v ${private_study} ${args}
 
-    library_strategy=\$(grep ${reads_accession} download_folder/${study_accession}/${study_accession}.txt | cut -f 7)
-    library_layout=\$(grep ${reads_accession} download_folder/${study_accession}/${study_accession}.txt | cut -f 5)
-
-    cp download_folder/${study_accession}/${study_accession}.txt download_folder/${study_accession}/fetch_tool_mqc.tsv
+    library_strategy=\$(echo "\$(grep ${reads_accession} download_folder/${study_accession}/${study_accession}.txt | cut -f 7)" | tr '[:upper:]' '[:lower:]')
+    library_layout=\$(echo "\$(grep ${reads_accession} download_folder/${study_accession}/${study_accession}.txt | cut -f 5)" | tr '[:upper:]' '[:lower:]')
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

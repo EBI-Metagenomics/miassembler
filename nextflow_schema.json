@@ -43,6 +43,16 @@
                     "type": "boolean",
                     "description": "Force the single_end value for the study / reads"
                 },
+                "library_strategy": {
+                    "type": "string",
+                    "description": "Force the library_strategy value for the study / reads",
+                    "enum": ["metagenomic", "metatranscriptomic", "genomic", "transcriptomic", "other"]
+                },
+                "library_layout": {
+                    "type": "string",
+                    "description": "Force the library_layout value for the study / reads",
+                    "enum": ["single", "paired"]
+                },
                 "spades_version": {
                     "type": "string",
                     "default": "3.15.5"

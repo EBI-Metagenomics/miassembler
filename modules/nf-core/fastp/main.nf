@@ -30,7 +30,7 @@ process FASTP {
     def single_end = reads.collect().size() == 1
     def args = task.ext.args ?: ''
     // Our team addition to handle metaT
-    def polyA = ( trim_polyA || meta.library_strategy == "METATRANSCRIPTOMIC" ) ? "--trim_poly_x" : ''
+    def polyA = ( trim_polyA || meta.library_strategy == "metatranscriptomic" ) ? "--trim_poly_x" : ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     def adapter_list = adapter_fasta ? "--adapter_fasta ${adapter_fasta}" : ""
     def fail_fastq = save_trimmed_fail && single_end ? "--failed_out ${prefix}.fail.fastq.gz" : save_trimmed_fail && !single_end ? "--unpaired1 ${prefix}_1.fail.fastq.gz --unpaired2 ${prefix}_2.fail.fastq.gz" : ''

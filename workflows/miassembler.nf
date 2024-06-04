@@ -84,10 +84,10 @@ workflow MIASSEMBLER {
     // Push the library strategy into the meta of the reads, this is to make it easier to handle downstream
     fetch_reads_transformed = FETCHTOOL_READS.out.reads.map { meta, reads, library_strategy, library_layout -> {
             [ meta + [
-                "library_strategy": library_strategy,
-                "library_layout": library_layout,
-                //  The user defined single_end is preferred over the metadata
-                "single_end": params.single_end ?: library_layout == "SINGLE"
+                //  -- The metadata will be overriden by the parameters -- //
+                "library_strategy": params.library_strategy ?: library_strategy,
+                "library_layout": params.library_layout ?: library_layout,
+                "single_end": params.single_end ?: library_layout == "single"
             ], reads ]
         }
     }
@@ -118,9 +118,9 @@ workflow MIASSEMBLER {
         - An error is raised if the assembler and read layout are incompatible (shouldn't happen...)
     */
     qc_reads_extended = READS_QC.out.qc_reads.map { meta, reads ->
-        if ( params.assembler == "megahit" || meta.single_end ) {
+        if ( params.assembler == "megahit" || ( meta.single_end && params.assembler == null ) ) {
             return [ meta + [assembler: "megahit", assembler_version: params.megahit_version], reads]
-        } else if ( ["metaspades", "spades"].contains(params.assembler) || !meta.single_end ) {
+        } else if ( ["metaspades", "spades"].contains(params.assembler) || ( !meta.single_end && params.assembler == null ) ) {
             def xspades_assembler = params.assembler ?: "metaspades" // Default to "metaspades" if the user didn't select one
             return [ meta + [assembler: xspades_assembler, assembler_version: params.spades_version], reads]
         } else {
@@ -190,6 +190,14 @@ workflow MIASSEMBLER {
         ch_versions.unique().collectFile(name: 'collated_versions.yml')
     )
 
+    // Metadata for MultiQC
+    fetch_tool_metadata = FETCHTOOL_READS.out.metadata_tsv.map { it[1] }.collectFile(
+        name: 'fetch_tool_mqc.tsv',
+        newLine: true,
+        keepHeader: true,
+        skip: 1
+    )
+
     //
     // MODULE: MultiQC
     //
@@ -203,7 +211,7 @@ workflow MIASSEMBLER {
     ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
     ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
     ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
-    ch_multiqc_files = ch_multiqc_files.mix(FETCHTOOL_READS.out.metadata_tsv.collect{it[1]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(fetch_tool_metadata)
     ch_multiqc_files = ch_multiqc_files.mix(FASTQC_BEFORE.out.zip.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(FASTQC_AFTER.out.zip.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(ASSEMBLY_COVERAGE.out.samtools_idxstats.collect{ it[1] }.ifEmpty([]))

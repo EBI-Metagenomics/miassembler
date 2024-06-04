@@ -20,7 +20,7 @@ process SEQKIT_SEQ {
 
     script:
     def min_len     = params.min_contig_length
-    if ( meta.library_strategy == "METATRANSCRIPTOMIC" ) {
+    if ( meta.library_strategy == "metatranscriptomic" ) {
         min_len = params.min_contig_length_metatranscriptomics 
     }
     def args        = task.ext.args ?: ''
