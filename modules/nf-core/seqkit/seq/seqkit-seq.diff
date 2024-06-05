@@ -1,0 +1,24 @@
+Changes in module 'nf-core/seqkit/seq'
+--- modules/nf-core/seqkit/seq/main.nf
++++ modules/nf-core/seqkit/seq/main.nf
+@@ -19,6 +19,10 @@
+     task.ext.when == null || task.ext.when
+ 
+     script:
++    def min_len     = params.min_contig_length
++    if ( meta.library_strategy == "metatranscriptomic" ) {
++        min_len = params.min_contig_length_metatranscriptomics 
++    }
+     def args        = task.ext.args ?: ''
+     def args2       = task.ext.args2 ?: ''
+     prefix          = task.ext.prefix ?: "${meta.id}"
+@@ -34,6 +38,7 @@
+         seq \\
+         --threads $task.cpus \\
+         $args \\
++        --min-len ${min_len} \\
+         $fastx \\
+         $call_gzip \\
+         > ${prefix}.${extension}
+
+************************************************************

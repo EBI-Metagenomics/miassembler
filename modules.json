@@ -43,8 +43,9 @@
                     },
                     "fastp": {
                         "branch": "master",
-                        "git_sha": "2c70c1c1951aaf884d2e8d8d9c871db79f7b35aa",
-                        "installed_by": ["modules"]
+                        "git_sha": "95cf5fe0194c7bf5cb0e3027a2eb7e7c89385080",
+                        "installed_by": ["modules"],
+                        "patch": "modules/nf-core/fastp/fastp.diff"
                     },
                     "fastqc": {
                         "branch": "master",
@@ -93,7 +94,8 @@
                     "seqkit/seq": {
                         "branch": "master",
                         "git_sha": "687ad41c14008d3d55cf7c2ffacebe6a057211a4",
-                        "installed_by": ["modules"]
+                        "installed_by": ["modules"],
+                        "patch": "modules/nf-core/seqkit/seq/seqkit-seq.diff"
                     },
                     "spades": {
                         "branch": "master",
