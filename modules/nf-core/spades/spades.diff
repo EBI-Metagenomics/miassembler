@@ -1,15 +1,14 @@
 Changes in module 'nf-core/spades'
 --- modules/nf-core/spades/main.nf
 +++ modules/nf-core/spades/main.nf
-@@ -1,6 +1,6 @@
+@@ -1,6 +1,5 @@
  process SPADES {
      tag "$meta.id"
 -    label 'process_high'
-+    label 'process_high_memory'
  
      conda "${moduleDir}/environment.yml"
      container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-@@ -9,6 +9,7 @@
+@@ -9,17 +8,20 @@
  
      input:
      tuple val(meta), path(illumina), path(pacbio), path(nanopore)
@@ -17,20 +16,35 @@ Changes in module 'nf-core/spades'
      path yml
      path hmm
  
-@@ -33,13 +34,25 @@
+     output:
+-    tuple val(meta), path('*.scaffolds.fa.gz')    , optional:true, emit: scaffolds
+-    tuple val(meta), path('*.contigs.fa.gz')      , optional:true, emit: contigs
+-    tuple val(meta), path('*.transcripts.fa.gz')  , optional:true, emit: transcripts
+-    tuple val(meta), path('*.gene_clusters.fa.gz'), optional:true, emit: gene_clusters
+-    tuple val(meta), path('*.assembly.gfa.gz')    , optional:true, emit: gfa
+-    tuple val(meta), path('*.log')                , emit: log
+-    path  "versions.yml"                          , emit: versions
++    tuple val(meta), path('*.scaffolds.fa.gz')                     , optional:true, emit: scaffolds
++    tuple val(meta), path('*.contigs.fa.gz')                       , optional:true, emit: contigs
++    tuple val(meta), path('*.transcripts.fa.gz')                   , optional:true, emit: transcripts
++    tuple val(meta), path('*.gene_clusters.fa.gz')                 , optional:true, emit: gene_clusters
++    tuple val(meta), path('*.assembly_graph_with_scaffolds.gfa.gz'), optional:true, emit: gfa
++    tuple val(meta), path('*.assembly_graph.fastg.gz')             , optional:true, emit: fastg
++    tuple val(meta), path('params.txt')                            , optional:true, emit: params
++    tuple val(meta), path('*.log')                                 , emit: log
++    path  "versions.yml"                                           , emit: versions
+ 
+     when:
+     task.ext.when == null || task.ext.when
+@@ -33,9 +35,15 @@
      def nanopore_reads = nanopore ? "--nanopore $nanopore" : ""
      def custom_hmms = hmm ? "--custom-hmms $hmm" : ""
      def reads = yml ? "--dataset $yml" : "$illumina_reads $pacbio_reads $nanopore_reads"
 +    def metaspades_arg = metaspades == "metaspades" ? "--meta" : ""
-+
-+    // Handle retries
-+    def restart = ""
-+    if (task.attempt > 1) {
-+        // Set of extra flags to restart the assembly process
-+        restart = "--restart-from last"
-+        reads = "" // --restart doesn't allow basic flags to be submitted
-+    }
-+
++    // FIXME: figure out how to use spades retry mechanism
++    //        the problem modifyng the flags or memory forces the expiration
++    //        the nextflow cache hence a new working directory, 
++    //        which then makes spades fail as if needs the "checkpointed files to resume itself"
      """
      spades.py \\
          $args \\
@@ -38,10 +52,22 @@ Changes in module 'nf-core/spades'
          --threads $task.cpus \\
          --memory $maxmem \\
          $custom_hmms \\
-         $reads \\
-+        $restart \\
-         -o ./
-     mv spades.log ${prefix}.spades.log
- 
+@@ -56,10 +64,13 @@
+         gzip -n ${prefix}.transcripts.fa
+     fi
+     if [ -f assembly_graph_with_scaffolds.gfa ]; then
+-        mv assembly_graph_with_scaffolds.gfa ${prefix}.assembly.gfa
+-        gzip -n ${prefix}.assembly.gfa
++        mv assembly_graph_with_scaffolds.gfa ${prefix}.assembly_graph_with_scaffolds.gfa
++        gzip -n ${prefix}.assembly_graph_with_scaffolds.gfa
+     fi
+-
++    if [ -f assembly_graph.fastg ]; then
++        mv assembly_graph.fastg ${prefix}.assembly_graph.fastg
++        gzip -n ${prefix}.assembly_graph.fastg
++    fi
+     if [ -f gene_clusters.fasta ]; then
+         mv gene_clusters.fasta ${prefix}.gene_clusters.fa
+         gzip -n ${prefix}.gene_clusters.fa
 
 ************************************************************

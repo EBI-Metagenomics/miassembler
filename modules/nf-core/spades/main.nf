@@ -36,15 +36,10 @@ process SPADES {
     def custom_hmms = hmm ? "--custom-hmms $hmm" : ""
     def reads = yml ? "--dataset $yml" : "$illumina_reads $pacbio_reads $nanopore_reads"
     def metaspades_arg = metaspades == "metaspades" ? "--meta" : ""
-
-    // Handle retries
-    def restart = ""
-    if (task.attempt > 1) {
-        // Set of extra flags to restart the assembly process
-        restart = "--restart-from last"
-        reads = "" // --restart doesn't allow basic flags to be submitted
-    }
-
+    // FIXME: figure out how to use spades retry mechanism
+    //        the problem modifyng the flags or memory forces the expiration
+    //        the nextflow cache hence a new working directory, 
+    //        which then makes spades fail as if needs the "checkpointed files to resume itself"
     """
     spades.py \\
         $args \\
@@ -53,7 +48,6 @@ process SPADES {
         --memory $maxmem \\
         $custom_hmms \\
         $reads \\
-        $restart \\
         -o ./
     mv spades.log ${prefix}.spades.log
 

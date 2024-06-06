@@ -31,14 +31,15 @@ process MEGAHIT {
         // Set of extra flags to restart the assembly process
         restart = "--continue"
     }
-
+    // FIXME: figure out how to use the continue mechanism
+    //        the problem modifyng the flags (adding --continue) forces the expiration
+    //        the nextflow cache hence a new working directory
     if (meta.single_end) {
         """
         megahit \\
             -r ${reads} \\
             -t $task.cpus \\
             $args \\
-            $restart \\
             --out-prefix $prefix
 
         if [ ! -s megahit_out/*.fa ]; then
@@ -65,7 +66,6 @@ process MEGAHIT {
             -2 ${reads[1]} \\
             -t $task.cpus \\
             $args \\
-            $restart \\
             --out-prefix $prefix
 
         if [ ! -s megahit_out/*.fa ]; then
