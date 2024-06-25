@@ -10,14 +10,27 @@
             "type": "object",
             "fa_icon": "fas fa-terminal",
             "description": "Define where the pipeline should find input data and save output data.",
-            "required": [
-                "study_accession",
-                "reads_accession",
-                "blast_reference_genomes_folder",
-                "bwamem2_reference_genomes_folder",
-                "outdir",
-                "human_phix_blast_index_name",
-                "human_phix_bwamem2_index_name"
+            "oneOf": [
+                {
+                    "description": "Required fields when samplesheet is not provided.",
+                    "required": [
+                      "study_accession",
+                      "reads_accession",
+                      "blast_reference_genomes_folder",
+                      "bwamem2_reference_genomes_folder",
+                      "outdir",
+                      "human_phix_blast_index_name",
+                      "human_phix_bwamem2_index_name"
+                    ]
+                },
+                {
+                    "description": "Required fields when samplesheet is provided.",
+                    "required": [
+                      "samplesheet",
+                      "blast_reference_genomes_folder",
+                      "bwamem2_reference_genomes_folder"
+                  ]
+                }
             ],
             "properties": {
                 "study_accession": {
@@ -33,6 +46,16 @@
                 "private_study": {
                     "type": "boolean",
                     "description": "To use if the ENA study is private"
+                },
+                "samplesheet": {
+                    "type": "string",
+                    "format": "file-path",
+                    "mimetype": "text/csv",
+                    "pattern": "^\\S+\\.csv$",
+                    "schema": "assets/schema_input.json",
+                    "description": "Path to comma-separated file containing information about the raw reads with the prefix to be used.",
+                    "help_text": "You will need to create a design file with information about the raw reads running the pipeline. Use this parameter to specify its location. It has to be a comma-separated file with 3 columns, and a header row.",
+                    "fa_icon": "fas fa-file-csv"
                 },
                 "assembler": {
                     "type": "string",

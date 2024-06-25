@@ -1,5 +1,5 @@
 {
-    "$schema": "http://json-schema.org/draft-07/schema",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "https://raw.githubusercontent.com/ebi-metagenomics/miassembler/master/assets/schema_input.json",
     "title": "ebi-metagenomics/miassembler pipeline - params.input schema",
     "description": "Schema for the file provided with params.input",
@@ -7,7 +7,12 @@
     "items": {
         "type": "object",
         "properties": {
-            "sample": {
+            "study_accession": {
+                "type": "string",
+                "pattern": "^\\S+$",
+                "errorMessage": "Sample name must be provided and cannot contain spaces"
+            },
+            "reads_accession": {
                 "type": "string",
                 "pattern": "^\\S+$",
                 "errorMessage": "Sample name must be provided and cannot contain spaces"
@@ -29,8 +34,18 @@
                         "maxLength": 0
                     }
                 ]
+            },
+            "library_layout": {
+                "type": "string",
+                "enum": ["single", "paired"],
+                "errorMessage": "library_layout should be only 'single' or 'paired' value"
+            },
+            "library_strategy": {
+                "type": "string",
+                "enum": ["metagenomic", "metatranscriptomic", "genomic", "transcriptomic", "other"],
+                "errorMessage": "library strategy should be only value from list: 'metagenomic', 'metatranscriptomic', 'genomic', 'transcriptomic', 'other'"
             }
         },
-        "required": ["sample", "fastq_1"]
+        "required": ["study_accession","reads_accession", "fastq_1", "library_layout", "library_strategy"]
     }
 }

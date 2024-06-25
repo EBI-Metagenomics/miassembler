@@ -4,7 +4,7 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { paramsSummaryLog; paramsSummaryMap } from 'plugin/nf-schema'
+include { validateParameters; paramsSummaryLog; paramsSummaryMap; samplesheetToList } from 'plugin/nf-schema'
 
 def logo = NfcoreTemplate.logo(workflow, params.monochrome_logs)
 def citation = '\n' + WorkflowMain.citation(workflow) + '\n'
@@ -12,6 +12,14 @@ def summary_params = paramsSummaryMap(workflow)
 
 // Print parameter summary log to screen
 log.info logo + paramsSummaryLog(workflow) + citation
+
+validateParameters()
+
+if (params.help) {
+   log.info paramsHelp("nextflow run ebi-metagenomics/miassembler --help")
+   exit 0
+}
+
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -69,29 +77,60 @@ workflow MIASSEMBLER {
 
     ch_versions = Channel.empty()
 
-    fetch_tool_config = file("${projectDir}/assets/fetch_tool_anonymous.json")
-    if ( params.private_study ) {
-        fetch_tool_config = file("${projectDir}/assets/fetch_tool_credentials.json")
-    }
-
-    FETCHTOOL_READS(
-        [ [id: params.reads_accession], params.study_accession, params.reads_accession ],
-        fetch_tool_config
-    )
-
-    ch_versions = ch_versions.mix(FETCHTOOL_READS.out.versions)
-
-    // Push the library strategy into the meta of the reads, this is to make it easier to handle downstream
-    fetch_reads_transformed = FETCHTOOL_READS.out.reads.map { meta, reads, library_strategy, library_layout -> {
-            [ meta + [
-                //  -- The metadata will be overriden by the parameters -- //
-                "library_strategy": params.library_strategy ?: library_strategy,
-                "library_layout": params.library_layout ?: library_layout,
-                "single_end": params.single_end ?: library_layout == "single"
-            ], reads ]
+    if (params.samplesheet) {
+        groupReads = { study_accession, reads_accession, fq1, fq2, library_layout, library_strategy ->
+            if (fq2 == []) {
+                return tuple(["id": reads_accession,
+                              "study_accession": study_accession,
+                              "library_strategy": library_strategy,
+                              "library_layout": library_layout,
+                              "single_end": true],
+                             [fq1])
+            }
+            else {
+                return tuple(["id": reads_accession,
+                              "study_accession": study_accession,
+                              "library_strategy": library_strategy,
+                              "library_layout": library_layout,
+                              "single_end": false],
+                             [fq1, fq2])
+            }
         }
+        samplesheet = Channel.fromList(samplesheetToList(params.samplesheet, "./assets/schema_input.json"))
+        fetch_reads_transformed = samplesheet.map(groupReads) // [ study, sample, read1, [read2], library_layout, library_strategy ]
     }
+    else {
+        fetch_tool_config = file("${projectDir}/assets/fetch_tool_anonymous.json")
+        if ( params.private_study ) {
+            fetch_tool_config = file("${projectDir}/assets/fetch_tool_credentials.json")
+        }
 
+        FETCHTOOL_READS(
+            [ [id: params.reads_accession], params.study_accession, params.reads_accession ],
+            fetch_tool_config
+        )
+
+        ch_versions = ch_versions.mix(FETCHTOOL_READS.out.versions)
+
+        // Push the library strategy into the meta of the reads, this is to make it easier to handle downstream
+        fetch_reads_transformed = FETCHTOOL_READS.out.reads.map { meta, reads, library_strategy, library_layout -> {
+                [ meta + [
+                    //  -- The metadata will be overriden by the parameters -- //
+                    "library_strategy": params.library_strategy ?: library_strategy,
+                    "library_layout": params.library_layout ?: library_layout,
+                    "single_end": params.single_end ?: library_layout == "single"
+                ], reads ]
+            }
+        }
+
+        // Metadata for MultiQC
+        fetch_tool_metadata = FETCHTOOL_READS.out.metadata_tsv.map { it[1] }.collectFile(
+            name: 'fetch_tool_mqc.tsv',
+            newLine: true,
+            keepHeader: true,
+            skip: 1
+        )
+    }
     FASTQC_BEFORE (
         fetch_reads_transformed
     )
@@ -190,14 +229,6 @@ workflow MIASSEMBLER {
         ch_versions.unique().collectFile(name: 'collated_versions.yml')
     )
 
-    // Metadata for MultiQC
-    fetch_tool_metadata = FETCHTOOL_READS.out.metadata_tsv.map { it[1] }.collectFile(
-        name: 'fetch_tool_mqc.tsv',
-        newLine: true,
-        keepHeader: true,
-        skip: 1
-    )
-
     //
     // MODULE: MultiQC
     //
@@ -211,7 +242,9 @@ workflow MIASSEMBLER {
     ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
     ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
     ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
-    ch_multiqc_files = ch_multiqc_files.mix(fetch_tool_metadata)
+    if (!params.samplesheet) {
+        ch_multiqc_files = ch_multiqc_files.mix(fetch_tool_metadata)
+    }
     ch_multiqc_files = ch_multiqc_files.mix(FASTQC_BEFORE.out.zip.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(FASTQC_AFTER.out.zip.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(ASSEMBLY_COVERAGE.out.samtools_idxstats.collect{ it[1] }.ifEmpty([]))
