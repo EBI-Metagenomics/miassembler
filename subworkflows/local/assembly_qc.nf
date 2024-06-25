@@ -2,7 +2,6 @@ include { BLAST_BLASTN as BLAST_BLASTN_HUMAN_PHIX } from '../../modules/nf-core/
 include { BLAST_BLASTN as BLAST_BLASTN_HOST       } from '../../modules/nf-core/blast/blastn/main'
 include { SEQKIT_GREP                             } from '../../modules/nf-core/seqkit/grep/main'
 include { SEQKIT_SEQ                              } from '../../modules/nf-core/seqkit/seq/main'
-include { PUBLISH_DECONTAMINATED                  } from '../../modules/local/publish_decontaminated'
 
 workflow ASSEMBLY_QC {
 
@@ -54,18 +53,15 @@ workflow ASSEMBLY_QC {
 
         ch_versions = ch_versions.mix(BLAST_BLASTN_HOST.out.versions.first())
 
-        contaminated_contigs = Channel.of( BLAST_BLASTN_HUMAN_PHIX.out.txt, BLAST_BLASTN_HOST.out.txt )
-            .collectFile(name: "contaminated_contigs_host.txt", newLine: true)
+        contaminated_contigs = BLAST_BLASTN_HUMAN_PHIX.out.txt.mix( BLAST_BLASTN_HOST.out.txt )
     } else {
         contaminated_contigs = BLAST_BLASTN_HUMAN_PHIX.out.txt
     }
 
-    // TODO: this process only function is to publish the decontaminated contigs txt file
-    PUBLISH_DECONTAMINATED( contaminated_contigs )
-
+    // TODO: this is not fit for samplesheets kind of inputs
     SEQKIT_GREP(
         SEQKIT_SEQ.out.fastx,
-        contaminated_contigs.map { meta, hits_txt -> { hits_txt }}
+        contaminated_contigs.map { meta, hits_txt -> { hits_txt }}.collectFile(name: "contaminated_contigs.txt", newLine: true)
     )
 
     ch_versions = ch_versions.mix(SEQKIT_GREP.out.versions)
