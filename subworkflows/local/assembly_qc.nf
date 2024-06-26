@@ -2,7 +2,6 @@ include { BLAST_BLASTN as BLAST_BLASTN_HUMAN_PHIX } from '../../modules/nf-core/
 include { BLAST_BLASTN as BLAST_BLASTN_HOST       } from '../../modules/nf-core/blast/blastn/main'
 include { SEQKIT_GREP                             } from '../../modules/nf-core/seqkit/grep/main'
 include { SEQKIT_SEQ                              } from '../../modules/nf-core/seqkit/seq/main'
-include { PUBLISH_DECONTAMINATED                  } from '../../modules/local/publish_decontaminated'
 
 workflow ASSEMBLY_QC {
 
@@ -40,7 +39,7 @@ workflow ASSEMBLY_QC {
         contaminated_contigs = BLAST_BLASTN_HUMAN_PHIX.out.txt
     }
 
-    if ( host_reference_genome != null) {
+    if ( host_reference_genome != null ) {
 
         ch_blast_host_refs = Channel.fromPath( "${params.blast_reference_genomes_folder}/${host_reference_genome}*", checkIfExists: true)
             .collect().map {
@@ -54,23 +53,25 @@ workflow ASSEMBLY_QC {
 
         ch_versions = ch_versions.mix(BLAST_BLASTN_HOST.out.versions.first())
 
-        contaminated_contigs = Channel.of( BLAST_BLASTN_HUMAN_PHIX.out.txt, BLAST_BLASTN_HOST.out.txt )
-            .collectFile(name: "contaminated_contigs_host.txt", newLine: true)
-    } else {
-        contaminated_contigs = BLAST_BLASTN_HUMAN_PHIX.out.txt
+        contaminated_contigs = contaminated_contigs.mix( BLAST_BLASTN_HOST.out.txt )
     }
 
-    // TODO: this process only function is to publish the decontaminated contigs txt file
-    PUBLISH_DECONTAMINATED( contaminated_contigs )
-
+    // TODO: this is not fit for samplesheets kind of inputs, it should .join with the contaminated contigs channel
     SEQKIT_GREP(
         SEQKIT_SEQ.out.fastx,
-        contaminated_contigs.map { meta, hits_txt -> { hits_txt }}
+        contaminated_contigs.map { meta, hits_txt -> { hits_txt }}.collectFile(name: "contaminated_contigs.txt", newLine: true)
     )
+
+    if ( !params.remove_human_phix && host_reference_genome == null ) {
+        // No decontamination //
+        filtered_contigs = assembly
+    } else {
+        filtered_contigs = SEQKIT_GREP.out.filter
+    }
 
     ch_versions = ch_versions.mix(SEQKIT_GREP.out.versions)
 
     emit:
-    filtered_contigs = SEQKIT_GREP.out.filter
+    filtered_contigs = filtered_contigs
     versions         = ch_versions
 }
