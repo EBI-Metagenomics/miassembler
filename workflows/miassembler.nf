@@ -77,32 +77,43 @@ workflow MIASSEMBLER {
 
     ch_versions = Channel.empty()
 
-    if (params.samplesheet) {
-        groupReads = { study_accession, reads_accession, fq1, fq2, library_layout, library_strategy ->
+    if ( params.samplesheet ) {
+        groupReads = { study_accession, reads_accession, fq1, fq2, library_layout, library_strategy, assembly_memory ->
             if (fq2 == []) {
                 return tuple(["id": reads_accession,
                               "study_accession": study_accession,
                               "library_strategy": library_strategy,
                               "library_layout": library_layout,
-                              "single_end": true],
-                             [fq1])
-            }
-            else {
+                              "single_end": true,
+                              "assembly_memory": assembly_memory ?: params.assembly_memory
+                            ],
+                            [fq1]
+                        )
+            } else {
                 return tuple(["id": reads_accession,
                               "study_accession": study_accession,
                               "library_strategy": library_strategy,
                               "library_layout": library_layout,
-                              "single_end": false],
-                             [fq1, fq2])
+                              "single_end": false,
+                              "assembly_memory": assembly_memory ?: params.assembly_memory
+                            ],
+                            [fq1, fq2])
             }
         }
+
         samplesheet = Channel.fromList(samplesheetToList(params.samplesheet, "./assets/schema_input.json"))
-        fetch_reads_transformed = samplesheet.map(groupReads) // [ study, sample, read1, [read2], library_layout, library_strategy ]
-    }
-    else {
-        fetch_tool_config = file("${projectDir}/assets/fetch_tool_anonymous.json")
+
+        // [ study, sample, read1, [read2], library_layout, library_strategy, assembly_memory ]
+        fetch_reads_transformed = samplesheet.map(groupReads)
+
+        fetch_reads_transformed.view()
+
+    } else {
+        // TODO: remove when the fetch tools get's published on bioconda
+        fetch_tool_config = file("${projectDir}/assets/fetch_tool_anonymous.json", checkIfExists: true)
+
         if ( params.private_study ) {
-            fetch_tool_config = file("${projectDir}/assets/fetch_tool_credentials.json")
+            fetch_tool_config = file("${projectDir}/assets/fetch_tool_credentials.json", checkIfExists: true)
         }
 
         FETCHTOOL_READS(
@@ -131,6 +142,7 @@ workflow MIASSEMBLER {
             skip: 1
         )
     }
+
     FASTQC_BEFORE (
         fetch_reads_transformed
     )
@@ -166,6 +178,7 @@ workflow MIASSEMBLER {
             error "Incompatible assembler and/or reads layout. We can't assembly data that is. Reads - single end value: ${meta.single_end}."
         }
     }
+
     qc_reads_extended.branch { meta, reads ->
         megahit: meta.assembler == "megahit"
         xspades: ["metaspades", "spades"].contains(meta.assembler)
@@ -211,8 +224,7 @@ workflow MIASSEMBLER {
 
     // Coverage //
     ASSEMBLY_COVERAGE(
-        qc_reads_extended,
-        ASSEMBLY_QC.out.filtered_contigs
+        qc_reads_extended.join( ASSEMBLY_QC.out.filtered_contigs )
     )
 
     ch_versions = ch_versions.mix(ASSEMBLY_COVERAGE.out.versions)

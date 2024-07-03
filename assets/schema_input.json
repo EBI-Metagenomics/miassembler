@@ -44,8 +44,13 @@
                 "type": "string",
                 "enum": ["metagenomic", "metatranscriptomic", "genomic", "transcriptomic", "other"],
                 "errorMessage": "library strategy should be only value from list: 'metagenomic', 'metatranscriptomic', 'genomic', 'transcriptomic', 'other'"
+            },
+            "assembly_memory": {
+                "type": "integer",
+                "default": null,
+                "description": "Default memory allocated for the assembly process for the run."
             }
         },
-        "required": ["study_accession","reads_accession", "fastq_1", "library_layout", "library_strategy"]
+        "required": ["study_accession", "reads_accession", "fastq_1", "library_layout", "library_strategy"]
     }
 }

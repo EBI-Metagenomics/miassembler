@@ -24,16 +24,12 @@
                     "blast/blastn": {
                         "branch": "master",
                         "git_sha": "209e5a3e2753c5e628736a662c877c20f341ee15",
-                        "installed_by": ["modules"]
+                        "installed_by": ["modules"],
+                        "patch": "modules/nf-core/blast/blastn/blast-blastn.diff"
                     },
                     "bwamem2/index": {
                         "branch": "master",
                         "git_sha": "3f5420aa22e00bd030a2556dfdffc9e164ec0ec5",
-                        "installed_by": ["modules"]
-                    },
-                    "bwamem2/mem": {
-                        "branch": "master",
-                        "git_sha": "a64788f5ad388f1d2ac5bd5f1f3f8fc81476148c",
                         "installed_by": ["modules"]
                     },
                     "custom/dumpsoftwareversions": {

@@ -29,6 +29,7 @@ Input/output options
   --study_accession                       [string]  The ENA Study secondary accession
   --reads_accession                       [string]  The ENA Run primary accession
   --private_study                         [boolean] To use if the ENA study is private
+  --samplesheet                           [string]  Path to comma-separated file containing information about the raw reads with the prefix to be used.
   --assembler                             [string]  The short reads assembler (accepted: spades, metaspades, megahit)
   --single_end                            [boolean] Force the single_end value for the study / reads
   --library_strategy                      [string]  Force the library_strategy value for the study / reads (accepted: metagenomic, metatranscriptomic,

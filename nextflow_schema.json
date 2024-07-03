@@ -14,22 +14,18 @@
                 {
                     "description": "Required fields when samplesheet is not provided.",
                     "required": [
-                      "study_accession",
-                      "reads_accession",
-                      "blast_reference_genomes_folder",
-                      "bwamem2_reference_genomes_folder",
-                      "outdir",
-                      "human_phix_blast_index_name",
-                      "human_phix_bwamem2_index_name"
+                        "study_accession",
+                        "reads_accession",
+                        "blast_reference_genomes_folder",
+                        "bwamem2_reference_genomes_folder",
+                        "outdir",
+                        "human_phix_blast_index_name",
+                        "human_phix_bwamem2_index_name"
                     ]
                 },
                 {
                     "description": "Required fields when samplesheet is provided.",
-                    "required": [
-                      "samplesheet",
-                      "blast_reference_genomes_folder",
-                      "bwamem2_reference_genomes_folder"
-                  ]
+                    "required": ["samplesheet", "blast_reference_genomes_folder", "bwamem2_reference_genomes_folder"]
                 }
             ],
             "properties": {

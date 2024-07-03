@@ -1,0 +1,14 @@
+Changes in module 'nf-core/blast/blastn'
+--- modules/nf-core/blast/blastn/main.nf
++++ modules/nf-core/blast/blastn/main.nf
+@@ -20,7 +20,7 @@
+ 
+     script:
+     def args = task.ext.args ?: ''
+-    def prefix = task.ext.prefix ?: "${meta.id}"
++    def prefix = task.ext.prefix ?: "${meta2.id}"
+     def is_compressed = fasta.getExtension() == "gz" ? true : false
+     def fasta_name = is_compressed ? fasta.getBaseName() : fasta
+ 
+
+************************************************************
