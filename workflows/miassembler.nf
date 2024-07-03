@@ -77,7 +77,10 @@ workflow MIASSEMBLER {
 
     ch_versions = Channel.empty()
 
+    fetch_tool_metadata = Channel.empty()
+
     if ( params.samplesheet ) {
+
         groupReads = { study_accession, reads_accession, fq1, fq2, library_layout, library_strategy, assembly_memory ->
             if (fq2 == []) {
                 return tuple(["id": reads_accession,
@@ -105,8 +108,6 @@ workflow MIASSEMBLER {
 
         // [ study, sample, read1, [read2], library_layout, library_strategy, assembly_memory ]
         fetch_reads_transformed = samplesheet.map(groupReads)
-
-        fetch_reads_transformed.view()
 
     } else {
         // TODO: remove when the fetch tools get's published on bioconda
@@ -254,9 +255,7 @@ workflow MIASSEMBLER {
     ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
     ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
     ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
-    if (!params.samplesheet) {
-        ch_multiqc_files = ch_multiqc_files.mix(fetch_tool_metadata)
-    }
+    ch_multiqc_files = ch_multiqc_files.mix(fetch_tool_metadata.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(FASTQC_BEFORE.out.zip.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(FASTQC_AFTER.out.zip.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(ASSEMBLY_COVERAGE.out.samtools_idxstats.collect{ it[1] }.ifEmpty([]))
