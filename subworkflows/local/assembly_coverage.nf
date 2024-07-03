@@ -21,10 +21,10 @@ workflow ASSEMBLY_COVERAGE {
 
     ch_versions = ch_versions.mix(BWAMEM2_INDEX.out.versions)
 
-    bwa_index_reads = BWAMEM2_INDEX.out.index.join( reads )
+    bwa_reads_index = reads.join( BWAMEM2_INDEX.out.index )
 
     BWAMEM2_MEM_COVERAGE(
-        bwa_index_reads
+        bwa_reads_index
     )
 
     ch_versions = ch_versions.mix(BWAMEM2_MEM_COVERAGE.out.versions)

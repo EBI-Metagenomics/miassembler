@@ -45,6 +45,12 @@
                 "enum": ["metagenomic", "metatranscriptomic", "genomic", "transcriptomic", "other"],
                 "errorMessage": "library strategy should be only value from list: 'metagenomic', 'metatranscriptomic', 'genomic', 'transcriptomic', 'other'"
             },
+            "assembler": {
+                "type": "string",
+                "enum": ["spades", "metaspades", "megahit"],
+                "default": null,
+                "description": "The short reads assembler"
+            },
             "assembly_memory": {
                 "type": "integer",
                 "default": null,
