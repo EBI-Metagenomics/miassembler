@@ -20,10 +20,13 @@ process SEQKIT_GREP {
 
     script:
     def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
     // fasta or fastq. Exact pattern match .fasta or .fa suffix with optional .gz (gzip) suffix
     def suffix = task.ext.suffix ?: "${sequence}" ==~ /(.*f[astn]*a(.gz)?$)/ ? "fa" : "fq"
     def pattern_file = pattern ? "-f ${pattern}" : ""
+
+    def pattern_filename = pattern.getName()
+    def pattern_name = pattern_filename.split('\\.')[0]
+    def prefix = task.ext.prefix ?: "${meta.id}_${pattern_name}"
 
     """
     seqkit \\
