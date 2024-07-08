@@ -77,32 +77,46 @@ workflow MIASSEMBLER {
 
     ch_versions = Channel.empty()
 
-    if (params.samplesheet) {
-        groupReads = { study_accession, reads_accession, fq1, fq2, library_layout, library_strategy ->
+    fetch_tool_metadata = Channel.empty()
+
+    if ( params.samplesheet ) {
+
+        groupReads = { study_accession, reads_accession, fq1, fq2, library_layout, library_strategy, assembler, assembly_memory ->
             if (fq2 == []) {
                 return tuple(["id": reads_accession,
                               "study_accession": study_accession,
                               "library_strategy": library_strategy,
                               "library_layout": library_layout,
-                              "single_end": true],
-                             [fq1])
-            }
-            else {
+                              "single_end": true,
+                              "assembler": assembler ?: params.assembler,
+                              "assembly_memory": assembly_memory ?: params.assembly_memory
+                            ],
+                            [fq1]
+                        )
+            } else {
                 return tuple(["id": reads_accession,
                               "study_accession": study_accession,
                               "library_strategy": library_strategy,
                               "library_layout": library_layout,
-                              "single_end": false],
-                             [fq1, fq2])
+                              "single_end": false,
+                              "assembler": assembler ?: params.assembler,
+                              "assembly_memory": assembly_memory ?: params.assembly_memory
+                            ],
+                            [fq1, fq2])
             }
         }
+
         samplesheet = Channel.fromList(samplesheetToList(params.samplesheet, "./assets/schema_input.json"))
-        fetch_reads_transformed = samplesheet.map(groupReads) // [ study, sample, read1, [read2], library_layout, library_strategy ]
-    }
-    else {
-        fetch_tool_config = file("${projectDir}/assets/fetch_tool_anonymous.json")
+
+        // [ study, sample, read1, [read2], library_layout, library_strategy, assembly_memory ]
+        fetch_reads_transformed = samplesheet.map(groupReads)
+
+    } else {
+        // TODO: remove when the fetch tools get's published on bioconda
+        fetch_tool_config = file("${projectDir}/assets/fetch_tool_anonymous.json", checkIfExists: true)
+
         if ( params.private_study ) {
-            fetch_tool_config = file("${projectDir}/assets/fetch_tool_credentials.json")
+            fetch_tool_config = file("${projectDir}/assets/fetch_tool_credentials.json", checkIfExists: true)
         }
 
         FETCHTOOL_READS(
@@ -116,6 +130,8 @@ workflow MIASSEMBLER {
         fetch_reads_transformed = FETCHTOOL_READS.out.reads.map { meta, reads, library_strategy, library_layout -> {
                 [ meta + [
                     //  -- The metadata will be overriden by the parameters -- //
+                    "assembler": params.assembler,
+                    "assembly_memory": params.assembler_memory,
                     "library_strategy": params.library_strategy ?: library_strategy,
                     "library_layout": params.library_layout ?: library_layout,
                     "single_end": params.single_end ?: library_layout == "single"
@@ -131,6 +147,7 @@ workflow MIASSEMBLER {
             skip: 1
         )
     }
+
     FASTQC_BEFORE (
         fetch_reads_transformed
     )
@@ -151,21 +168,23 @@ workflow MIASSEMBLER {
     /***************************/
     /*
         The selection process ensures that:
-        - The user selected assembler is always used.
+        - The user selected assembler is always used (either from the samplesheet assembler column (with precedesnse) or the params.assembler)
         - Single-end reads are assembled with MEGAHIT, unless specified otherwise.
         - Paired-end reads are assembled with MetaSPAdes, unless specified otherwise
         - An error is raised if the assembler and read layout are incompatible (shouldn't happen...)
     */
     qc_reads_extended = READS_QC.out.qc_reads.map { meta, reads ->
-        if ( params.assembler == "megahit" || ( meta.single_end && params.assembler == null ) ) {
+        def selected_assembler = meta.assembler;
+        if ( selected_assembler == "megahit" || ( meta.single_end && selected_assembler == null ) ) {
             return [ meta + [assembler: "megahit", assembler_version: params.megahit_version], reads]
-        } else if ( ["metaspades", "spades"].contains(params.assembler) || ( !meta.single_end && params.assembler == null ) ) {
-            def xspades_assembler = params.assembler ?: "metaspades" // Default to "metaspades" if the user didn't select one
+        } else if ( ["metaspades", "spades"].contains(selected_assembler) || ( !meta.single_end && selected_assembler == null ) ) {
+            def xspades_assembler = selected_assembler ?: "metaspades" // Default to "metaspades" if the user didn't select one
             return [ meta + [assembler: xspades_assembler, assembler_version: params.spades_version], reads]
         } else {
             error "Incompatible assembler and/or reads layout. We can't assembly data that is. Reads - single end value: ${meta.single_end}."
         }
     }
+
     qc_reads_extended.branch { meta, reads ->
         megahit: meta.assembler == "megahit"
         xspades: ["metaspades", "spades"].contains(meta.assembler)
@@ -186,7 +205,6 @@ workflow MIASSEMBLER {
 
     SPADES(
         qc_reads.xspades.map { meta, reads -> [meta, reads, [], []] },
-        params.assembler ?: "metaspades",
         [], // yml input parameters, which we don't use
         []  // hmm, not used
     )
@@ -211,8 +229,7 @@ workflow MIASSEMBLER {
 
     // Coverage //
     ASSEMBLY_COVERAGE(
-        qc_reads_extended,
-        ASSEMBLY_QC.out.filtered_contigs
+        qc_reads_extended.join( ASSEMBLY_QC.out.filtered_contigs )
     )
 
     ch_versions = ch_versions.mix(ASSEMBLY_COVERAGE.out.versions)
@@ -242,9 +259,7 @@ workflow MIASSEMBLER {
     ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
     ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
     ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
-    if (!params.samplesheet) {
-        ch_multiqc_files = ch_multiqc_files.mix(fetch_tool_metadata)
-    }
+    ch_multiqc_files = ch_multiqc_files.mix(fetch_tool_metadata.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(FASTQC_BEFORE.out.zip.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(FASTQC_AFTER.out.zip.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(ASSEMBLY_COVERAGE.out.samtools_idxstats.collect{ it[1] }.ifEmpty([]))

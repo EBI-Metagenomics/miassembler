@@ -17,8 +17,9 @@ nextflow_pipeline {
 
         then {
             with(workflow) {
-                assert !success
-                assert trace.failed().count{ task -> task.name.contains("SPADES") } == 2
+                assert success
+                assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 1
+                assert trace.succeeded().count{ task -> task.name.contains("MEGAHIT") } == 1
             }
         }
 

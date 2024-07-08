@@ -6,12 +6,14 @@ include { METABAT2_JGISUMMARIZEBAMCONTIGDEPTHS } from '../../modules/nf-core/met
 workflow ASSEMBLY_COVERAGE {
 
     take:
-    reads            // [ val(meta), path(reads) ]
-    assembly         // [ val(meta), path(assembly_fasta) ]
+    reads_assembly   // [ val(meta), path(reads), path(assembly_fasta) ]
 
     main:
 
     ch_versions = Channel.empty()
+
+    reads = reads_assembly.map { meta, reads, _ -> [meta, reads]}
+    assembly = reads_assembly.map { meta, _, assembly -> [meta, assembly]}
 
     BWAMEM2_INDEX(
         assembly
@@ -19,9 +21,10 @@ workflow ASSEMBLY_COVERAGE {
 
     ch_versions = ch_versions.mix(BWAMEM2_INDEX.out.versions)
 
+    bwa_reads_index = reads.join( BWAMEM2_INDEX.out.index )
+
     BWAMEM2_MEM_COVERAGE(
-        reads,
-        BWAMEM2_INDEX.out.index
+        bwa_reads_index
     )
 
     ch_versions = ch_versions.mix(BWAMEM2_MEM_COVERAGE.out.versions)

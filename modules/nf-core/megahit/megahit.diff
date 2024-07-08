@@ -1,35 +1,19 @@
 Changes in module 'nf-core/megahit'
 --- modules/nf-core/megahit/main.nf
 +++ modules/nf-core/megahit/main.nf
-@@ -25,6 +25,15 @@
-     def args = task.ext.args ?: ''
-     def args2 = task.ext.args2 ?: ''
-     def prefix = task.ext.prefix ?: "${meta.id}"
-+
-+    def restart = ""
-+    if (task.attempt > 1) {
-+        // Set of extra flags to restart the assembly process
-+        restart = "--continue"
-+    }
-+    // FIXME: figure out how to use the continue mechanism
-+    //        the problem modifyng the flags (adding --continue) forces the expiration
-+    //        the nextflow cache hence a new working directory
-     if (meta.single_end) {
-         """
-         megahit \\
-@@ -32,6 +41,11 @@
-             -t $task.cpus \\
+@@ -33,6 +33,11 @@
              $args \\
              --out-prefix $prefix
-+
+ 
 +        if [ ! -s megahit_out/*.fa ]; then
 +            echo "No contigs assembled" | tee /dev/stderr
 +            exit 1
 +        fi
- 
++
          pigz \\
              --no-name \\
-@@ -54,6 +68,11 @@
+             -p $task.cpus \\
+@@ -54,6 +59,11 @@
              $args \\
              --out-prefix $prefix
  
