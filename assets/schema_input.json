@@ -10,7 +10,7 @@
             "study_accession": {
                 "type": "string",
                 "pattern": "^\\S+$",
-                "errorMessage": "Sample name must be provided and cannot contain spaces"
+                "errorMessage": "Study name must be provided and cannot contain spaces"
             },
             "reads_accession": {
                 "type": "string",
