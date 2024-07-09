@@ -11,7 +11,7 @@
 This pipeline is still in early development. It's mostly a direct port of the mi-automation assembly generation pipeline. Some of the bespoke scripts used to remove contaminated contigs or to calculate the coverage of the assembly were replaced with tools provided by the community ([SeqKit](https://doi.org/10.1371/journal.pone.0163962) and [quast](https://doi.org/10.1093/bioinformatics/btu153) respectively).
 
 > [!NOTE]
-> This pipeline uses the nf-core template with some tweaks, but it's not part of nf-core.
+> This pipeline uses the [nf-core](https://nf-co.re) template with some tweaks, but it's not part of nf-core.
 
 ## Usage
 
@@ -72,6 +72,49 @@ nextflow run ebi-metagenomics/miassembler \
   --reads_accession SRR1631361
 ```
 
+### Samplesheet
+
+The samplesheet is a comma-separated file (.csv) with the following columns:
+
+- study_accession: Unique identifier for the study.
+- reads_accession: Unique identifier for the reads.
+- fastq_1: Full path to the first FastQ file.
+- fastq_2: Full path to the second FastQ file (for paired-end reads). Leave empty if single-end.
+- library_layout: Either single or paired.
+- library_strategy: One of metagenomic, metatranscriptomic, genomic, transcriptomic, or other.
+
+The header row is mandatory. Below is an example of a minimum required samplesheet:
+
+```csv
+study_accession,reads_accession,fastq_1,fastq_2,library_layout,library_strategy
+PRJ1,ERR1,/path/to/reads/ERR1_1.fq.gz,/path/to/reads/ERR1_2.fq.gz,paired,metagenomic
+PRJ2,ERR2,/path/to/reads/ERR2.fq.gz,,single,genomic
+```
+
+#### Full Samplesheet Example
+
+The pipeline can handle both single-end and paired-end reads. A full samplesheet for different library layouts and strategies might look like this:
+
+```csv
+study_accession,reads_accession,fastq_1,fastq_2,library_layout,library_strategy,assembler
+PRJ1,ERR1,/path/to/reads/ERR1_1.fq.gz,/path/to/reads/ERR1_2.fq.gz,paired,metagenomic
+PRJ2,ERR2,/path/to/reads/ERR2.fq.gz,,single,genomic,metaspades
+PRJ3,ERR3,/path/to/reads/ERR3_1.fq.gz,/path/to/reads/ERR3_2.fq.gz,paired,transcriptomic
+```
+
+It also allow to specify which assembler and how much memory in GB to use for the assembly process. Assembler and assembler memory columns:
+
+- assembler: One of spades, metaspades, or megahit.
+- assembly_memory: Integer value specifying the memory allocated for the assembly process.
+
+Example with additional columns:
+
+```csv
+study_accession,reads_accession,fastq_1,fastq_2,library_layout,library_strategy,assembler,assembly_memory
+PRJ1,ERR1,/path/to/reads/ERR1_1.fq.gz,/path/to/reads/ERR1_2.fq.gz,paired,metagenomic,spades,16
+PRJ2,ERR2,/path/to/reads/ERR2.fq.gz,,single,genomic,megahit,32
+```
+
 ## Outputs
 
 The outputs of the pipeline are organized as follows:
@@ -103,6 +146,12 @@ There is a very small test data set ready to use:
 
 ```bash
 nextflow run main.nf -resume -profile test,docker
+```
+
+It's also possible to run the [nf-test](https://www.nf-test.com/) suite with
+
+```bash
+nf-test test
 ```
 
 ### End to end tests

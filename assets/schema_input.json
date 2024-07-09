@@ -56,7 +56,7 @@
             "assembly_memory": {
                 "type": "integer",
                 "default": null,
-                "description": "Default memory allocated for the assembly process for the run."
+                "description": "Default memory (in GB) allocated for the assembly process for the run."
             }
         },
         "required": ["study_accession", "reads_accession", "fastq_1", "library_layout", "library_strategy"]
