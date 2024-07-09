@@ -31,12 +31,14 @@
                 "study_accession": {
                     "type": "string",
                     "fa_icon": "fas fa-address-card",
-                    "description": "The ENA Study secondary accession"
+                    "description": "The ENA Study secondary accession",
+                    "minLength": 3
                 },
                 "reads_accession": {
                     "type": "string",
                     "description": "The ENA Run primary accession",
-                    "fa_icon": "far fa-address-card"
+                    "fa_icon": "far fa-address-card",
+                    "minLength": 3
                 },
                 "private_study": {
                     "type": "boolean",

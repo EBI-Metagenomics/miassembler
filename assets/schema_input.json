@@ -10,12 +10,14 @@
             "study_accession": {
                 "type": "string",
                 "pattern": "^\\S+$",
-                "errorMessage": "Study name must be provided and cannot contain spaces"
+                "errorMessage": "Study name must be provided and cannot contain spaces",
+                "minLength": 3
             },
             "reads_accession": {
                 "type": "string",
                 "pattern": "^\\S+$",
-                "errorMessage": "Sample name must be provided and cannot contain spaces"
+                "errorMessage": "Sample name must be provided and cannot contain spaces",
+                "minLength": 3
             },
             "fastq_1": {
                 "type": "string",
