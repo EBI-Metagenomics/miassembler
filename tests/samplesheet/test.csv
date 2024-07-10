@@ -1,3 +1,4 @@
-study_accession,reads_accession,fastq_1,fastq_2,library_layout,library_strategy,assembler
-SRP115494,SRR6180434,ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR618/004/SRR6180434/SRR6180434_1.fastq.gz,ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR618/004/SRR6180434/SRR6180434_2.fastq.gz,paired,metagenomic
-DRP007622,DRR280712,ftp://ftp.sra.ebi.ac.uk/vol1/fastq/DRR280/DRR280712/DRR280712.fastq.gz,,single,metatranscriptomic,megahit
+study_accession,reads_accession,fastq_1,fastq_2,library_layout,library_strategy,assembler,assembly_memory
+SRP115494,SRR6180434,tests/test_reads/SRR6180434_1.fastq.gz,tests/test_reads/SRR6180434_2.fastq.gz,paired,metagenomic,,
+SRP115494,SRR5949318,tests/test_reads/SRR5949318_1.fastq.gz,tests/test_reads/SRR5949318_2.fastq.gz,paired,metagenomic,,
+DRP007622,DRR280712,tests/test_reads/DRR280712.fastq.gz,,single,metatranscriptomic,megahit,
