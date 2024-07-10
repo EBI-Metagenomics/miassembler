@@ -44,7 +44,7 @@ nextflow_pipeline {
                 assert success
                 assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 1
                 assert trace.succeeded().count{ task -> task.name.contains("MEGAHIT") } == 0
-                assert trace.succeeded().size() == 16
+                assert trace.succeeded().size() == 18
             }
         }
 
@@ -68,7 +68,7 @@ nextflow_pipeline {
                 assert success
                 assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 0
                 assert trace.succeeded().count{ task -> task.name.contains("MEGAHIT") } == 1
-                assert trace.tasks().size() == 16
+                assert trace.tasks().size() == 18
             }
         }
 
@@ -134,7 +134,7 @@ nextflow_pipeline {
                 assert success
                 assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 0
                 assert trace.succeeded().count{ task -> task.name.contains("MEGAHIT") } == 1
-                assert trace.tasks().size() == 16
+                assert trace.tasks().size() == 18
             }
         }
 
