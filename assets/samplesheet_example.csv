@@ -1,0 +1,3 @@
+study_accession,reads_accession,fastq_1,fastq_2,library_layout,library_strategy
+PRJ1,ERR1,my_reads/ERR1_1.fq.gz,my_reads/ERR1_2.fq.gz,paired,metagenomic
+PRJ2,ERR2,my_reads/ERR2.fq.gz,,single,other

@@ -4,7 +4,7 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { paramsSummaryLog; paramsSummaryMap } from 'plugin/nf-schema'
+include { validateParameters; paramsSummaryLog; paramsSummaryMap; samplesheetToList } from 'plugin/nf-schema'
 
 def logo = NfcoreTemplate.logo(workflow, params.monochrome_logs)
 def citation = '\n' + WorkflowMain.citation(workflow) + '\n'
@@ -13,15 +13,23 @@ def summary_params = paramsSummaryMap(workflow)
 // Print parameter summary log to screen
 log.info logo + paramsSummaryLog(workflow) + citation
 
+validateParameters()
+
+if (params.help) {
+   log.info paramsHelp("nextflow run ebi-metagenomics/miassembler --help")
+   exit 0
+}
+
+
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     CONFIG FILES
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-ch_multiqc_config          = Channel.fromPath("$projectDir/assets/multiqc_config.yml", checkIfExists: true)
-ch_multiqc_custom_config   = params.multiqc_config ? Channel.fromPath( params.multiqc_config, checkIfExists: true ) : Channel.empty()
-ch_multiqc_logo            = params.multiqc_logo   ? Channel.fromPath( params.multiqc_logo, checkIfExists: true ) : Channel.fromPath("$projectDir/assets/mgnify_logo.png")
+ch_multiqc_config          = file("$projectDir/assets/multiqc_config.yml", checkIfExists: true)
+ch_multiqc_custom_config   = params.multiqc_config ? file( params.multiqc_config, checkIfExists: true ) : []
+ch_multiqc_logo            = params.multiqc_logo   ? file( params.multiqc_logo, checkIfExists: true ) : file("$projectDir/assets/mgnify_logo.png", checkIfExists: true)
 ch_multiqc_custom_methods_description = params.multiqc_methods_description ? file(params.multiqc_methods_description, checkIfExists: true) : file("$projectDir/assets/methods_description_template.yml", checkIfExists: true)
 
 /*
@@ -49,7 +57,8 @@ include { ASSEMBLY_COVERAGE  } from '../subworkflows/local/assembly_coverage'
 //
 include { FASTQC as FASTQC_BEFORE      } from '../modules/nf-core/fastqc/main'
 include { FASTQC as FASTQC_AFTER       } from '../modules/nf-core/fastqc/main'
-include { MULTIQC                      } from '../modules/nf-core/multiqc/main'
+include { MULTIQC as MULTIQC_STUDY     } from '../modules/nf-core/multiqc/main'
+include { MULTIQC as MULTIQC_RUN       } from '../modules/nf-core/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS  } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 include { SPADES                       } from '../modules/nf-core/spades/main'
 include { MEGAHIT                      } from '../modules/nf-core/megahit/main'
@@ -69,26 +78,96 @@ workflow MIASSEMBLER {
 
     ch_versions = Channel.empty()
 
-    fetch_tool_config = file("${projectDir}/assets/fetch_tool_anonymous.json")
-    if ( params.private_study ) {
-        fetch_tool_config = file("${projectDir}/assets/fetch_tool_credentials.json")
+    fetch_tool_metadata = Channel.empty()
+
+    if ( params.samplesheet ) {
+
+        groupReads = { study_accession, reads_accession, fq1, fq2, library_layout, library_strategy, assembler, assembly_memory ->
+            if (fq2 == []) {
+                return tuple(["id": reads_accession,
+                              "study_accession": study_accession,
+                              "library_strategy": library_strategy,
+                              "library_layout": library_layout,
+                              "single_end": true,
+                              "assembler": assembler ?: params.assembler,
+                              "assembly_memory": assembly_memory ?: params.assembly_memory
+                            ],
+                            [fq1]
+                        )
+            } else {
+                return tuple(["id": reads_accession,
+                              "study_accession": study_accession,
+                              "library_strategy": library_strategy,
+                              "library_layout": library_layout,
+                              "single_end": false,
+                              "assembler": assembler ?: params.assembler,
+                              "assembly_memory": assembly_memory ?: params.assembly_memory
+                            ],
+                            [fq1, fq2])
+            }
+        }
+
+        samplesheet = Channel.fromList(samplesheetToList(params.samplesheet, "./assets/schema_input.json"))
+
+        // [ study, sample, read1, [read2], library_layout, library_strategy, assembly_memory ]
+        fetch_reads_transformed = samplesheet.map(groupReads)
+
+    } else {
+        // TODO: remove when the fetch tools get's published on bioconda
+        fetch_tool_config = file("${projectDir}/assets/fetch_tool_anonymous.json", checkIfExists: true)
+
+        if ( params.private_study ) {
+            fetch_tool_config = file("${projectDir}/assets/fetch_tool_credentials.json", checkIfExists: true)
+        }
+
+        FETCHTOOL_READS(
+            [ [id: params.reads_accession], params.study_accession, params.reads_accession ],
+            fetch_tool_config
+        )
+
+        ch_versions = ch_versions.mix(FETCHTOOL_READS.out.versions)
+
+        // Push the library strategy into the meta of the reads, this is to make it easier to handle downstream
+        fetch_reads_transformed = FETCHTOOL_READS.out.reads.map { meta, reads, library_strategy, library_layout -> {
+                [ meta + [
+                    //  -- The metadata will be overriden by the parameters -- //
+                    "assembler": params.assembler,
+                    "assembly_memory": params.assembler_memory,
+                    "library_strategy": params.library_strategy ?: library_strategy,
+                    "library_layout": params.library_layout ?: library_layout,
+                    "single_end": params.single_end ?: library_layout == "single"
+                ], reads ]
+            }
+        }
+
+        // Metadata for MultiQC
+        fetch_tool_metadata = FETCHTOOL_READS.out.metadata_tsv.map { it[1] }.collectFile(
+            name: 'fetch_tool_mqc.tsv',
+            newLine: true,
+            keepHeader: true,
+            skip: 1
+        )
     }
 
-    FETCHTOOL_READS(
-        [ [id: params.reads_accession], params.study_accession, params.reads_accession ],
-        fetch_tool_config
-    )
-
-    ch_versions = ch_versions.mix(FETCHTOOL_READS.out.versions)
-
-    // Push the library strategy into the meta of the reads, this is to make it easier to handle downstream
-    fetch_reads_transformed = FETCHTOOL_READS.out.reads.map { meta, reads, library_strategy, library_layout -> {
-            [ meta + [
-                //  -- The metadata will be overriden by the parameters -- //
-                "library_strategy": params.library_strategy ?: library_strategy,
-                "library_layout": params.library_layout ?: library_layout,
-                "single_end": params.single_end ?: library_layout == "single"
-            ], reads ]
+    /***************************/
+    /* Selecting the assembler */
+    /***************************/
+    /*
+        The selection process ensures that:
+        - The user selected assembler is always used (either from the samplesheet assembler column (with precedesnse) or the params.assembler)
+        - Single-end reads are assembled with MEGAHIT, unless specified otherwise.
+        - Paired-end reads are assembled with MetaSPAdes, unless specified otherwise
+        - An error is raised if the assembler and read layout are incompatible (shouldn't happen...)
+    */
+    fetch_reads_transformed = fetch_reads_transformed.map { meta, reads ->
+        def selected_assembler = meta.assembler;
+        if ( selected_assembler == "megahit" || ( meta.single_end && selected_assembler == null ) ) {
+            return [ meta + [assembler: "megahit", assembler_version: params.megahit_version], reads]
+        } else if ( ["metaspades", "spades"].contains(selected_assembler) || ( !meta.single_end && selected_assembler == null ) ) {
+            def xspades_assembler = selected_assembler ?: "metaspades" // Default to "metaspades" if the user didn't select one
+            return [ meta + [assembler: xspades_assembler, assembler_version: params.spades_version], reads]
+        } else {
+            error "Incompatible assembler and/or reads layout. We can't assembly data that is. Reads - single end value: ${meta.single_end}."
         }
     }
 
@@ -107,27 +186,7 @@ workflow MIASSEMBLER {
         READS_QC.out.qc_reads
     )
 
-    /***************************/
-    /* Selecting the assembler */
-    /***************************/
-    /*
-        The selection process ensures that:
-        - The user selected assembler is always used.
-        - Single-end reads are assembled with MEGAHIT, unless specified otherwise.
-        - Paired-end reads are assembled with MetaSPAdes, unless specified otherwise
-        - An error is raised if the assembler and read layout are incompatible (shouldn't happen...)
-    */
-    qc_reads_extended = READS_QC.out.qc_reads.map { meta, reads ->
-        if ( params.assembler == "megahit" || ( meta.single_end && params.assembler == null ) ) {
-            return [ meta + [assembler: "megahit", assembler_version: params.megahit_version], reads]
-        } else if ( ["metaspades", "spades"].contains(params.assembler) || ( !meta.single_end && params.assembler == null ) ) {
-            def xspades_assembler = params.assembler ?: "metaspades" // Default to "metaspades" if the user didn't select one
-            return [ meta + [assembler: xspades_assembler, assembler_version: params.spades_version], reads]
-        } else {
-            error "Incompatible assembler and/or reads layout. We can't assembly data that is. Reads - single end value: ${meta.single_end}."
-        }
-    }
-    qc_reads_extended.branch { meta, reads ->
+    READS_QC.out.qc_reads.branch { meta, reads ->
         megahit: meta.assembler == "megahit"
         xspades: ["metaspades", "spades"].contains(meta.assembler)
     }.set { qc_reads }
@@ -137,17 +196,8 @@ workflow MIASSEMBLER {
     /*********************/
     /*     Assembly     */
     /********************/
-    /* -- Clarification -- */
-    /*
-        At the moment, the pipeline only processes one set of reads at a time.
-        Therefore, running Spades, metaSpades, or MEGAHIT are mutually exclusive.
-        In order to support multiple runs, we need to refactor the code slightly.
-        We will need to use `.join()` to keep assemblies together with their corresponding reads.
-    */
-
     SPADES(
         qc_reads.xspades.map { meta, reads -> [meta, reads, [], []] },
-        params.assembler ?: "metaspades",
         [], // yml input parameters, which we don't use
         []  // hmm, not used
     )
@@ -172,8 +222,7 @@ workflow MIASSEMBLER {
 
     // Coverage //
     ASSEMBLY_COVERAGE(
-        qc_reads_extended,
-        ASSEMBLY_QC.out.filtered_contigs
+        READS_QC.out.qc_reads.join( ASSEMBLY_QC.out.filtered_contigs )
     )
 
     ch_versions = ch_versions.mix(ASSEMBLY_COVERAGE.out.versions)
@@ -190,14 +239,6 @@ workflow MIASSEMBLER {
         ch_versions.unique().collectFile(name: 'collated_versions.yml')
     )
 
-    // Metadata for MultiQC
-    fetch_tool_metadata = FETCHTOOL_READS.out.metadata_tsv.map { it[1] }.collectFile(
-        name: 'fetch_tool_mqc.tsv',
-        newLine: true,
-        keepHeader: true,
-        skip: 1
-    )
-
     //
     // MODULE: MultiQC
     //
@@ -207,41 +248,92 @@ workflow MIASSEMBLER {
     methods_description    = WorkflowMiassembler.methodsDescriptionText(workflow, ch_multiqc_custom_methods_description, params)
     ch_methods_description = Channel.value(methods_description)
 
-    ch_multiqc_files = Channel.empty()
-    ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
-    ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
-    ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
-    ch_multiqc_files = ch_multiqc_files.mix(fetch_tool_metadata)
-    ch_multiqc_files = ch_multiqc_files.mix(FASTQC_BEFORE.out.zip.collect{it[1]}.ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(FASTQC_AFTER.out.zip.collect{it[1]}.ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(ASSEMBLY_COVERAGE.out.samtools_idxstats.collect{ it[1] }.ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(QUAST.out.results.collect { it[1] }.ifEmpty([]))
+    ch_multiqc_base_files = Channel.empty()
+    ch_multiqc_base_files = ch_multiqc_base_files.mix( CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect() )
+    ch_multiqc_base_files = ch_multiqc_base_files.mix( ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml') )
+    ch_multiqc_base_files = ch_multiqc_base_files.mix( ch_methods_description.collectFile(name: 'methods_description_mqc.yaml') )
 
-    MULTIQC (
-        ch_multiqc_files.collect(),
-        ch_multiqc_config.toList(),
-        ch_multiqc_custom_config.toList(),
-        ch_multiqc_logo.toList(),
-        QUAST.out.results.map{meta, _ -> meta}
+    /**************************************/
+    /* MultiQC report for the whole study */
+    /**************************************/
+
+    def meta_by_study = { meta, result_artifact ->
+        [ meta.subMap("study_accession"), result_artifact ]
+    }
+
+    ch_multiqc_study_tools_files = Channel.empty()
+
+    ch_multiqc_study_tools_files = FASTQC_BEFORE.out.zip.map(meta_by_study)
+        .join( FASTQC_AFTER.out.zip.map(meta_by_study), failOnMismatch: true )
+        .join( ASSEMBLY_COVERAGE.out.samtools_idxstats.map(meta_by_study), failOnMismatch: true )
+        .join( QUAST.out.results.map(meta_by_study), failOnMismatch: true )
+
+    // TODO: include the fetchtool metadata
+    // if ( !params.samplesheet ) {
+    //     ch_multiqc_study_tools_files = ch_multiqc_study_tools_files.join( fetch_tool_metadata.map(meta_by_study), failOnMismatch: true )
+    // }
+
+    ch_multiqc_study_tools_files = ch_multiqc_study_tools_files.flatMap { meta, fastqc_before, fastqc_after, assembly_coverage, quast -> {
+            // Flatten the fastqc_before and fastqc_after lists
+            def flattened_fastqc_before = fastqc_before instanceof List ? fastqc_before.flatten() : [fastqc_before]
+            def flattened_fastqc_after = fastqc_after instanceof List ? fastqc_after.flatten() : [fastqc_after]
+            // Combine all elements into a single list
+            def all_files = flattened_fastqc_before + flattened_fastqc_after + [assembly_coverage, quast].flatten()
+            // Produce a tuple with meta and the flattened list of files
+            all_files.collect { file ->
+                [meta, file]
+            }
+        }
+    }.groupTuple()
+
+    MULTIQC_STUDY (
+        ch_multiqc_base_files.collect(),
+        ch_multiqc_study_tools_files,
+        ch_multiqc_config,
+        ch_multiqc_custom_config,
+        ch_multiqc_logo
     )
-    multiqc_report = MULTIQC.out.report.toList()
-}
 
-/*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    COMPLETION EMAIL AND SUMMARY
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*/
+    /**************************/
+    /* MultiQC report per run */
+    /*************************/
 
-workflow.onComplete {
-    if (params.email || params.email_on_fail) {
-        NfcoreTemplate.email(workflow, params, summary_params, projectDir, log, multiqc_report)
+    def meta_by_run = { meta, result_artifact ->
+        [ meta.subMap("study_accession", "id", "assembler", "assembler_version"), result_artifact ]
     }
-    NfcoreTemplate.dump_parameters(workflow, params)
-    NfcoreTemplate.summary(workflow, params, log)
-    if (params.hook_url) {
-        NfcoreTemplate.IM_notification(workflow, params, summary_params, projectDir, log)
-    }
+
+    ch_multiqc_run_tools_files = Channel.empty()
+
+    ch_multiqc_run_tools_files = FASTQC_BEFORE.out.zip.map(meta_by_run)
+        .join( FASTQC_AFTER.out.zip.map(meta_by_run), failOnMismatch: true )
+        .join( ASSEMBLY_COVERAGE.out.samtools_idxstats.map(meta_by_run), failOnMismatch: true )
+        .join( QUAST.out.results.map(meta_by_run), failOnMismatch: true )
+
+    // TODO: include the fetchtool metadata
+    // if ( !params.samplesheet ) {
+    //     ch_multiqc_run_tools_files = ch_multiqc_run_tools_files.join( fetch_tool_metadata.map(meta_by_run), failOnMismatch: true )
+    // }
+
+    ch_multiqc_run_tools_files = ch_multiqc_run_tools_files.flatMap { meta, fastqc_before, fastqc_after, assembly_coverage, quast -> {
+            // Flatten the fastqc_before and fastqc_after lists
+            def flattened_fastqc_before = fastqc_before instanceof List ? fastqc_before.flatten() : [fastqc_before]
+            def flattened_fastqc_after = fastqc_after instanceof List ? fastqc_after.flatten() : [fastqc_after]
+            // Combine all elements into a single list
+            def all_files = flattened_fastqc_before + flattened_fastqc_after + [assembly_coverage, quast].flatten()
+            // Produce a tuple with meta and the flattened list of files
+            all_files.collect { file ->
+                [meta, file]
+            }
+        }
+    }.groupTuple()
+
+    MULTIQC_RUN (
+        ch_multiqc_base_files.collect(),
+        ch_multiqc_run_tools_files,
+        ch_multiqc_config,
+        ch_multiqc_custom_config,
+        ch_multiqc_logo
+    )
 }
 
 /*

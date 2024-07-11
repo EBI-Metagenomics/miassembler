@@ -8,12 +8,7 @@ Changes in module 'nf-core/spades'
  
      conda "${moduleDir}/environment.yml"
      container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-@@ -9,17 +8,20 @@
- 
-     input:
-     tuple val(meta), path(illumina), path(pacbio), path(nanopore)
-+    val(metaspades)
-     path yml
+@@ -13,13 +12,15 @@
      path hmm
  
      output:
@@ -36,11 +31,11 @@ Changes in module 'nf-core/spades'
  
      when:
      task.ext.when == null || task.ext.when
-@@ -33,9 +35,15 @@
+@@ -33,9 +34,15 @@
      def nanopore_reads = nanopore ? "--nanopore $nanopore" : ""
      def custom_hmms = hmm ? "--custom-hmms $hmm" : ""
      def reads = yml ? "--dataset $yml" : "$illumina_reads $pacbio_reads $nanopore_reads"
-+    def metaspades_arg = metaspades == "metaspades" ? "--meta" : ""
++    def metaspades_arg = meta.assembler == "metaspades" ? "--meta" : ""
 +    // FIXME: figure out how to use spades retry mechanism
 +    //        the problem modifyng the flags or memory forces the expiration
 +    //        the nextflow cache hence a new working directory, 
@@ -52,7 +47,7 @@ Changes in module 'nf-core/spades'
          --threads $task.cpus \\
          --memory $maxmem \\
          $custom_hmms \\
-@@ -56,10 +64,13 @@
+@@ -56,10 +63,13 @@
          gzip -n ${prefix}.transcripts.fa
      fi
      if [ -f assembly_graph_with_scaffolds.gfa ]; then

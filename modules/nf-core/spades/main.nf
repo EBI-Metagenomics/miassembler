@@ -8,7 +8,6 @@ process SPADES {
 
     input:
     tuple val(meta), path(illumina), path(pacbio), path(nanopore)
-    val(metaspades)
     path yml
     path hmm
 
@@ -35,7 +34,7 @@ process SPADES {
     def nanopore_reads = nanopore ? "--nanopore $nanopore" : ""
     def custom_hmms = hmm ? "--custom-hmms $hmm" : ""
     def reads = yml ? "--dataset $yml" : "$illumina_reads $pacbio_reads $nanopore_reads"
-    def metaspades_arg = metaspades == "metaspades" ? "--meta" : ""
+    def metaspades_arg = meta.assembler == "metaspades" ? "--meta" : ""
     // FIXME: figure out how to use spades retry mechanism
     //        the problem modifyng the flags or memory forces the expiration
     //        the nextflow cache hence a new working directory, 

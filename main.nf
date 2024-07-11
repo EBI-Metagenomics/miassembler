@@ -26,6 +26,13 @@ if (params.help) {
 
 validateParameters()
 
+// Custom validation //
+// The conditional validation doesn't work yet -> https://github.com/nf-core/tools/issues/2619
+if ( !params.samplesheet && ( !params.study_accession || !params.reads_accession ) ) {
+    error "Either --samplesheet or both --study_accession and --reads_accession are required."
+    exit 1
+}
+
 log.info paramsSummaryLog(workflow)
 
 /*

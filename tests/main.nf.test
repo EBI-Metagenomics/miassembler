@@ -3,6 +3,29 @@ nextflow_pipeline {
     name "Test Workflow EBIMETAGENOMICS_MIASSEMBLER"
     script "main.nf"
 
+    // TODO: re-enable after the tests reads are on the repo
+    // test("Samplesheet spades") {
+
+    //     when {
+    //         params {
+    //             outdir = "tests/results"
+    //             assembler = "spades"
+    //             bwamem2_reference_genomes_folder = "${projectDir}/tests/human_phix/bwa2mem"
+    //             blast_reference_genomes_folder   = "${projectDir}/tests/human_phix/blast"
+    //             samplesheet                      = "${projectDir}/tests/samplesheet/test.csv"
+    //         }
+    //     }
+
+    //     then {
+    //         with(workflow) {
+    //             assert success
+    //             assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 1
+    //             assert trace.succeeded().count{ task -> task.name.contains("MEGAHIT") } == 1
+    //         }
+    //     }
+
+    // }
+
     test("metaSPAdes - paired end") {
 
         when {
@@ -21,7 +44,7 @@ nextflow_pipeline {
                 assert success
                 assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 1
                 assert trace.succeeded().count{ task -> task.name.contains("MEGAHIT") } == 0
-                assert trace.succeeded().size() == 16
+                assert trace.succeeded().size() == 18
             }
         }
 
@@ -45,7 +68,7 @@ nextflow_pipeline {
                 assert success
                 assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 0
                 assert trace.succeeded().count{ task -> task.name.contains("MEGAHIT") } == 1
-                assert trace.tasks().size() == 16
+                assert trace.tasks().size() == 18
             }
         }
 
@@ -111,7 +134,7 @@ nextflow_pipeline {
                 assert success
                 assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 0
                 assert trace.succeeded().count{ task -> task.name.contains("MEGAHIT") } == 1
-                assert trace.tasks().size() == 16
+                assert trace.tasks().size() == 18
             }
         }
 
@@ -138,5 +161,4 @@ nextflow_pipeline {
         }
 
     }
-
 }

@@ -1,7 +1,22 @@
 include { BLAST_BLASTN as BLAST_BLASTN_HUMAN_PHIX } from '../../modules/nf-core/blast/blastn/main'
 include { BLAST_BLASTN as BLAST_BLASTN_HOST       } from '../../modules/nf-core/blast/blastn/main'
-include { SEQKIT_GREP                             } from '../../modules/nf-core/seqkit/grep/main'
+include { SEQKIT_GREP as SEQKIT_GREP_HUMAN_PHIX   } from '../../modules/nf-core/seqkit/grep/main'
+include { SEQKIT_GREP as SEQKIT_GREP_HOST         } from '../../modules/nf-core/seqkit/grep/main'
 include { SEQKIT_SEQ                              } from '../../modules/nf-core/seqkit/seq/main'
+
+process PUBLISH_CLEANED_CONTIGS {
+
+    input:
+    tuple val(meta), path(cleaned_contigs)
+
+    output:
+    tuple val(meta), path("${meta.id}_cleaned.contigs.fa.gz")
+
+    script:
+    """
+    cp ${cleaned_contigs} ${meta.id}_cleaned.contigs.fa.gz
+    """
+}
 
 workflow ASSEMBLY_QC {
 
@@ -20,7 +35,7 @@ workflow ASSEMBLY_QC {
 
     ch_versions = ch_versions.mix(SEQKIT_SEQ.out.versions)
 
-    contaminated_contigs = channel.empty()
+    filtered_contigs = SEQKIT_SEQ.out.fastx
 
     if ( params.remove_human_phix ) {
 
@@ -36,7 +51,13 @@ workflow ASSEMBLY_QC {
 
         ch_versions = ch_versions.mix(BLAST_BLASTN_HUMAN_PHIX.out.versions.first())
 
-        contaminated_contigs = BLAST_BLASTN_HUMAN_PHIX.out.txt
+        SEQKIT_GREP_HUMAN_PHIX(
+            filtered_contigs.join( BLAST_BLASTN_HUMAN_PHIX.out.txt )
+        )
+
+        filtered_contigs = SEQKIT_GREP_HUMAN_PHIX.out.filter
+
+        ch_versions = ch_versions.mix(SEQKIT_GREP_HUMAN_PHIX.out.versions)
     }
 
     if ( host_reference_genome != null ) {
@@ -47,29 +68,24 @@ workflow ASSEMBLY_QC {
             }
 
         BLAST_BLASTN_HOST(
-            SEQKIT_SEQ.out.fastx,
+            filtered_contigs,
             ch_blast_host_refs
         )
 
         ch_versions = ch_versions.mix(BLAST_BLASTN_HOST.out.versions.first())
 
-        contaminated_contigs = contaminated_contigs.mix( BLAST_BLASTN_HOST.out.txt )
+        SEQKIT_GREP_HOST(
+            filtered_contigs.join( BLAST_BLASTN_HOST.out.txt )
+        )
+
+        cleaned_contigs = SEQKIT_GREP_HOST.out.filter
+
+        ch_versions = ch_versions.mix(SEQKIT_GREP_HOST.out.versions)
     }
 
-    // TODO: this is not fit for samplesheets kind of inputs, it should .join with the contaminated contigs channel
-    SEQKIT_GREP(
-        SEQKIT_SEQ.out.fastx,
-        contaminated_contigs.map { meta, hits_txt -> { hits_txt }}.collectFile(name: "contaminated_contigs.txt", newLine: true)
+    PUBLISH_CLEANED_CONTIGS(
+        filtered_contigs
     )
-
-    if ( !params.remove_human_phix && host_reference_genome == null ) {
-        // No decontamination //
-        filtered_contigs = assembly
-    } else {
-        filtered_contigs = SEQKIT_GREP.out.filter
-    }
-
-    ch_versions = ch_versions.mix(SEQKIT_GREP.out.versions)
 
     emit:
     filtered_contigs = filtered_contigs

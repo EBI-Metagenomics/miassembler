@@ -25,15 +25,6 @@ process MEGAHIT {
     def args = task.ext.args ?: ''
     def args2 = task.ext.args2 ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-
-    def restart = ""
-    if (task.attempt > 1) {
-        // Set of extra flags to restart the assembly process
-        restart = "--continue"
-    }
-    // FIXME: figure out how to use the continue mechanism
-    //        the problem modifyng the flags (adding --continue) forces the expiration
-    //        the nextflow cache hence a new working directory
     if (meta.single_end) {
         """
         megahit \\

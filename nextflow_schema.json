@@ -11,24 +11,34 @@
             "fa_icon": "fas fa-terminal",
             "description": "Define where the pipeline should find input data and save output data.",
             "required": [
-                "study_accession",
-                "reads_accession",
                 "blast_reference_genomes_folder",
                 "bwamem2_reference_genomes_folder",
-                "outdir",
                 "human_phix_blast_index_name",
-                "human_phix_bwamem2_index_name"
+                "human_phix_bwamem2_index_name",
+                "outdir"
             ],
             "properties": {
+                "samplesheet": {
+                    "type": "string",
+                    "format": "file-path",
+                    "mimetype": "text/csv",
+                    "pattern": "^\\S+\\.csv$",
+                    "schema": "assets/schema_input.json",
+                    "description": "Path to comma-separated file containing information about the raw reads with the prefix (read accession) to be used.",
+                    "help_text": "You will need to create a design file with information about the raw reads running the pipeline. Use this parameter to specify its location. It has to be a comma-separated file with a minimum of 3 columns (study_accession, reads_accession, fastq_1), and a header row. The following fields are optional or depend on the data type: fastq_2, library_layout, library_strategy, assembler.",
+                    "fa_icon": "fas fa-file-csv"
+                },
                 "study_accession": {
                     "type": "string",
                     "fa_icon": "fas fa-address-card",
-                    "description": "The ENA Study secondary accession"
+                    "description": "The ENA Study secondary accession",
+                    "minLength": 3
                 },
                 "reads_accession": {
                     "type": "string",
                     "description": "The ENA Run primary accession",
-                    "fa_icon": "far fa-address-card"
+                    "fa_icon": "far fa-address-card",
+                    "minLength": 3
                 },
                 "private_study": {
                     "type": "boolean",
