@@ -1,0 +1,2 @@
+study_accession,reads_accession,fastq_1,fastq_2,library_layout,library_strategy,assembler,assembly_memory
+SRP115494,SRR6180434,s3://era-public/fastq/SRR618/004/SRR6180434/SRR6180434_1.fastq.gz,s3://era-public/fastq/SRR618/004/SRR6180434/SRR6180434_2.fastq.gz,paired,metagenomic,,

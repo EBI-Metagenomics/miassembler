@@ -334,6 +334,12 @@ workflow MIASSEMBLER {
         ch_multiqc_custom_config,
         ch_multiqc_logo
     )
+
+    ch_multiqc_run_tools_files.map { it -> {
+        def meta = it[0]
+        meta["id"]
+    }}.collectFile(name: "end_samplesheet.csv", storeDir: "${params.outdir}", newLine: true)
+
 }
 
 /*
