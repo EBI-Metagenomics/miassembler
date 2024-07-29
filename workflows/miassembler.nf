@@ -261,31 +261,36 @@ workflow MIASSEMBLER {
         [ meta.subMap("study_accession"), result_artifact ]
     }
 
+    // Helper method for the MultiQC aggregation by study and runs //
+    def combineFiles = { meta, fastqc_before, fastqc_after, assembly_coverage, quast ->
+        // Flatten the fastqc_before and fastqc_after lists
+        def flattened_fastqc_before = fastqc_before instanceof List ? fastqc_before.flatten() : [fastqc_before]
+        def flattened_fastqc_after = fastqc_after instanceof List ? fastqc_after.flatten() : [fastqc_after]
+
+        // Combine all elements into a single list
+        def all_files = flattened_fastqc_before + flattened_fastqc_after
+        if (assembly_coverage) {
+            all_files += [assembly_coverage]
+        }
+        if (quast) {
+            all_files += [quast]
+        }
+        // Produce a tuple with meta and the flattened list of files
+        return all_files.flatten().collect { file ->
+            [meta, file]
+        }
+    }
+
     ch_multiqc_study_tools_files = Channel.empty()
 
     ch_multiqc_study_tools_files = FASTQC_BEFORE.out.zip.map(meta_by_study)
-        .join( FASTQC_AFTER.out.zip.map(meta_by_study), failOnMismatch: true )
-        .join( ASSEMBLY_COVERAGE.out.samtools_idxstats.map(meta_by_study), failOnMismatch: true )
-        .join( QUAST.out.results.map(meta_by_study), failOnMismatch: true )
+        .join( FASTQC_AFTER.out.zip.map(meta_by_study) )
+        .join( ASSEMBLY_COVERAGE.out.samtools_idxstats.map(meta_by_study), remainder: true ) // the assembly step could fail
+        .join( QUAST.out.results.map(meta_by_study), remainder: true )                       // the assembly step could fail
 
-    // TODO: include the fetchtool metadata
-    // if ( !params.samplesheet ) {
-    //     ch_multiqc_study_tools_files = ch_multiqc_study_tools_files.join( fetch_tool_metadata.map(meta_by_study), failOnMismatch: true )
-    // }
+    ch_multiqc_study_tools_files = ch_multiqc_study_tools_files.flatMap( combineFiles ).groupTuple()
 
-    ch_multiqc_study_tools_files = ch_multiqc_study_tools_files.flatMap { meta, fastqc_before, fastqc_after, assembly_coverage, quast -> {
-            // Flatten the fastqc_before and fastqc_after lists
-            def flattened_fastqc_before = fastqc_before instanceof List ? fastqc_before.flatten() : [fastqc_before]
-            def flattened_fastqc_after = fastqc_after instanceof List ? fastqc_after.flatten() : [fastqc_after]
-            // Combine all elements into a single list
-            def all_files = flattened_fastqc_before + flattened_fastqc_after + [assembly_coverage, quast].flatten()
-            // Produce a tuple with meta and the flattened list of files
-            all_files.collect { file ->
-                [meta, file]
-            }
-        }
-    }.groupTuple()
-
+    // TODO: add the fetch tool log file
     MULTIQC_STUDY (
         ch_multiqc_base_files.collect(),
         ch_multiqc_study_tools_files,
@@ -305,28 +310,13 @@ workflow MIASSEMBLER {
     ch_multiqc_run_tools_files = Channel.empty()
 
     ch_multiqc_run_tools_files = FASTQC_BEFORE.out.zip.map(meta_by_run)
-        .join( FASTQC_AFTER.out.zip.map(meta_by_run), failOnMismatch: true )
-        .join( ASSEMBLY_COVERAGE.out.samtools_idxstats.map(meta_by_run), failOnMismatch: true )
-        .join( QUAST.out.results.map(meta_by_run), failOnMismatch: true )
+        .join( FASTQC_AFTER.out.zip.map(meta_by_run) )
+        .join( ASSEMBLY_COVERAGE.out.samtools_idxstats.map(meta_by_run), remainder: true ) // the assembly step could fail
+        .join( QUAST.out.results.map(meta_by_run), remainder: true )                       // the assembly step could fail
 
-    // TODO: include the fetchtool metadata
-    // if ( !params.samplesheet ) {
-    //     ch_multiqc_run_tools_files = ch_multiqc_run_tools_files.join( fetch_tool_metadata.map(meta_by_run), failOnMismatch: true )
-    // }
+    ch_multiqc_run_tools_files = ch_multiqc_run_tools_files.flatMap( combineFiles ).groupTuple()
 
-    ch_multiqc_run_tools_files = ch_multiqc_run_tools_files.flatMap { meta, fastqc_before, fastqc_after, assembly_coverage, quast -> {
-            // Flatten the fastqc_before and fastqc_after lists
-            def flattened_fastqc_before = fastqc_before instanceof List ? fastqc_before.flatten() : [fastqc_before]
-            def flattened_fastqc_after = fastqc_after instanceof List ? fastqc_after.flatten() : [fastqc_after]
-            // Combine all elements into a single list
-            def all_files = flattened_fastqc_before + flattened_fastqc_after + [assembly_coverage, quast].flatten()
-            // Produce a tuple with meta and the flattened list of files
-            all_files.collect { file ->
-                [meta, file]
-            }
-        }
-    }.groupTuple()
-
+    // TODO: add the fetch tool log file
     MULTIQC_RUN (
         ch_multiqc_base_files.collect(),
         ch_multiqc_run_tools_files,
