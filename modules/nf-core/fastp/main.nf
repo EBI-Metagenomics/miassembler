@@ -27,13 +27,12 @@ process FASTP {
     task.ext.when == null || task.ext.when
 
     script:
-    def single_end = reads.collect().size() == 1
     def args = task.ext.args ?: ''
     // Our team addition to handle metaT
     def polyA = ( trim_polyA || meta.library_strategy == "metatranscriptomic" ) ? "--trim_poly_x" : ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     def adapter_list = adapter_fasta ? "--adapter_fasta ${adapter_fasta}" : ""
-    def fail_fastq = save_trimmed_fail && single_end ? "--failed_out ${prefix}.fail.fastq.gz" : save_trimmed_fail && !single_end ? "--unpaired1 ${prefix}_1.fail.fastq.gz --unpaired2 ${prefix}_2.fail.fastq.gz" : ''
+    def fail_fastq = save_trimmed_fail && meta.single_end ? "--failed_out ${prefix}.fail.fastq.gz" : save_trimmed_fail && !meta.single_end ? "--unpaired1 ${prefix}_1.fail.fastq.gz --unpaired2 ${prefix}_2.fail.fastq.gz" : ''
     // Added soft-links to original fastqs for consistent naming in MultiQC
     if ( task.ext.args?.contains('--interleaved_in') ) {
         """
@@ -49,7 +48,7 @@ process FASTP {
             $fail_fastq \\
             $polyA \\
             $args \\
-            2> ${prefix}.fastp.log \\
+            2> >(tee ${prefix}.fastp.log >&2) \\
         | gzip -c > ${prefix}.fastp.fastq.gz
 
         cat <<-END_VERSIONS > versions.yml
@@ -57,7 +56,7 @@ process FASTP {
             fastp: \$(fastp --version 2>&1 | sed -e "s/fastp //g")
         END_VERSIONS
         """
-    } else if (single_end) {
+    } else if (meta.single_end) {
         """
         [ ! -f  ${prefix}.fastq.gz ] && ln -sf $reads ${prefix}.fastq.gz
 
@@ -71,7 +70,7 @@ process FASTP {
             $fail_fastq \\
             $polyA \\
             $args \\
-            2> ${prefix}.fastp.log
+            2> >(tee ${prefix}.fastp.log >&2)
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
@@ -107,19 +106,22 @@ process FASTP {
     }
 
     stub:
-    def layout = ""
-    if (reads.collect().size() == 1) {
-        layout = 'SE'
-    }
-    else {
-        layout = 'PE'
-    }
+    def prefix              = task.ext.prefix ?: "${meta.id}"
+    def is_single_output    = task.ext.args?.contains('--interleaved_in') || meta.single_end
+    def touch_reads         = (discard_trimmed_pass) ? "" : (is_single_output) ? "echo '' | gzip > ${prefix}.fastp.fastq.gz" : "echo '' | gzip > ${prefix}_1.fastp.fastq.gz ; echo '' | gzip > ${prefix}_2.fastp.fastq.gz"
+    def touch_merged        = (!is_single_output && save_merged) ? "echo '' | gzip >  ${prefix}.merged.fastq.gz" : ""
+    def touch_fail_fastq    = (!save_trimmed_fail) ? "" : meta.single_end ? "echo '' | gzip > ${prefix}.fail.fastq.gz" : "echo '' | gzip > ${prefix}.paired.fail.fastq.gz ; echo '' | gzip > ${prefix}_1.fail.fastq.gz ; echo '' | gzip > ${prefix}_2.fail.fastq.gz"
     """
-    touch ${layout}.fastq
+    $touch_reads
+    $touch_fail_fastq
+    $touch_merged
+    touch "${prefix}.fastp.json"
+    touch "${prefix}.fastp.html"
+    touch "${prefix}.fastp.log"
 
     cat <<-END_VERSIONS > versions.yml
-        "${task.process}":
-            fastp: \$(fastp --version 2>&1 | sed -e "s/fastp //g")
-        END_VERSIONS
+    "${task.process}":
+        fastp: \$(fastp --version 2>&1 | sed -e "s/fastp //g")
+    END_VERSIONS
     """
 }

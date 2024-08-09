@@ -61,6 +61,7 @@ workflow READS_QC {
     }
 
     emit:
-    qc_reads = decontaminated_reads
-    versions = ch_versions
+    qc_reads   = decontaminated_reads
+    fastp_json = FASTP.out.json
+    versions   = ch_versions
 }
