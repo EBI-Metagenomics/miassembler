@@ -120,25 +120,88 @@ PRJ2,ERR2,/path/to/reads/ERR2.fq.gz,,single,genomic,megahit,32
 The outputs of the pipeline are organized as follows:
 
 ```
-results/SRP1154
-└── SRP115494
-    └── SRR6180
-        └── SRR6180434
-            ├── assembly
-            │   └── metaspades
-            │       └── 3.15.5
-            │           ├── coverage
-            │           ├── decontamination
-            │           └── qc
-            │               ├── multiqc
-            │               └── quast
-            └── qc
-                ├── fastp
-                └── fastqc
-
+results
+├── pipeline_info
+├── DRP0076
+│   └── DRP007622
+│       ├── DRR2807
+│       │   └── DRR280712
+│       │       ├── assembly
+│       │       │   └── megahit
+│       │       │       └── 1.2.9
+│       │       │           ├── coverage
+│       │       │           ├── decontamination
+│       │       │           └── qc
+│       │       │               ├── multiqc
+│       │       │               └── quast
+│       │       │                   └── DRR280712
+│       │       └── qc
+│       │           ├── fastp
+│       │           └── fastqc
+│       └── multiqc
+└── SRP1154
+    └── SRP115494
+        ├── multiqc
+        ├── SRR5949
+        │   └── SRR5949318
+        │       ├── assembly
+        │       │   └── metaspades
+        │       │       └── 3.15.5
+        │       │           ├── coverage
+        │       │           ├── decontamination
+        │       │           └── qc
+        │       │               ├── multiqc
+        │       │               └── quast
+        │       │                   └── SRR5949318
+        │       └── qc
+        │           ├── fastp
+        │           └── fastqc
+        └── SRR6180
+            └── SRR6180434 --> QC Failed (not assembled)
+                └── qc
+                    ├── fastp
+                    └── fastqc
 ```
 
 The nested structure based on ENA Study and Reads accessions was created to suit the Microbiome Informatics team’s needs. The benefit of this structure is that results from different runs of the same study won’t overwrite any results.
+
+### Top Level Reports
+
+#### MultiQC
+
+The pipeline produces two [MultiQC](https://multiqc.info) reports: one per study and one per run. These reports aggregate statistics related to raw reads, read QC, assembly, and assembly QC.
+
+The run-level MultiQC report is generated for runs that passed QC and were assembled. The study-level MultiQC report includes all runs; however, runs without assemblies will not have assembly stats included.
+
+#### QC failed runs
+
+QC failed runs are filtered out to prevent downstream assembly failures.
+
+Runs that fail QC checks are excluded from the assembly process. These runs are listed in the file `qc_failed_runs.csv`, along with the corresponding exclusion message. Assembling such runs may cause the pipeline to fail or produce very poor assemblies.
+
+Example:
+
+```csv
+SRR6180434,filter_ratio_threshold_exceeded
+```
+
+##### Runs exclusion messages
+
+| Exclusion Message                 | Description                                                                                                                                                                                                                                                                            |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `filter_ratio_threshold_exceeded` | The maximum fraction of reads that are allowed to be filtered out. If exceeded, it flags excessive filtering. The default value is 0.9, meaning that if more than 90% of the reads are filtered out, the threshold is considered exceeded, and the run is not assembled. |
+| `low_reads_count_threshold`       | The minimum number of reads required after filtering. If below, it flags a low read count, and the run is not assembled.                                                                                                                                                               |
+
+#### Assembled Runs
+
+Runs that were successfully assembled are listed in a CSV file named `assembled_runs.csv`. This file contains the run accession, assembler, and assembler version used.
+
+Example:
+
+```csv
+DRR280712,megahit,1.2.9
+SRR5949318,metaspades,3.15.5
+```
 
 ## Tests
 

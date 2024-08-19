@@ -1,3 +1,6 @@
+// Groovy //
+import groovy.json.JsonSlurper
+
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     PRINT PARAMS SUMMARY
@@ -186,10 +189,31 @@ workflow MIASSEMBLER {
         READS_QC.out.qc_reads
     )
 
-    READS_QC.out.qc_reads.branch { meta, reads ->
+    /******************************************/
+    /*  Reads that fail the following rules:  */
+    /*  - Reads discarded by fastp > 90% (default value) */
+    /*  - Less than 1k reads                  */
+    /******************************************/
+    extended_qc = READS_QC.out.fastp_json.map { meta, json -> {
+            json_txt = new JsonSlurper().parseText(json.text)
+            bf_total_reads = json_txt?.summary?.before_filtering?.total_reads ?: 0;
+            af_total_reads = json_txt?.summary?.after_filtering?.total_reads ?: 0;
+            reads_qc_meta = [
+                "low_reads_count": af_total_reads <= params.low_reads_count_threshold,
+                "filter_ratio_threshold_exceeded": af_total_reads == 0 || ((af_total_reads / bf_total_reads) <= params.filter_ratio_threshold )
+            ]
+            return [meta, reads_qc_meta]
+        }
+    }
+
+    extended_reads_qc = READS_QC.out.qc_reads.join( extended_qc )
+
+    extended_reads_qc.branch { meta, reads, reads_qc_meta ->
+        // Filter out failed reads //
+        qc_failed: reads_qc_meta.low_reads_count || reads_qc_meta.filter_ratio_threshold_exceeded
         megahit: meta.assembler == "megahit"
         xspades: ["metaspades", "spades"].contains(meta.assembler)
-    }.set { qc_reads }
+    }.set { qc_filtered_reads }
 
     ch_versions = ch_versions.mix(READS_QC.out.versions)
 
@@ -197,7 +221,7 @@ workflow MIASSEMBLER {
     /*     Assembly     */
     /********************/
     SPADES(
-        qc_reads.xspades.map { meta, reads -> [meta, reads, [], []] },
+        qc_filtered_reads.xspades.map { meta, reads, _ -> [meta, reads, [], []] },
         [], // yml input parameters, which we don't use
         []  // hmm, not used
     )
@@ -205,7 +229,7 @@ workflow MIASSEMBLER {
     ch_versions = ch_versions.mix(SPADES.out.versions)
 
     MEGAHIT(
-        qc_reads.megahit
+        qc_filtered_reads.megahit.map { meta, reads, _ -> [meta, reads] }
     )
 
     assembly = SPADES.out.contigs.mix( MEGAHIT.out.contigs )
@@ -222,7 +246,7 @@ workflow MIASSEMBLER {
 
     // Coverage //
     ASSEMBLY_COVERAGE(
-        READS_QC.out.qc_reads.join( ASSEMBLY_QC.out.filtered_contigs )
+        ASSEMBLY_QC.out.filtered_contigs.join( READS_QC.out.qc_reads, remainder: false )
     )
 
     ch_versions = ch_versions.mix(ASSEMBLY_COVERAGE.out.versions)
@@ -314,7 +338,11 @@ workflow MIASSEMBLER {
         .join( ASSEMBLY_COVERAGE.out.samtools_idxstats.map(meta_by_run), remainder: true ) // the assembly step could fail
         .join( QUAST.out.results.map(meta_by_run), remainder: true )                       // the assembly step could fail
 
-    ch_multiqc_run_tools_files = ch_multiqc_run_tools_files.flatMap( combineFiles ).groupTuple()
+    // Filter out the non-assembled runs //
+    ch_multiqc_run_tools_files = ch_multiqc_run_tools_files.filter { meta, fastqc_before, fastqc_after, assembly_coverage, quast -> {
+            return assembly_coverage != null && quast != null
+        }
+    } .flatMap( combineFiles ).groupTuple()
 
     // TODO: add the fetch tool log file
     MULTIQC_RUN (
@@ -325,11 +353,31 @@ workflow MIASSEMBLER {
         ch_multiqc_logo
     )
 
-    ch_multiqc_run_tools_files.map { it -> {
-        def meta = it[0]
-        meta["id"]
-    }}.collectFile(name: "end_samplesheet.csv", storeDir: "${params.outdir}", newLine: true)
+    /*****************************/
+    /* End of execution reports */
+    /****************************/
 
+    // Asssembled runs //
+    ASSEMBLY_COVERAGE.out.samtools_idxstats.map {
+        meta, _ -> {
+            return "${meta.id},${meta.assembler},${meta.assembler_version}"
+        }
+     }.collectFile(name: "assembled_runs.csv", storeDir: "${params.outdir}", newLine: true, cache: false)
+
+    // Reads QC failed //
+    qc_failed_entries = qc_filtered_reads.qc_failed.map {
+        meta, _, extended_meta -> {
+            if ( extended_meta.low_reads_count ) {
+                return "${meta.id},low_reads_count"
+            }
+            if ( extended_meta.filter_ratio_threshold_exceeded ) {
+                return "${meta.id},filter_ratio_threshold_exceeded"
+            }
+            error "Unexpected. meta: ${meta}, extended_meta: ${extended_meta}"
+        }
+    }
+
+    qc_failed_entries.collectFile(name: "qc_failed_runs.csv", storeDir: "${params.outdir}", newLine: true, cache: false)
 }
 
 /*
