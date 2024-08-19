@@ -338,7 +338,11 @@ workflow MIASSEMBLER {
         .join( ASSEMBLY_COVERAGE.out.samtools_idxstats.map(meta_by_run), remainder: true ) // the assembly step could fail
         .join( QUAST.out.results.map(meta_by_run), remainder: true )                       // the assembly step could fail
 
-    ch_multiqc_run_tools_files = ch_multiqc_run_tools_files.flatMap( combineFiles ).groupTuple()
+    // Filter out the non-assembled runs //
+    ch_multiqc_run_tools_files = ch_multiqc_run_tools_files.filter { meta, fastqc_before, fastqc_after, assembly_coverage, quast -> {
+            return assembly_coverage != null && quast != null
+        }
+    } .flatMap( combineFiles ).groupTuple()
 
     // TODO: add the fetch tool log file
     MULTIQC_RUN (
@@ -356,7 +360,7 @@ workflow MIASSEMBLER {
     // Asssembled runs //
     ASSEMBLY_COVERAGE.out.samtools_idxstats.map {
         meta, _ -> {
-            return "${meta.id}"
+            return "${meta.id},${meta.assembler},${meta.assembler_version}"
         }
      }.collectFile(name: "assembled_runs.csv", storeDir: "${params.outdir}", newLine: true, cache: false)
 

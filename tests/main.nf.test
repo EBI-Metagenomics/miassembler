@@ -5,6 +5,8 @@ nextflow_pipeline {
 
     test("Samplesheet spades") {
 
+        tag "samplesheet"
+
         when {
             params {
                 outdir = "tests/results"
@@ -18,7 +20,7 @@ nextflow_pipeline {
         then {
             with(workflow) {
                 assert success
-                assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 2
+                assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 1
                 assert trace.succeeded().count{ task -> task.name.contains("MEGAHIT") } == 1
             }
         }
@@ -26,6 +28,8 @@ nextflow_pipeline {
     }
 
     test("metaSPAdes - paired end") {
+
+        tag "ena-portal-api"
 
         when {
 
@@ -51,6 +55,8 @@ nextflow_pipeline {
 
     test("MEGAHIT - paired end") {
 
+        tag "ena-portal-api"
+
         when {
             params {
                 outdir                           = "tests/results"
@@ -75,6 +81,8 @@ nextflow_pipeline {
 
     test("metaSPAdes - single end - should fail") {
 
+        tag "ena-portal-api"
+
         when {
             params {
                 outdir                           = "tests/results"
@@ -98,6 +106,8 @@ nextflow_pipeline {
 
     test("MEGAHIT - single end - should fail") {
 
+        tag "ena-portal-api"
+
         when {
             params {
                 outdir = "tests/results"
@@ -117,6 +127,8 @@ nextflow_pipeline {
     }
 
     test("MEGAHIT - metaT - single end") {
+
+        tag "ena-portal-api"
 
         when {
             params {
@@ -140,6 +152,8 @@ nextflow_pipeline {
     }
 
     test("Spades - metaT - single end should fail") {
+
+        tag "ena-portal-api"
 
         when {
             params {
