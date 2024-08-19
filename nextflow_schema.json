@@ -166,6 +166,8 @@
                     "type": "number",
                     "description": "The maximum allowed ratio of reads after filtering compared to before filtering. If exceeded, it flags excessive filtering. The default value is 0.9, meaning that if more than 90% of the reads are filtered out, the threshold is considered exceeded and the run is not assembled.",
                     "default": 0.9
+                    "minimum": 0.0,
+                    "maximum": 1.0
                 },
                 "low_reads_count_threshold": {
                     "type": "number",
