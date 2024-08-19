@@ -191,7 +191,7 @@ workflow MIASSEMBLER {
 
     /******************************************/
     /*  Reads that fail the following rules:  */
-    /*  - Reads discarded by fastp > 80%      */
+    /*  - Reads discarded by fastp > 90% (default value) */
     /*  - Less than 1k reads                  */
     /******************************************/
     extended_qc = READS_QC.out.fastp_json.map { meta, json -> {
