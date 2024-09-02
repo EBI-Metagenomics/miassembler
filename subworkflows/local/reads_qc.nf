@@ -16,6 +16,7 @@ workflow READS_QC {
         [],
         false,
         false,
+        false,
         false
     )
 

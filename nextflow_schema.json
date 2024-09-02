@@ -40,14 +40,24 @@
                     "fa_icon": "far fa-address-card",
                     "minLength": 3
                 },
+                "min_read_length": {
+                    "type": "integer",
+                    "description": "Minimum read length for pre-assembly quality filtering",
+                    "default": 200
+                },
                 "private_study": {
                     "type": "boolean",
                     "description": "To use if the ENA study is private"
                 },
                 "assembler": {
                     "type": "string",
-                    "enum": ["spades", "metaspades", "megahit"],
-                    "description": "The short reads assembler"
+                    "enum": ["spades", "metaspades", "megahit", "flye"],
+                    "description": "The short or long reads assembler"
+                },
+                "assembler_config": {
+                    "type": "string",
+                    "description": "Configuration to use flye with. Pick from nano-raw, nano-corr, nano-hq, pacbio-raw, pacbio-corr, pacbio-hifi", 
+                    "default": ""
                 },
                 "single_end": {
                     "type": "boolean",
@@ -62,6 +72,15 @@
                     "type": "string",
                     "description": "Force the library_layout value for the study / reads",
                     "enum": ["single", "paired"]
+                },
+                "platform": {
+                    "type": "string",
+                    "description": "Force the instrument_platform value for the study / reads",
+                    "default": "ont"
+                },
+                "flye_version": {
+                    "type": "string",
+                    "default": "2.9"
                 },
                 "spades_version": {
                     "type": "string",
@@ -104,15 +123,30 @@
                     "description": "Remove human and phiX reads pre assembly, and contigs matching those genomes.",
                     "default": true
                 },
+                "remove_human": {
+                    "type": "boolean",
+                    "description": "Remove human reads pre assembly, and contigs matching those genomes.",
+                    "default": true
+                },
                 "human_phix_blast_index_name": {
                     "type": "string",
                     "description": "Combined Human and phiX BLAST db.",
                     "default": "human_phix"
                 },
+                "human_blast_index_name": {
+                    "type": "string",
+                    "description": "Human BLAST db.",
+                    "default": "human"
+                },
                 "human_phix_bwamem2_index_name": {
                     "type": "string",
                     "description": "Combined Human and phiX bwa-mem2 index.",
                     "default": "human_phix"
+                },
+                "human_bwamem2_index_name": {
+                    "type": "string",
+                    "description": "Human bwa-mem2 index.",
+                    "default": "human"
                 },
                 "min_contig_length": {
                     "type": "integer",

@@ -1,0 +1,2 @@
+study_accession,reads_accession,fastq_1,library_layout,library_strategy,assembler,assembly_memory
+SRP226117,SRR10303629,/home/germana/Desktop/EBI_root/Git/long-read-assembly/tests/test_reads/SRR10303629_1.fastq.gz,single,metagenomic,,
