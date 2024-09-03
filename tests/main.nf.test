@@ -11,7 +11,6 @@ nextflow_pipeline {
             params {
                 outdir = "tests/results"
                 assembler = "spades"
-                reference_genomes_folder         = "${projectDir}/tests/human_phix/bwa2mem"
                 bwamem2_reference_genomes_folder = "${projectDir}/tests/human_phix/bwa2mem"
                 blast_reference_genomes_folder   = "${projectDir}/tests/human_phix/blast"
                 samplesheet                      = "${projectDir}/tests/samplesheet/test.csv"
@@ -36,7 +35,6 @@ nextflow_pipeline {
 
             params {
                 outdir = "tests/results"
-                reference_genomes_folder         = "${projectDir}/tests/human_phix/bwa2mem"
                 bwamem2_reference_genomes_folder = "${projectDir}/tests/human_phix/bwa2mem"
                 blast_reference_genomes_folder   = "${projectDir}/tests/human_phix/blast"
                 study_accession                  = "SRP115494"
@@ -65,7 +63,6 @@ nextflow_pipeline {
                 assembler                        = "megahit"
                 study_accession                  = "SRP115494"
                 reads_accession                  = "SRR6180434"
-                reference_genomes_folder         = "${projectDir}/tests/human_phix/bwa2mem"
                 bwamem2_reference_genomes_folder = "${projectDir}/tests/human_phix/bwa2mem"
                 blast_reference_genomes_folder   = "${projectDir}/tests/human_phix/blast"
             }
@@ -90,7 +87,6 @@ nextflow_pipeline {
             params {
                 outdir                           = "tests/results"
                 assembler                        = "metaspades"
-                reference_genomes_folder         = "${projectDir}/tests/human_phix/bwa2mem"
                 bwamem2_reference_genomes_folder = "${projectDir}/tests/human_phix/bwa2mem"
                 blast_reference_genomes_folder   = "${projectDir}/tests/human_phix/blast"
                 study_accession                  = "ERP012810"
@@ -115,7 +111,6 @@ nextflow_pipeline {
         when {
             params {
                 outdir = "tests/results"
-                reference_genomes_folder         = "${projectDir}/tests/human_phix/bwa2mem"
                 bwamem2_reference_genomes_folder = "${projectDir}/tests/human_phix/bwa2mem"
                 blast_reference_genomes_folder   = "${projectDir}/tests/human_phix/blast"
                 study_accession                  = "ERP012810"
@@ -138,7 +133,6 @@ nextflow_pipeline {
         when {
             params {
                 outdir = "tests/results"
-                reference_genomes_folder         = "${projectDir}/tests/human_phix/bwa2mem"
                 bwamem2_reference_genomes_folder = "${projectDir}/tests/human_phix/bwa2mem"
                 blast_reference_genomes_folder   = "${projectDir}/tests/human_phix/blast"
                 study_accession                  = "DRP007622"
@@ -165,7 +159,6 @@ nextflow_pipeline {
             params {
                 outdir = "tests/results"
                 assembler = "spades"
-                reference_genomes_folder         = "${projectDir}/tests/human_phix/bwa2mem"
                 bwamem2_reference_genomes_folder = "${projectDir}/tests/human_phix/bwa2mem"
                 blast_reference_genomes_folder   = "${projectDir}/tests/human_phix/blast"
                 study_accession                  = "DRP007622"
