@@ -37,18 +37,21 @@ Input/output options
   --library_layout                        [string]  Force the library_layout value for the study / reads (accepted: single, paired)
   --spades_version                        [string]  null [default: 3.15.5]
   --megahit_version                       [string]  null [default: 1.2.9]
-  --reference_genome                      [string]  The genome to be used to clean the assembly, the genome will be taken from the Microbiome Informatics
+  --flye_version                          [string]  null [default: 2.9]
+  --host_reference_genome                 [string]  The genome to be used to clean the assembly, the genome will be taken from the Microbiome Informatics
                                                     internal directory (accepted: chicken.fna, salmon.fna, cod.fna, pig.fna, cow.fna, mouse.fna,
                                                     honeybee.fna, rainbow_trout.fna, ...)
   --blast_reference_genomes_folder        [string]  The folder with the reference genome blast indexes, defaults to the Microbiome Informatics internal
                                                     directory.
   --bwamem2_reference_genomes_folder      [string]  The folder with the reference genome bwa-mem2 indexes, defaults to the Microbiome Informatics internal
+  
+  --reference_genomes_folder              [string]  The folder with reference genomes, defaults to the Microbiome Informatics internal
                                                     directory.
   --remove_human_phix                     [boolean] Remove human and phiX reads pre assembly, and contigs matching those genomes. [default: true]
   --human_phix_blast_index_name           [string]  Combined Human and phiX BLAST db. [default: human_phix]
   --human_phix_bwamem2_index_name         [string]  Combined Human and phiX bwa-mem2 index. [default: human_phix]
-  --min_contig_length                     [integer] Minimum contig length filter. [default: 500]
-  --min_contig_length_metatranscriptomics [integer] Minimum contig length filter for metaT. [default: 200]
+  --short_reads_min_contig_length         [integer] Minimum contig length filter. [default: 500]
+  --short_reads_min_contig_length_metat   [integer] Minimum contig length filter for metaT. [default: 200]
   --assembly_memory                       [integer] Default memory allocated for the assembly process. [default: 100]
   --spades_only_assembler                 [boolean] Run SPAdes/metaSPAdes without the error correction step. [default: true]
   --outdir                                [string]  The output directory where the results will be saved. You have to use absolute paths to storage on Cloud
@@ -66,7 +69,7 @@ Example:
 nextflow run ebi-metagenomics/miassembler \
   -profile codon_slurm \
   --assembler metaspades \
-  --reference_genome human \
+  --host_reference_genome human \
   --outdir testing_results \
   --study_accession SRP002480 \
   --reads_accession SRR1631361
@@ -182,15 +185,15 @@ Runs that fail QC checks are excluded from the assembly process. These runs are 
 Example:
 
 ```csv
-SRR6180434,filter_ratio_threshold_exceeded
+SRR6180434,short_reads_filter_ratio_threshold_exceeded
 ```
 
 ##### Runs exclusion messages
 
 | Exclusion Message                 | Description                                                                                                                                                                                                                                                                            |
 | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `filter_ratio_threshold_exceeded` | The maximum fraction of reads that are allowed to be filtered out. If exceeded, it flags excessive filtering. The default value is 0.9, meaning that if more than 90% of the reads are filtered out, the threshold is considered exceeded, and the run is not assembled. |
-| `low_reads_count_threshold`       | The minimum number of reads required after filtering. If below, it flags a low read count, and the run is not assembled.                                                                                                                                                               |
+| `short_reads_filter_ratio_threshold_exceeded` | The maximum fraction of reads that are allowed to be filtered out. If exceeded, it flags excessive filtering. The default value is 0.9, meaning that if more than 90% of the reads are filtered out, the threshold is considered exceeded, and the run is not assembled. |
+| `short_reads_low_reads_count_threshold`       | The minimum number of reads required after filtering. If below, it flags a low read count, and the run is not assembled.                                                                                                                                                               |
 
 #### Assembled Runs
 

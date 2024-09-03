@@ -182,7 +182,7 @@ workflow MIASSEMBLER {
 
     READS_QC(
         fetch_reads_transformed,
-        params.reference_genome
+        params.host_reference_genome
     )
 
     FASTQC_AFTER (
@@ -199,8 +199,8 @@ workflow MIASSEMBLER {
             bf_total_reads = json_txt?.summary?.before_filtering?.total_reads ?: 0;
             af_total_reads = json_txt?.summary?.after_filtering?.total_reads ?: 0;
             reads_qc_meta = [
-                "low_reads_count": af_total_reads <= params.low_reads_count_threshold,
-                "filter_ratio_threshold_exceeded": af_total_reads == 0 || ((af_total_reads / bf_total_reads) <= params.filter_ratio_threshold )
+                "short_reads_low_reads_count": af_total_reads <= params.short_reads_low_reads_count_threshold,
+                "short_reads_filter_ratio_threshold_exceeded": af_total_reads == 0 || ((af_total_reads / bf_total_reads) <= params.short_reads_filter_ratio_threshold )
             ]
             return [meta, reads_qc_meta]
         }
@@ -210,7 +210,7 @@ workflow MIASSEMBLER {
 
     extended_reads_qc.branch { meta, reads, reads_qc_meta ->
         // Filter out failed reads //
-        qc_failed: reads_qc_meta.low_reads_count || reads_qc_meta.filter_ratio_threshold_exceeded
+        qc_failed: reads_qc_meta.low_reads_count || reads_qc_meta.short_reads_filter_ratio_threshold_exceeded
         megahit: meta.assembler == "megahit"
         xspades: ["metaspades", "spades"].contains(meta.assembler)
     }.set { qc_filtered_reads }
@@ -239,7 +239,7 @@ workflow MIASSEMBLER {
     // Clean the assembly contigs //
     ASSEMBLY_QC(
         assembly,
-        params.reference_genome
+        params.host_reference_genome
     )
 
     ch_versions = ch_versions.mix(ASSEMBLY_QC.out.versions)
@@ -370,8 +370,8 @@ workflow MIASSEMBLER {
             if ( extended_meta.low_reads_count ) {
                 return "${meta.id},low_reads_count"
             }
-            if ( extended_meta.filter_ratio_threshold_exceeded ) {
-                return "${meta.id},filter_ratio_threshold_exceeded"
+            if ( extended_meta.short_reads_filter_ratio_threshold_exceeded ) {
+                return "${meta.id},short_reads_filter_ratio_threshold_exceeded"
             }
             error "Unexpected. meta: ${meta}, extended_meta: ${extended_meta}"
         }
