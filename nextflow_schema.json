@@ -104,6 +104,11 @@
                         "zebrafish.fna"
                     ]
                 },
+                "reference_genomes_folder": {
+                    "type": "string",
+                    "description": "The folder with the reference genomes, defaults to the Microbiome Informatics internal directory.",
+                    "format": "directory-path"
+                },
                 "blast_reference_genomes_folder": {
                     "type": "string",
                     "description": "The folder with the reference genome blast indexes, defaults to the Microbiome Informatics internal directory.",
