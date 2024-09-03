@@ -76,7 +76,7 @@ workflow LONGREADSASSEMBLY {
 
     if ( params.samplesheet ) {
 
-        longReads = { study_accession, reads_accession, fq1, library_layout, library_strategy, assembler, long_read_assembler_config, assembly_memory ->
+        longReads = { study_accession, reads_accession, fq1, library_layout, library_strategy, assembler, long_reads_assembler_config, assembly_memory ->
             return tuple(
                 [
                     "id": reads_accession,
@@ -85,7 +85,7 @@ workflow LONGREADSASSEMBLY {
                     "library_layout": library_layout,
                     "single_end": true,
                     "assembler": assembler ?: params.assembler,
-                    "long_read_assembler_config": long_read_assembler_config ?: params.long_read_assembler_config,
+                    "long_reads_assembler_config": long_reads_assembler_config ?: params.long_reads_assembler_config,
                     "assembly_memory": assembly_memory ?: params.assembly_memory
                 ],
                 [fq1]
@@ -117,7 +117,7 @@ workflow LONGREADSASSEMBLY {
                     //  -- The metadata will be overriden by the parameters -- //
                     "assembler": params.assembler,
                     "assembly_memory": params.assembly_memory,
-                    "long_read_assembler_config": params.long_read_assembler_config,
+                    "long_reads_assembler_config": params.long_reads_assembler_config,
                     "library_strategy": params.library_strategy ?: library_strategy,
                     "library_layout": params.library_layout ?: library_layout,
                     "single_end": params.single_end ?: library_layout == "single",
@@ -156,16 +156,16 @@ workflow LONGREADSASSEMBLY {
 
     reads_assembler_config = LONG_READS_QC.out.qc_reads.map { meta, reads ->
         if (meta.platform == "ont") {
-            if (params.long_read_assembler_config == "nano-raw" || meta.quality == "low") {
-                return [meta + ["long_read_assembler_config": "nano-raw"], reads]
-            } else if (params.long_read_assembler_config == "nano-hq" || meta.quality == "high") {
-                return [meta + ["long_read_assembler_config": "nano-hq"], reads]
+            if (params.long_reads_assembler_config == "nano-raw" || meta.quality == "low") {
+                return [meta + ["long_reads_assembler_config": "nano-raw"], reads]
+            } else if (params.long_reads_assembler_config == "nano-hq" || meta.quality == "high") {
+                return [meta + ["long_reads_assembler_config": "nano-hq"], reads]
             }
         } else if (meta.platform == "pacbio") {
-            if (params.long_read_assembler_config == "pacbio-raw" || meta.quality == "low") {
-                return [meta + ["long_read_assembler_config": "pacbio-raw"], reads]
-            } else if (params.long_read_assembler_config == "pacbio-hifi" || meta.quality == "high") {
-                return [meta + ["long_read_assembler_config": "pacbio-hifi"], reads]
+            if (params.long_reads_assembler_config == "pacbio-raw" || meta.quality == "low") {
+                return [meta + ["long_reads_assembler_config": "pacbio-raw"], reads]
+            } else if (params.long_reads_assembler_config == "pacbio-hifi" || meta.quality == "high") {
+                return [meta + ["long_reads_assembler_config": "pacbio-hifi"], reads]
             }
         } else {
             error "Incompatible configuration"
@@ -173,10 +173,10 @@ workflow LONGREADSASSEMBLY {
     }
     
     reads_assembler_config.branch { meta, reads ->
-        lq_ont: meta.long_read_assembler_config == "nano-raw"
-        hq_ont: meta.long_read_assembler_config == "pacbio-raw"
-        lq_pacbio: meta.long_read_assembler_config == "nano-hq"
-        hq_pacbio: meta.long_read_assembler_config == "pacbio-hifi"
+        lq_ont: meta.long_reads_assembler_config == "nano-raw"
+        hq_ont: meta.long_reads_assembler_config == "pacbio-raw"
+        lq_pacbio: meta.long_reads_assembler_config == "nano-hq"
+        hq_pacbio: meta.long_reads_assembler_config == "pacbio-hifi"
     }.set {subworkflow_platform_reads}
 
     ONT_LQ(

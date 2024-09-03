@@ -36,7 +36,7 @@
                     "fa_icon": "far fa-address-card",
                     "minLength": 3
                 },
-                "min_read_length": {
+                "long_reads_min_read_length": {
                     "type": "integer",
                     "description": "Minimum read length for pre-assembly quality filtering",
                     "default": 200
@@ -50,7 +50,7 @@
                     "enum": ["spades", "metaspades", "megahit", "flye"],
                     "description": "The short or long reads assembler"
                 },
-                "long_read_assembler_config": {
+                "long_reads_assembler_config": {
                     "type": "string",
                     "description": "Configuration to use flye with. Pick from nano-raw, nano-corr, nano-hq, pacbio-raw, pacbio-corr, pacbio-hifi", 
                     "default": ""
