@@ -18,7 +18,7 @@ process PUBLISH_CLEANED_CONTIGS {
     """
 }
 
-workflow ASSEMBLY_QC {
+workflow SHORT_READS_ASSEMBLY_QC {
 
     take:
     assembly                    // [ val(meta), path(assembly_fasta) ]

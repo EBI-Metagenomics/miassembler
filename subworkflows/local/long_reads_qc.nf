@@ -4,6 +4,7 @@ include { MINIMAP2_ALIGN as HUMAN_DECONTAMINATION } from '../../modules/nf-core/
 include { MINIMAP2_ALIGN as HOST_DECONTAMINATION  } from '../../modules/nf-core/minimap2/align/main'
 
 workflow LONG_READS_QC {
+
     take:
     reads                   // [ val(meta), path(reads) ]
     host_reference_genome   // [ val(meta2), path(reference_genome) ]

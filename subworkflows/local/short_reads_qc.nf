@@ -2,7 +2,7 @@ include { FASTP                                             } from '../../module
 include { BWAMEM2DECONTNOBAMS as HUMAN_PHIX_DECONTAMINATION } from '../../modules/ebi-metagenomics/bwamem2decontnobams/main'
 include { BWAMEM2DECONTNOBAMS as HOST_DECONTAMINATION       } from '../../modules/ebi-metagenomics/bwamem2decontnobams/main'
 
-workflow READS_QC {
+workflow SHORT_READS_QC {
 
     take:
     reads                 // [ val(meta), path(reads) ]
