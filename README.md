@@ -16,7 +16,7 @@ This pipeline is still in early development. It's mostly a direct port of the mi
 ## Usage
 
 > [!WARNING]
-> It only runs in Codon using Slurm ATM.
+> It only runs in EBI Codon cluster using Slurm ATM.
 
 Pipeline help:
 
@@ -59,6 +59,12 @@ Input/output options
 Generic options
   --multiqc_methods_description           [string]  Custom MultiQC yaml file containing HTML including a methods description.
 ```
+
+### Required DBs:
+- `--reference_genome`: reference genome in FASTA format
+- `--blast_reference_genomes_folder`: mandatory **human_phiX** is provided on [FTP](https://ftp.ebi.ac.uk/pub/databases/metagenomics/pipelines/references/)
+- `--bwamem2_reference_genomes_folder`: mandatory **human_phiX** is provided on [FTP](https://ftp.ebi.ac.uk/pub/databases/metagenomics/pipelines/references/)
+
 
 Example:
 
