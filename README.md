@@ -60,11 +60,6 @@ Generic options
   --multiqc_methods_description           [string]  Custom MultiQC yaml file containing HTML including a methods description.
 ```
 
-### Required DBs:
-- `--reference_genome`: reference genome in FASTA format
-- `--blast_reference_genomes_folder`: mandatory **human_phiX** is provided on [FTP](https://ftp.ebi.ac.uk/pub/databases/metagenomics/pipelines/references/)
-- `--bwamem2_reference_genomes_folder`: mandatory **human_phiX** is provided on [FTP](https://ftp.ebi.ac.uk/pub/databases/metagenomics/pipelines/references/)
-
 
 Example:
 
@@ -77,6 +72,33 @@ nextflow run ebi-metagenomics/miassembler \
   --study_accession SRP002480 \
   --reads_accession SRR1631361
 ```
+
+### Required DBs:
+- `--reference_genome`: reference genome in FASTA format
+- `--blast_reference_genomes_folder`: mandatory **human_phiX** is provided on [FTP](https://ftp.ebi.ac.uk/pub/databases/metagenomics/pipelines/references/)
+- `--bwamem2_reference_genomes_folder`: mandatory **human_phiX** is provided on [FTP](https://ftp.ebi.ac.uk/pub/databases/metagenomics/pipelines/references/)
+
+Blast and bwa-mem2 reference databases can be generated for any reference genome to polish input sequences with.
+
+#### BWA-MEM2
+As explained in [bwa-mem2's README](https://github.com/bwa-mem2/bwa-mem2?tab=readme-ov-file#getting-started):
+```
+# Use precompiled binaries (recommended)
+curl -L https://github.com/bwa-mem2/bwa-mem2/releases/download/v2.2.1/bwa-mem2-2.2.1_x64-linux.tar.bz2 \
+  | tar jxf -
+
+# Index your reference genome with
+bwa-mem2-2.2.1_x64-linux/bwa-mem2 index ref.fa
+```
+
+This will generate multiple index files in a folder. The folder containing them is the one to use as `bwamem2_reference_genomes_folder`.
+
+#### BLAST
+```
+makeblastdb -in <ref.fa> -dbtype nucl -out <my_db_file>
+```
+
+As with bwa-mem2, numerous files will be generated in the same folder, which should be used for `blast_reference_genomes_folder`.
 
 ### Samplesheet
 
