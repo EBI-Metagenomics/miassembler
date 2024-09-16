@@ -195,10 +195,13 @@ nextflow_pipeline {
 
         then {
             with(workflow) {
+                // eventual success:
                 assert success
                 assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 1
-                assert workflow.errorReport.contains("Execution is retried (1)")
-                assert workflow.errorReport.contains("Execution is retried (2)")
+
+                // but failed and therefore retried multiple times first:
+                assert trace.failed().count{ task -> task.name.contains("SPADES") } >= 2
+                assert workflow.getStdout().join("").contains("Execution is retried")
             }
         }
 
