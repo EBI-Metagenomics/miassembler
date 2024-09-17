@@ -5,9 +5,9 @@ Changes in module 'nf-core/seqkit/seq'
      task.ext.when == null || task.ext.when
  
      script:
-+    def min_len     = params.min_contig_length
++    def min_len     = params.short_reads_min_contig_length
 +    if ( meta.library_strategy == "metatranscriptomic" ) {
-+        min_len = params.min_contig_length_metatranscriptomics 
++        min_len = params.short_reads_min_contig_length_metat
 +    }
      def args        = task.ext.args ?: ''
      def args2       = task.ext.args2 ?: ''

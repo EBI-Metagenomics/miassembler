@@ -3,17 +3,17 @@ process FETCHTOOL_READS {
 
     label 'process_single'
 
-    container "quay.io/microbiome-informatics/fetch-tool:v1.0.0rc"
+    container "quay.io/microbiome-informatics/fetch-tool:v1.0.2"
 
     input:
     tuple val(meta), val(study_accession), val(reads_accession)
     path fetchtool_config
 
     output:
-    tuple val(meta), path("download_folder/${study_accession}/raw/${reads_accession}*.fastq.gz"), env(library_strategy), env(library_layout), emit: reads
+    tuple val(meta), path("download_folder/${study_accession}/raw/${reads_accession}*.fastq.gz"), env(library_strategy), env(library_layout), env(platform), emit: reads
     // The '_mqc.' is for multiQC
-    tuple val(meta), path("download_folder/${study_accession}/${study_accession}.txt")                                     , emit: metadata_tsv
-    path "versions.yml"                                                                                                    , emit: versions
+    tuple val(meta), path("download_folder/${study_accession}/${study_accession}.txt")      , emit: metadata_tsv
+    path "versions.yml"                                                                     , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -31,6 +31,15 @@ process FETCHTOOL_READS {
 
     library_strategy=\$(echo "\$(grep ${reads_accession} download_folder/${study_accession}/${study_accession}.txt | cut -f 7)" | tr '[:upper:]' '[:lower:]')
     library_layout=\$(echo "\$(grep ${reads_accession} download_folder/${study_accession}/${study_accession}.txt | cut -f 5)" | tr '[:upper:]' '[:lower:]')
+
+    export metadata_platform=\$(echo "\$(grep ${reads_accession} download_folder/${study_accession}/${study_accession}.txt | cut -f 8)" | tr '[:upper:]' '[:lower:]')
+    if [[ \$metadata_platform == "minion" || \$metadata_platform == "promethion" || \$metadata_platform == "gridion" ]]; then
+        platform="ont"
+    elif [[ \$metadata_platform == "pacbio rs" || \$metadata_platform == "pacbio rs ii" ]]; then
+        platform="pacbio"
+    else
+        platform="short"
+    fi
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

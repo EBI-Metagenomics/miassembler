@@ -10,6 +10,7 @@ process FASTP {
     input:
     tuple val(meta), path(reads)
     path  adapter_fasta
+    val   discard_trimmed_pass
     val   save_trimmed_fail
     val   save_merged
     val   trim_polyA
@@ -32,8 +33,11 @@ process FASTP {
     def polyA = ( trim_polyA || meta.library_strategy == "metatranscriptomic" ) ? "--trim_poly_x" : ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     def adapter_list = adapter_fasta ? "--adapter_fasta ${adapter_fasta}" : ""
-    def fail_fastq = save_trimmed_fail && meta.single_end ? "--failed_out ${prefix}.fail.fastq.gz" : save_trimmed_fail && !meta.single_end ? "--unpaired1 ${prefix}_1.fail.fastq.gz --unpaired2 ${prefix}_2.fail.fastq.gz" : ''
+    def fail_fastq = save_trimmed_fail && meta.single_end ? "--failed_out ${prefix}.fail.fastq.gz" : save_trimmed_fail && !meta.single_end ? "--failed_out ${prefix}.paired.fail.fastq.gz --unpaired1 ${prefix}_1.fail.fastq.gz --unpaired2 ${prefix}_2.fail.fastq.gz" : ''
+    def out_fq1 = discard_trimmed_pass ?: ( meta.single_end ? "--out1 ${prefix}.fastp.fastq.gz" : "--out1 ${prefix}_1.fastp.fastq.gz" )
+    def out_fq2 = discard_trimmed_pass ?: "--out2 ${prefix}_2.fastp.fastq.gz"
     // Added soft-links to original fastqs for consistent naming in MultiQC
+    // Use single ended for interleaved. Add --interleaved_in in config.
     if ( task.ext.args?.contains('--interleaved_in') ) {
         """
         [ ! -f  ${prefix}.fastq.gz ] && ln -sf $reads ${prefix}.fastq.gz
@@ -62,6 +66,7 @@ process FASTP {
 
         fastp \\
             --in1 ${prefix}.fastq.gz \\
+            $out_fq1 \\
             --out1  ${prefix}.fastp.fastq.gz \\
             --thread $task.cpus \\
             --json ${prefix}.fastp.json \\
@@ -85,8 +90,8 @@ process FASTP {
         fastp \\
             --in1 ${prefix}_1.fastq.gz \\
             --in2 ${prefix}_2.fastq.gz \\
-            --out1 ${prefix}_1.fastp.fastq.gz \\
-            --out2 ${prefix}_2.fastp.fastq.gz \\
+            $out_fq1 \\
+            $out_fq2 \\
             --json ${prefix}.fastp.json \\
             --html ${prefix}.fastp.html \\
             $adapter_list \\
@@ -96,7 +101,7 @@ process FASTP {
             --thread $task.cpus \\
             --detect_adapter_for_pe \\
             $args \\
-            2> ${prefix}.fastp.log
+            2> >(tee ${prefix}.fastp.log >&2)
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":

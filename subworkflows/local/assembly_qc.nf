@@ -22,13 +22,13 @@ workflow ASSEMBLY_QC {
 
     take:
     assembly                    // [ val(meta), path(assembly_fasta) ]
-    host_reference_genome       // [ val(meta2), path(reference_genome) ] | meta2 contains the name of the reference genome
+    host_reference_genome       // [ val(meta2), path(host_reference_genome) ] | meta2 contains the name of the reference genome
 
     main:
 
     ch_versions = Channel.empty()
 
-    /* Len filter using the parameter "min_contig_length" */
+    /* Len filter using the parameter "short_reads_min_contig_length" */
     SEQKIT_SEQ(
         assembly
     )
