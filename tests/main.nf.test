@@ -174,4 +174,35 @@ nextflow_pipeline {
         }
 
     }
+
+    test("Samplesheet spades - retries") {
+
+        tag "samplesheet"
+        tag "retries"
+
+        when {
+            params {
+                outdir = "tests/results"
+                assembler = "spades"
+                bwamem2_reference_genomes_folder = "${projectDir}/tests/human_phix/bwa2mem"
+                blast_reference_genomes_folder   = "${projectDir}/tests/human_phix/blast"
+                samplesheet                      = "${projectDir}/tests/samplesheet/test_mem.csv"
+                assembly_memory                  = 0.5
+                  // will will be [0.5GB, 0.75GB, 1.13GB, ...] which rounds down to [0, 0, 1, ...] so should definitely fail twice before succeeding. after a few trys.
+                max_spades_retries               = 5
+            }
+        }
+
+        then {
+            with(workflow) {
+                // eventual success:
+                assert success
+                assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 1
+
+                // but failed and therefore retried multiple times first:
+                assert trace.failed().count{ task -> task.name.contains("SPADES") } >= 2
+            }
+        }
+
+    }
 }

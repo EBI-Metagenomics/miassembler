@@ -135,7 +135,7 @@ workflow MIASSEMBLER {
                 [ meta + [
                     //  -- The metadata will be overriden by the parameters -- //
                     "assembler": params.assembler,
-                    "assembly_memory": params.assembler_memory,
+                    "assembly_memory": params.assembly_memory,
                     "library_strategy": params.library_strategy ?: library_strategy,
                     "library_layout": params.library_layout ?: library_layout,
                     "single_end": params.single_end ?: library_layout == "single"
