@@ -212,7 +212,7 @@
                 "max_spades_retries": {
                     "type": "integer",
                     "description": "Maximum number of task attempt retries for (meta)spades assembly steps only.",
-                    "default": 5,
+                    "default": 3,
                     "fa_icon": "fas fa-repeat",
                     "hidden": true,
                     "help_text": "Each retry will increase the memory by 50%. Use to limit how many times this increase-and-retry happens."
@@ -220,7 +220,7 @@
                 "max_megahit_retries": {
                     "type": "integer",
                     "description": "Maximum number of task attempt retries for megahit assembly steps only.",
-                    "default": 5,
+                    "default": 3,
                     "fa_icon": "fas fa-repeat",
                     "hidden": true,
                     "help_text": "Each retry will increase the memory by 50%. Use to limit how many times this increase-and-retry happens."
