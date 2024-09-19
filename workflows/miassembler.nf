@@ -246,7 +246,8 @@ workflow MIASSEMBLER {
 
     // Coverage //
     ASSEMBLY_COVERAGE(
-        ASSEMBLY_QC.out.filtered_contigs.join( READS_QC.out.qc_reads, remainder: false )
+        ASSEMBLY_QC.out.filtered_contigs.join( READS_QC.out.qc_reads, remainder: false ),
+        READS_QC.out.fastp_json
     )
 
     ch_versions = ch_versions.mix(ASSEMBLY_COVERAGE.out.versions)
