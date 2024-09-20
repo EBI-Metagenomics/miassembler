@@ -135,7 +135,7 @@ workflow MIASSEMBLER {
                 [ meta + [
                     //  -- The metadata will be overriden by the parameters -- //
                     "assembler": params.assembler,
-                    "assembly_memory": params.assembler_memory,
+                    "assembly_memory": params.assembly_memory,
                     "library_strategy": params.library_strategy ?: library_strategy,
                     "library_layout": params.library_layout ?: library_layout,
                     "single_end": params.single_end ?: library_layout == "single"
@@ -246,7 +246,8 @@ workflow MIASSEMBLER {
 
     // Coverage //
     ASSEMBLY_COVERAGE(
-        ASSEMBLY_QC.out.filtered_contigs.join( READS_QC.out.qc_reads, remainder: false )
+        ASSEMBLY_QC.out.filtered_contigs.join( READS_QC.out.qc_reads, remainder: false ),
+        READS_QC.out.fastp_json
     )
 
     ch_versions = ch_versions.mix(ASSEMBLY_COVERAGE.out.versions)

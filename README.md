@@ -165,6 +165,49 @@ results
 
 The nested structure based on ENA Study and Reads accessions was created to suit the Microbiome Informatics team’s needs. The benefit of this structure is that results from different runs of the same study won’t overwrite any results.
 
+### Coverage
+
+The pipeline reports the coverage values for the assembly using two mechanisms: `jgi_summarize_bam_contig_depths` and a custom whole assembly coverage and coverage depth.
+
+#### jgi_summarize_bam_contig_depths
+
+This tool summarizes the depth of coverage for each contig from BAM files containing the mapped reads. It quantifies the extent to which contigs in an assembly are covered by these reads. The output is a tabular file, with rows representing contigs and columns displaying the summarized coverage values from the BAM files. This summary is useful for binning contigs or estimating abundance in various metagenomic datasets.
+
+This file is generated per assembly and stored in the following location (e.g., for study `SRP115494` and run `SRR6180434`): `SRP1154/SRP115494/multiqc/SRR5949/SRR5949318/assembly/metaspades/3.15.5/coverage/SRR6180434_coverage_depth_summary.tsv.gz`
+
+##### Example output of `jgi_summarize_bam_contig_depths`
+
+| contigName                       | contigLen | totalAvgDepth | SRR6180434_sorted.bam | SRR6180434_sorted.bam-var |
+| -------------------------------- | --------- | ------------- | --------------------- | ------------------------- |
+| NODE_1_length_539_cov_105.072314 | 539       | 273.694       | 273.694               | 74284.7                   |
+
+###### Explanation of the Columns:
+
+1. **contigName**: The name or identifier of the contig (e.g., `NODE_1_length_539_cov_105.072314`). This is usually derived from the assembly process and may include information such as the contig length and coverage.
+
+2. **contigLen**: The length of the contig in base pairs (e.g., `539`).
+
+3. **totalAvgDepth**: The average depth of coverage across the entire contig from all BAM files (e.g., `273.694`). This represents the total sequencing coverage averaged across the length of the contig. This value will be the same as the sample avg. depth in assemblies of a single sample.
+
+4. **SRR6180434_sorted.bam**: The average depth of coverage for the specific sample represented by this BAM file (e.g., `273.694`). This shows how well the contig is covered by reads.
+
+5. **SRR6180434_sorted.bam-var**: The variance in the depth of coverage for the same BAM file (e.g., `74284.7`). This gives a measure of how uniform or uneven the read coverage is across the contig.
+
+#### Coverage JSON
+
+The pipeline calculates two key metrics: coverage and coverage depth for the entire assembly. The coverage is determined by dividing the number of assembled base pairs by the total number of base pairs before filtering. Coverage depth is calculated by dividing the number of assembled base pairs by the total length of the assembly, provided the assembly length is greater than zero. These metrics provide insights into how well the reads cover the assembly and the average depth of coverage across the assembled contigs. The script that calculates this number is [calculate_assembly_coverage.py](bin/calculate_assembly_coverage.py).
+
+The pipeline creates a JSON file with the following content:
+
+```json
+{
+  "coverage": 0.04760503915318373,
+  "coverage_depth": 273.694
+}
+```
+
+The file is stored in (e.g. for study `SRP115494` and run `SRR6180434`) -> `SRP1154/SRP115494/multiqc/SRR5949/SRR5949318/assembly/metaspades/3.15.5/coverage/SRR6180434_coverage.json`
+
 ### Top Level Reports
 
 #### MultiQC
@@ -187,10 +230,10 @@ SRR6180434,filter_ratio_threshold_exceeded
 
 ##### Runs exclusion messages
 
-| Exclusion Message                 | Description                                                                                                                                                                                                                                                                            |
-| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Exclusion Message                 | Description                                                                                                                                                                                                                                                              |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `filter_ratio_threshold_exceeded` | The maximum fraction of reads that are allowed to be filtered out. If exceeded, it flags excessive filtering. The default value is 0.9, meaning that if more than 90% of the reads are filtered out, the threshold is considered exceeded, and the run is not assembled. |
-| `low_reads_count_threshold`       | The minimum number of reads required after filtering. If below, it flags a low read count, and the run is not assembled.                                                                                                                                                               |
+| `low_reads_count_threshold`       | The minimum number of reads required after filtering. If below, it flags a low read count, and the run is not assembled.                                                                                                                                                 |
 
 #### Assembled Runs
 
