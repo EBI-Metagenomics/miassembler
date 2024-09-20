@@ -187,7 +187,7 @@ This file is generated per assembly and stored in the following location (e.g., 
 
 2. **contigLen**: The length of the contig in base pairs (e.g., `539`).
 
-3. **totalAvgDepth**: The average depth of coverage across the entire contig from all BAM files (e.g., `273.694`). This represents the total sequencing coverage averaged across the length of the contig.
+3. **totalAvgDepth**: The average depth of coverage across the entire contig from all BAM files (e.g., `273.694`). This represents the total sequencing coverage averaged across the length of the contig. This value will be the same as the sample avg. depth in assemblies of a single sample.
 
 4. **SRR6180434_sorted.bam**: The average depth of coverage for the specific sample represented by this BAM file (e.g., `273.694`). This shows how well the contig is covered by reads.
 
