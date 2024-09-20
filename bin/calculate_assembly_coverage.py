@@ -29,6 +29,9 @@ def get_assembled_base_pairs_and_length(jgi_summarize_coverage_file_gz: str) -> 
             if not contig_length_str.isnumeric():
                 raise ValueError(f"The column 'contigLen' has an invalid value: {contig_length_str}")
 
+            if int(contig_length_str) == 0:
+                raise ValueError(f"The column 'contigLen' cannot have a contig of len 0")
+
             contig_length = float(contig_length_str)
             # If total total_avg_depth_str is not a float, a ValueError should be raised
             total_avg_depth = float(total_avg_depth_str)

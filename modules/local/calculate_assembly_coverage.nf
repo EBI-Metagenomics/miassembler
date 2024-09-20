@@ -13,7 +13,7 @@ process CALCULATE_ASSEMBLY_COVERAGE {
 
     output:
     tuple val(meta), path("${meta.id}_coverage.json"), emit: assembly_coverage_json
-    val("versions.yml"),                                        emit: version
+    val("versions.yml"),                               emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -21,7 +21,7 @@ process CALCULATE_ASSEMBLY_COVERAGE {
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    calculate_assembly_covarege.py -j ${jgi_summary_tsv_gz} -f ${fastp_json} -o ${prefix}_coverage.json
+    calculate_assembly_coverage.py -j ${jgi_summary_tsv_gz} -f ${fastp_json} -o ${prefix}_coverage.json
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

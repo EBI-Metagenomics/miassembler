@@ -48,6 +48,8 @@ workflow ASSEMBLY_COVERAGE {
         METABAT2_JGISUMMARIZEBAMCONTIGDEPTHS.out.depth.join ( fastp_json )
     )
 
+    ch_versions = ch_versions.mix(CALCULATE_ASSEMBLY_COVERAGE.out.versions)
+
     emit:
     coverage_depth_summary        = METABAT2_JGISUMMARIZEBAMCONTIGDEPTHS.out.depth
     samtools_idxstats             = SAMTOOLS_IDXSTATS.out.idxstats
