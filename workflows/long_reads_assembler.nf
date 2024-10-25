@@ -34,17 +34,20 @@ include { ONT_HQ          } from '../subworkflows/local/ont_hq'
 
 // Info required for completion email and summary
 
-workflow LONGREADSASSEMBLER {
+workflow LONG_READS_ASSEMBLER {
 
     take:
-    reads // TODO
+    reads // tuple(meta), path(reads)
 
     main:
 
+    ch_versions = Channel.empty()
+
     LONG_READS_QC (
         reads,
-        params.reference_genome
+        params.host_reference_genome
     )
+    ch_versions = ch_versions.mix(LONG_READS_QC.out.versions)
 
     /*********************************************************************************/
     /* Selecting the combination of adapter trimming, assembler, and post-processing */
@@ -76,12 +79,6 @@ workflow LONGREADSASSEMBLER {
             error "Incompatible configuration"
         }
     }
-
-
-    ch_versions = Channel.empty()
-
-
-    ch_versions = ch_versions.mix(LONG_READS_QC.out.versions)
 
     /*********************************************************************************/
     /* Selecting the combination of adapter trimming, assembler, and post-processing */
@@ -177,6 +174,9 @@ workflow LONGREADSASSEMBLER {
     //     ch_multiqc_logo.toList()
     // )
     // multiqc_report = MULTIQC.out.report.toList()
+
+    emit:
+    versions                             = ch_versions
 }
 
 /*

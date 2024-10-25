@@ -22,7 +22,7 @@ workflow SHORT_READS_ASSEMBLY_QC {
 
     take:
     assembly                    // [ val(meta), path(assembly_fasta) ]
-    host_reference_genome       // [ val(meta2), path(reference_genome) ] | meta2 contains the name of the reference genome
+    host_reference_genome       // [ val(meta2), path(host_reference_genome) ] | meta2 contains the name of the reference genome
 
     main:
 

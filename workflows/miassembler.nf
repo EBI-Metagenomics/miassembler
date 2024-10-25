@@ -59,7 +59,7 @@ include { CUSTOM_DUMPSOFTWAREVERSIONS  } from '../modules/nf-core/custom/dumpsof
 // WORKFLOWS
 //
 include { SHORT_READS_ASSEMBLER   } from '../workflows/short_reads_assembler'
-// include { LONG_READS_ASSEMBLER    } from '../workflows/long_reads_assembler'
+include { LONG_READS_ASSEMBLER    } from '../workflows/long_reads_assembler'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -141,7 +141,7 @@ workflow MIASSEMBLER {
                     //  -- The metadata will be overriden by the parameters -- //
                     "assembler": params.assembler,
                     "assembler_config": params.assembler_config,
-                    "assembly_memory": params.assembler_memory,
+                    "assembly_memory": params.assembly_memory,
                     "library_strategy": params.library_strategy ?: library_strategy,
                     "library_layout": params.library_layout ?: library_layout,
                     "single_end": params.single_end ?: library_layout == "single",
@@ -188,12 +188,11 @@ workflow MIASSEMBLER {
 
     ch_versions.mix( SHORT_READS_ASSEMBLER.out.versions )
 
-    // TODO: enable once this is ready
-    // LONG_READS_ASSEMBLER(
-    //     reads_to_assemble.out.long_reads
-    // )
+    LONG_READS_ASSEMBLER(
+        reads_to_assemble.long_reads
+    )
 
-    // ch_versions.mix( LONG_READS_ASSEMBLER.out.versions )
+    ch_versions.mix( LONG_READS_ASSEMBLER.out.versions )
 
     CUSTOM_DUMPSOFTWAREVERSIONS (
         ch_versions.unique().collectFile(name: 'collated_versions.yml')

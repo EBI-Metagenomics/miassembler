@@ -1,4 +1,4 @@
-include { FASTP_LR                                } from '../../modules/nf-core/fastp/main'
+include { FASTP as FASTP_LR                       } from '../../modules/nf-core/fastp/main'
 include { RAW_READ_QUALITY_CHECK                  } from '../../modules/local/raw_read_quality_check/'
 include { MINIMAP2_ALIGN as HUMAN_DECONTAMINATION } from '../../modules/nf-core/minimap2/align/main'
 include { MINIMAP2_ALIGN as HOST_DECONTAMINATION  } from '../../modules/nf-core/minimap2/align/main'
@@ -21,15 +21,18 @@ workflow LONG_READS_QC {
         false
     )
 
-    ch_versions = ch_versions.mix(FASTP.out.versions)
+    ch_versions = ch_versions.mix(FASTP_LR.out.versions)
 
     RAW_READ_QUALITY_CHECK(
-        FASTP.out.json
+        FASTP_LR.out.json
     )
 
     decontaminated_reads = channel.empty()
 
     if ( params.remove_human ) {
+        // TODO: make this consistent with short_reads
+        // can we use the same flag, even if one has phix but not the other?
+        // Check file extensions too
 
         ch_bwamem2_human_refs = Channel.fromPath( "${params.bwamem2_reference_genomes_folder}/${params.human_blast_index_name}.fna", checkIfExists: true)
             .collect().map {
@@ -39,7 +42,7 @@ workflow LONG_READS_QC {
         // TODO: can we change the way human/host are given via prefixes?
 
         HUMAN_DECONTAMINATION(
-            FASTP.out.reads,
+            FASTP_LR.out.reads,
             ch_bwamem2_human_refs,
             "human",
             true,
@@ -53,12 +56,12 @@ workflow LONG_READS_QC {
         decontaminated_reads = HUMAN_DECONTAMINATION.out.filtered_fastq
 
     } else {
-        decontaminated_reads = FASTP.out.reads
+        decontaminated_reads = FASTP_LR.out.reads
     }
 
     if ( host_reference_genome != null ) {
 
-        ch_bwamem2_host_refs = Channel.fromPath( "${params.bwamem2_reference_genomes_folder}/${host_reference_genome}*", checkIfExists: true)
+        ch_bwamem2_host_refs = Channel.fromPath( "${params.bwamem2_reference_genomes_folder}/${host_reference_genome}", checkIfExists: true)
             .collect().map {
                 files -> [ ["id": host_reference_genome], files ]
             }

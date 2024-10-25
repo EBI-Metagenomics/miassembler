@@ -6,7 +6,7 @@ workflow SHORT_READS_QC {
 
     take:
     reads                 // [ val(meta), path(reads) ]
-    host_reference_genome // [ val(meta2), path(reference_genome) ] | meta2 contains the name of the reference genome
+    host_reference_genome // [ val(meta2), path(host_reference_genome) ] | meta2 contains the name of the reference genome
 
     main:
     ch_versions = Channel.empty()
