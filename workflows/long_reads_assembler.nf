@@ -95,16 +95,16 @@ workflow LONG_READS_ASSEMBLER {
 
     reads_assembler_config = LONG_READS_QC.out.qc_reads.map { meta, reads ->
         if (meta.platform == "ont") {
-            if (params.assembler_config == "nano-raw" || meta.quality == "low") {
-                return [meta + ["assembler_config": "nano-raw"], reads]
-            } else if (params.assembler_config == "nano-hq" || meta.quality == "high") {
-                return [meta + ["assembler_config": "nano-hq"], reads]
+            if (params.long_reads_assembler_config == "nano-raw" || meta.quality == "low") {
+                return [meta + ["long_reads_assembler_config": "nano-raw"], reads]
+            } else if (params.long_reads_assembler_config == "nano-hq" || meta.quality == "high") {
+                return [meta + ["long_reads_assembler_config": "nano-hq"], reads]
             }
         } else if (meta.platform == "pacbio") {
-            if (params.assembler_config == "pacbio-raw" || meta.quality == "low") {
-                return [meta + ["assembler_config": "pacbio-raw"], reads]
-            } else if (params.assembler_config == "pacbio-hifi" || meta.quality == "high") {
-                return [meta + ["assembler_config": "pacbio-hifi"], reads]
+            if (params.long_reads_assembler_config == "pacbio-raw" || meta.quality == "low") {
+                return [meta + ["long_reads_assembler_config": "pacbio-raw"], reads]
+            } else if (params.long_reads_assembler_config == "pacbio-hifi" || meta.quality == "high") {
+                return [meta + ["long_reads_assembler_config": "pacbio-hifi"], reads]
             }
         } else {
             error "Incompatible configuration"
@@ -112,10 +112,10 @@ workflow LONG_READS_ASSEMBLER {
     }
 
     reads_assembler_config.branch { meta, reads ->
-        lq_ont: meta.assembler_config == "nano-raw"
-        hq_ont: meta.assembler_config == "pacbio-raw"
-        lq_pacbio: meta.assembler_config == "nano-hq"
-        hq_pacbio: meta.assembler_config == "pacbio-hifi"
+        lq_ont: meta.long_reads_assembler_config == "nano-raw"
+        hq_ont: meta.long_reads_assembler_config == "pacbio-raw"
+        lq_pacbio: meta.long_reads_assembler_config == "nano-hq"
+        hq_pacbio: meta.long_reads_assembler_config == "pacbio-hifi"
     }.set {subworkflow_platform_reads}
 
     ONT_LQ(

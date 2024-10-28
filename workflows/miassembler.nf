@@ -305,8 +305,8 @@ workflow MIASSEMBLER {
             if ( extended_meta.low_reads_count ) {
                 return "${meta.id},low_reads_count"
             }
-            if ( extended_meta.filter_ratio_threshold_exceeded ) {
-                return "${meta.id},filter_ratio_threshold_exceeded"
+            if ( extended_meta.short_reads_filter_ratio_threshold_exceeded ) {
+                return "${meta.id},short_reads_filter_ratio_threshold_exceeded"
             }
             error "Unexpected. meta: ${meta}, extended_meta: ${extended_meta}"
         }

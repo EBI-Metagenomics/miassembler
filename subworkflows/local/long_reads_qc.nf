@@ -34,7 +34,7 @@ workflow LONG_READS_QC {
         // can we use the same flag, even if one has phix but not the other?
         // Check file extensions too
 
-        ch_bwamem2_human_refs = Channel.fromPath( "${params.bwamem2_reference_genomes_folder}/${params.human_blast_index_name}.fna", checkIfExists: true)
+        human_reference = Channel.fromPath( "${params.reference_genomes_folder}/${params.human_fasta_prefix}.fna", checkIfExists: true)
             .collect().map {
                 files -> [ ["id": params.human_blast_index_name], files ]
             }
@@ -43,7 +43,7 @@ workflow LONG_READS_QC {
 
         HUMAN_DECONTAMINATION(
             FASTP_LR.out.reads,
-            ch_bwamem2_human_refs,
+            human_reference,
             "human",
             true,
             "bai",
@@ -61,14 +61,14 @@ workflow LONG_READS_QC {
 
     if ( host_reference_genome != null ) {
 
-        ch_bwamem2_host_refs = Channel.fromPath( "${params.bwamem2_reference_genomes_folder}/${host_reference_genome}", checkIfExists: true)
+        host_reference = Channel.fromPath( "${params.reference_genomes_folder}/${host_reference_genome}*", checkIfExists: true)
             .collect().map {
                 files -> [ ["id": host_reference_genome], files ]
             }
 
         HOST_DECONTAMINATION(
             decontaminated_reads,
-            ch_bwamem2_host_refs,
+            host_reference,
             "host",
             true,
             "bai",

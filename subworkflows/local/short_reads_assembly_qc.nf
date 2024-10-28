@@ -28,7 +28,7 @@ workflow SHORT_READS_ASSEMBLY_QC {
 
     ch_versions = Channel.empty()
 
-    /* Len filter using the parameter "min_contig_length" */
+    /* Len filter using the parameter "short_reads_min_contig_length" */
     SEQKIT_SEQ(
         assembly
     )
