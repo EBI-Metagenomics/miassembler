@@ -64,15 +64,15 @@ workflow LONG_READS_ASSEMBLER {
 
     reads_assembler_config = LONG_READS_QC.out.qc_reads.map { meta, reads ->
         if (meta.platform == "ont") {
-            if (params.assembler_config == "nano-raw" || meta.quality == "low") {
+            if (params.long_reads_assembler_config == "nano-raw" || meta.quality == "low") {
                 return [meta + ["assembler_config": "nano-raw"], reads]
-            } else if (params.assembler_config == "nano-hq" || meta.quality == "high") {
+            } else if (params.long_reads_assembler_config == "nano-hq" || meta.quality == "high") {
                 return [meta + ["assembler_config": "nano-hq"], reads]
             }
         } else if (meta.platform == "pacbio") {
-            if (params.assembler_config == "pacbio-raw" || meta.quality == "low") {
+            if (params.long_reads_assembler_config == "pacbio-raw" || meta.quality == "low") {
                 return [meta + ["assembler_config": "pacbio-raw"], reads]
-            } else if (params.assembler_config == "pacbio-hifi" || meta.quality == "high") {
+            } else if (params.long_reads_assembler_config == "pacbio-hifi" || meta.quality == "high") {
                 return [meta + ["assembler_config": "pacbio-hifi"], reads]
             }
         } else {
@@ -147,10 +147,6 @@ workflow LONG_READS_ASSEMBLER {
     //     INPUT_CHECK.out.reads
     // )
     // ch_versions = ch_versions.mix(FASTQC.out.versions.first())
-
-    // CUSTOM_DUMPSOFTWAREVERSIONS (
-    //     ch_versions.unique().collectFile(name: 'collated_versions.yml')
-    // )
 
     //
     // MODULE: MultiQC

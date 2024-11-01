@@ -102,8 +102,8 @@ workflow SHORT_READS_ASSEMBLER {
             bf_total_reads = json_txt?.summary?.before_filtering?.total_reads ?: 0;
             af_total_reads = json_txt?.summary?.after_filtering?.total_reads ?: 0;
             reads_qc_meta = [
-                "low_reads_count": af_total_reads <= params.low_reads_count_threshold,
-                "filter_ratio_threshold_exceeded": af_total_reads == 0 || ((af_total_reads / bf_total_reads) <= params.filter_ratio_threshold )
+                "low_reads_count": af_total_reads <= params.short_reads_low_reads_count_threshold,
+                "filter_ratio_threshold_exceeded": af_total_reads == 0 || ((af_total_reads / bf_total_reads) <= params.short_reads_filter_ratio_threshold )
             ]
             return [meta, reads_qc_meta]
         }

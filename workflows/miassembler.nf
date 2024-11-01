@@ -96,7 +96,7 @@ workflow MIASSEMBLER {
                               "single_end": true,
                               "assembler": assembler ?: params.assembler,
                               "assembly_memory": assembly_memory ?: params.assembly_memory,
-                              "assembler_config": params.assembler_config
+                              "assembler_config": params.long_reads_assembler_config
                             ],
                             [fq1]
                         )
@@ -108,7 +108,7 @@ workflow MIASSEMBLER {
                               "single_end": false,
                               "assembler": assembler ?: params.assembler,
                               "assembly_memory": assembly_memory ?: params.assembly_memory,
-                              "assembler_config": params.assembler_config,
+                              "assembler_config": params.long_reads_assembler_config,
                               "platform": params.platform ?: platform
                             ],
                             [fq1, fq2])
@@ -140,7 +140,7 @@ workflow MIASSEMBLER {
                 [ meta + [
                     //  -- The metadata will be overriden by the parameters -- //
                     "assembler": params.assembler,
-                    "assembler_config": params.assembler_config,
+                    "assembler_config": params.long_reads_assembler_config,
                     "assembly_memory": params.assembly_memory,
                     "library_strategy": params.library_strategy ?: library_strategy,
                     "library_layout": params.library_layout ?: library_layout,
@@ -186,13 +186,13 @@ workflow MIASSEMBLER {
         reads_to_assemble.short_reads
     )
 
-    ch_versions.mix( SHORT_READS_ASSEMBLER.out.versions )
+    ch_versions = ch_versions.mix( SHORT_READS_ASSEMBLER.out.versions )
 
     LONG_READS_ASSEMBLER(
         reads_to_assemble.long_reads
     )
 
-    ch_versions.mix( LONG_READS_ASSEMBLER.out.versions )
+    ch_versions = ch_versions.mix( LONG_READS_ASSEMBLER.out.versions )
 
     CUSTOM_DUMPSOFTWAREVERSIONS (
         ch_versions.unique().collectFile(name: 'collated_versions.yml')
@@ -305,8 +305,8 @@ workflow MIASSEMBLER {
             if ( extended_meta.low_reads_count ) {
                 return "${meta.id},low_reads_count"
             }
-            if ( extended_meta.short_reads_filter_ratio_threshold_exceeded ) {
-                return "${meta.id},short_reads_filter_ratio_threshold_exceeded"
+            if ( extended_meta.filter_ratio_threshold_exceeded ) {
+                return "${meta.id},filter_ratio_threshold_exceeded"
             }
             error "Unexpected. meta: ${meta}, extended_meta: ${extended_meta}"
         }

@@ -134,11 +134,6 @@
                     "description": "Combined Human and phiX BLAST db.",
                     "default": "human_phix"
                 },
-                "human_blast_index_name": {
-                    "type": "string",
-                    "description": "Human BLAST db.",
-                    "default": "human"
-                },
                 "human_phix_bwamem2_index_name": {
                     "type": "string",
                     "description": "Combined Human and phiX bwa-mem2 index.",

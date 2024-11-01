@@ -36,7 +36,7 @@ workflow LONG_READS_QC {
 
         human_reference = Channel.fromPath( "${params.reference_genomes_folder}/${params.human_fasta_prefix}.fna", checkIfExists: true)
             .collect().map {
-                files -> [ ["id": params.human_blast_index_name], files ]
+                files -> [ ["id": params.human_fasta_prefix], files ]
             }
 
         // TODO: can we change the way human/host are given via prefixes?
