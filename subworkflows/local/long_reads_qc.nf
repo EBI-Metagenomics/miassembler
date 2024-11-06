@@ -7,7 +7,7 @@ workflow LONG_READS_QC {
 
     take:
     reads                   // [ val(meta), path(reads) ]
-    host_reference_genome   // [ val(meta2), path(reference_genome) ]
+    reference_genome   // [ val(meta2), path(reference_genome) ]
 
     main:
     ch_versions = Channel.empty()
@@ -59,11 +59,11 @@ workflow LONG_READS_QC {
         decontaminated_reads = FASTP_LR.out.reads
     }
 
-    if ( host_reference_genome != null ) {
+    if ( reference_genome != null ) {
 
-        host_reference = Channel.fromPath( "${params.reference_genomes_folder}/${host_reference_genome}*", checkIfExists: true)
+        host_reference = Channel.fromPath( "${params.reference_genomes_folder}/${reference_genome}*", checkIfExists: true)
             .collect().map {
-                files -> [ ["id": host_reference_genome], files ]
+                files -> [ ["id": reference_genome], files ]
             }
 
         HOST_DECONTAMINATION(

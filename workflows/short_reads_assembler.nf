@@ -85,7 +85,7 @@ workflow SHORT_READS_ASSEMBLER {
 
     SHORT_READS_QC(
         reads_by_assembler,
-        params.host_reference_genome
+        params.reference_genome
     )
 
     FASTQC_AFTER (
@@ -142,7 +142,7 @@ workflow SHORT_READS_ASSEMBLER {
     // Clean the assembly contigs //
     SHORT_READS_ASSEMBLY_QC(
         assembly,
-        params.host_reference_genome
+        params.reference_genome
     )
 
     ch_versions = ch_versions.mix(SHORT_READS_ASSEMBLY_QC.out.versions)

@@ -22,7 +22,7 @@ workflow SHORT_READS_ASSEMBLY_QC {
 
     take:
     assembly                    // [ val(meta), path(assembly_fasta) ]
-    host_reference_genome       // [ val(meta2), path(host_reference_genome) ] | meta2 contains the name of the reference genome
+    reference_genome       // [ val(meta2), path(reference_genome) ] | meta2 contains the name of the reference genome
 
     main:
 
@@ -60,11 +60,11 @@ workflow SHORT_READS_ASSEMBLY_QC {
         ch_versions = ch_versions.mix(SEQKIT_GREP_HUMAN_PHIX.out.versions)
     }
 
-    if ( host_reference_genome != null ) {
+    if ( reference_genome != null ) {
 
-        ch_blast_host_refs = Channel.fromPath( "${params.blast_reference_genomes_folder}/${host_reference_genome}*", checkIfExists: true)
+        ch_blast_host_refs = Channel.fromPath( "${params.blast_reference_genomes_folder}/${reference_genome}*", checkIfExists: true)
             .collect().map {
-                files -> [ ["id": host_reference_genome], files ]
+                files -> [ ["id": reference_genome], files ]
             }
 
         BLAST_BLASTN_HOST(

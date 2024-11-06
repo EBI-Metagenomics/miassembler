@@ -45,7 +45,7 @@ workflow LONG_READS_ASSEMBLER {
 
     LONG_READS_QC (
         reads,
-        params.host_reference_genome
+        params.reference_genome
     )
     ch_versions = ch_versions.mix(LONG_READS_QC.out.versions)
 
