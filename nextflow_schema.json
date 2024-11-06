@@ -86,7 +86,7 @@
                     "type": "string",
                     "default": "1.2.9"
                 },
-                "host_reference_genome": {
+                "reference_genome": {
                     "type": "string",
                     "description": "The genome to be used to clean the assembly, the genome will be taken from the Microbiome Informatics internal directory",
                     "enum": [
@@ -133,11 +133,6 @@
                     "type": "string",
                     "description": "Combined Human and phiX BLAST db.",
                     "default": "human_phix"
-                },
-                "human_blast_index_name": {
-                    "type": "string",
-                    "description": "Human BLAST db.",
-                    "default": "human"
                 },
                 "human_phix_bwamem2_index_name": {
                     "type": "string",

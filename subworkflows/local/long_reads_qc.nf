@@ -1,12 +1,13 @@
-include { FASTP_LR                                } from '../../modules/nf-core/fastp/main'
+include { FASTP as FASTP_LR                       } from '../../modules/nf-core/fastp/main'
 include { RAW_READ_QUALITY_CHECK                  } from '../../modules/local/raw_read_quality_check/'
 include { MINIMAP2_ALIGN as HUMAN_DECONTAMINATION } from '../../modules/nf-core/minimap2/align/main'
 include { MINIMAP2_ALIGN as HOST_DECONTAMINATION  } from '../../modules/nf-core/minimap2/align/main'
 
 workflow LONG_READS_QC {
+
     take:
     reads                   // [ val(meta), path(reads) ]
-    host_reference_genome   // [ val(meta2), path(reference_genome) ]
+    reference_genome   // [ val(meta2), path(reference_genome) ]
 
     main:
     ch_versions = Channel.empty()
@@ -20,25 +21,28 @@ workflow LONG_READS_QC {
         false
     )
 
-    ch_versions = ch_versions.mix(FASTP.out.versions)
+    ch_versions = ch_versions.mix(FASTP_LR.out.versions)
 
     RAW_READ_QUALITY_CHECK(
-        FASTP.out.json
+        FASTP_LR.out.json
     )
 
     decontaminated_reads = channel.empty()
 
     if ( params.remove_human ) {
+        // TODO: make this consistent with short_reads
+        // can we use the same flag, even if one has phix but not the other?
+        // Check file extensions too
 
         human_reference = Channel.fromPath( "${params.reference_genomes_folder}/${params.human_fasta_prefix}.fna", checkIfExists: true)
             .collect().map {
-                files -> [ ["id": params.human_blast_index_name], files ]
+                files -> [ ["id": params.human_fasta_prefix], files ]
             }
 
         // TODO: can we change the way human/host are given via prefixes?
 
         HUMAN_DECONTAMINATION(
-            FASTP.out.reads,
+            FASTP_LR.out.reads,
             human_reference,
             "human",
             true,
@@ -52,14 +56,14 @@ workflow LONG_READS_QC {
         decontaminated_reads = HUMAN_DECONTAMINATION.out.filtered_fastq
 
     } else {
-        decontaminated_reads = FASTP.out.reads
+        decontaminated_reads = FASTP_LR.out.reads
     }
 
-    if ( host_reference_genome != null ) {
+    if ( reference_genome != null ) {
 
-        host_reference = Channel.fromPath( "${params.reference_genomes_folder}/${host_reference_genome}*", checkIfExists: true)
+        host_reference = Channel.fromPath( "${params.reference_genomes_folder}/${reference_genome}*", checkIfExists: true)
             .collect().map {
-                files -> [ ["id": host_reference_genome], files ]
+                files -> [ ["id": reference_genome], files ]
             }
 
         HOST_DECONTAMINATION(

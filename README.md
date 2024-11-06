@@ -38,7 +38,7 @@ Input/output options
   --spades_version                        [string]  null [default: 3.15.5]
   --megahit_version                       [string]  null [default: 1.2.9]
   --flye_version                          [string]  null [default: 2.9]
-  --host_reference_genome                 [string]  The genome to be used to clean the assembly, the genome will be taken from the Microbiome Informatics
+  --reference_genome                 [string]  The genome to be used to clean the assembly, the genome will be taken from the Microbiome Informatics
                                                     internal directory (accepted: chicken.fna, salmon.fna, cod.fna, pig.fna, cow.fna, mouse.fna,
                                                     honeybee.fna, rainbow_trout.fna, ...)
   --blast_reference_genomes_folder        [string]  The folder with the reference genome blast indexes, defaults to the Microbiome Informatics internal
@@ -69,7 +69,7 @@ Example:
 nextflow run ebi-metagenomics/miassembler \
   -profile codon_slurm \
   --assembler metaspades \
-  --host_reference_genome human \
+  --reference_genome human \
   --outdir testing_results \
   --study_accession SRP002480 \
   --reads_accession SRR1631361
