@@ -35,6 +35,7 @@ Input/output options
   --library_strategy                      [string]  Force the library_strategy value for the study / reads (accepted: metagenomic, metatranscriptomic,
                                                     genomic, transcriptomic, other)
   --library_layout                        [string]  Force the library_layout value for the study / reads (accepted: single, paired)
+  --platform                              [string]  Force the sequencing_platform value for the study / reads 
   --spades_version                        [string]  null [default: 3.15.5]
   --megahit_version                       [string]  null [default: 1.2.9]
   --flye_version                          [string]  null [default: 2.9]

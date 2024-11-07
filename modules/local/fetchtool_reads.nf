@@ -38,7 +38,7 @@ process FETCHTOOL_READS {
     elif [[ \$metadata_platform == "pacbio rs" || \$metadata_platform == "pacbio rs ii" ]]; then
         platform="pacbio"
     else
-        platform="short"
+        platform=\$metadata_platform
     fi
 
     cat <<-END_VERSIONS > versions.yml
