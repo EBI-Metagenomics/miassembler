@@ -1,11 +1,11 @@
-include { FASTP as FASTP_LR                       } from '../../modules/nf-core/fastp/main'
-include { MINIMAP2_ALIGN as HUMAN_DECONTAMINATION } from '../../modules/nf-core/minimap2/align/main'
-include { MINIMAP2_ALIGN as HOST_DECONTAMINATION  } from '../../modules/nf-core/minimap2/align/main'
+include { FASTP as FASTP_LR                      } from '../../modules/nf-core/fastp/main'
+include { MINIMAP2_ALIGN as MINIMAP2_ALIGN_HUMAN } from '../../modules/nf-core/minimap2/align/main'
+include { MINIMAP2_ALIGN as MINIMAP2_ALIGN_HOST  } from '../../modules/nf-core/minimap2/align/main'
 
 workflow LONG_READS_QC {
 
     take:
-    reads                   // [ val(meta), path(reads) ]
+    reads              // [ val(meta), path(reads) ]
     reference_genome   // [ val(meta2), path(reference_genome) ]
 
     main:
@@ -13,11 +13,11 @@ workflow LONG_READS_QC {
 
     FASTP_LR(
         reads,
-        [],
-        false,
-        false,
-        false,
-        false
+        [],      // no input adapters
+        false,   // keep passing reads in the output
+        false,   // omit trimmed reads in the output
+        false,   // don't merge all reads in the output
+        false    // don't trim for polyA
     )
 
     ch_versions = ch_versions.mix(FASTP_LR.out.versions)
@@ -37,9 +37,7 @@ workflow LONG_READS_QC {
         } 
     }
 
-    RAW_READ_QUALITY_CHECK(
-        FASTP_LR.out.json
-    )
+    // TODO: add filter if too many reads are removed
 
     decontaminated_reads = channel.empty()
 
@@ -55,14 +53,14 @@ workflow LONG_READS_QC {
 
         // TODO: can we change the way human/host are given via prefixes?
 
-        HUMAN_DECONTAMINATION(
+        MINIMAP2_ALIGN_HUMAN(
             FASTP_LR.out.reads,
             human_reference,
             "human",
-            true,
-            "bai",
-            false,
-            true
+            true,    // output bam format
+            "bai",   // bam index extension
+            false,   // no CIGAR in paf format
+            true     // allow for long CIGAR
         )
 
         ch_versions = ch_versions.mix(HUMAN_DECONTAMINATION.out.versions)
@@ -80,30 +78,22 @@ workflow LONG_READS_QC {
                 files -> [ ["id": reference_genome], files ]
             }
 
-        HOST_DECONTAMINATION(
+        MINIMAP2_ALIGN_HOST(
             decontaminated_reads,
             host_reference,
             "host",
-            true,
-            "bai",
-            false,
-            true
+            true,    // output bam format
+            "bai",   // bam index extension
+            false,   // no CIGAR in paf format
+            true     // allow for long CIGAR
         )
 
-        ch_versions = ch_versions.mix(HOST_DECONTAMINATION.out.versions)
+        ch_versions = ch_versions.mix(MINIMAP2_ALIGN_HOST.out.versions)
 
-        decontaminated_reads = HOST_DECONTAMINATION.out.filtered_fastq
+        decontaminated_reads = MINIMAP2_ALIGN_HOST.out.filtered_fastq
     }
 
-    final_reads = decontaminated_reads
-                .map{ meta, reads -> {
-                        [ meta + [
-                            "quality": RAW_READ_QUALITY_CHECK.out.quality.val
-                        ], reads ]
-                    }
-                }
-
     emit:
-    qc_reads = final_reads
+    qc_reads = decontaminated_reads
     versions = ch_versions
 }

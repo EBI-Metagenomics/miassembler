@@ -1,4 +1,4 @@
-include { CANU as CANU_ONT                     } from '../../modules/nf-core/canu/main'
+include { CANU } from '../../modules/nf-core/canu/main'
 
 workflow ONT_LQ {
     take:

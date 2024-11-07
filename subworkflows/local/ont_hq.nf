@@ -1,4 +1,4 @@
-include { PORECHOP_ABI as PORECHOP_ONT         } from '../../modules/nf-core/porechop/abi/main'
+include { PORECHOP_ABI } from '../../modules/nf-core/porechop/abi/main'
 
 workflow ONT_HQ {
     take:

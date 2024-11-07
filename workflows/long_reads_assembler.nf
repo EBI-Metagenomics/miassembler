@@ -13,8 +13,8 @@ include { LONG_READS_QC   } from '../subworkflows/local/long_reads_qc'
 
 include { ONT_LQ          } from '../subworkflows/local/ont_lq'
 include { ONT_HQ          } from '../subworkflows/local/ont_hq'
-// include { PACBIO_LQ       } from '../subworkflows/local/pacbio_lq'
-// include { PACBIO_HIFI     } from '../subworkflows/local/pacbio_hifi'
+include { PACBIO_LQ       } from '../subworkflows/local/pacbio_lq'
+include { PACBIO_HIFI     } from '../subworkflows/local/pacbio_hifi'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
