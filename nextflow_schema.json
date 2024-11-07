@@ -155,7 +155,7 @@
                     "description": "Minimum contig length filter for short reads metaT."
                 },
                 "assembly_memory": {
-                    "type": "integer",
+                    "type": "number",
                     "default": 100,
                     "description": "Default memory allocated for the assembly process."
                 },
@@ -238,6 +238,22 @@
                     "pattern": "^(\\d+\\.?\\s*(s|m|h|d|day)\\s*)+$",
                     "hidden": true,
                     "help_text": "Use to set an upper-limit for the time requirement for each process. Should be a string in the format integer-unit e.g. `--max_time '2.h'`"
+                },
+                "max_spades_retries": {
+                    "type": "integer",
+                    "description": "Maximum number of task attempt retries for (meta)spades assembly steps only.",
+                    "default": 3,
+                    "fa_icon": "fas fa-repeat",
+                    "hidden": true,
+                    "help_text": "Each retry will increase the memory by 50%. Use to limit how many times this increase-and-retry happens."
+                },
+                "max_megahit_retries": {
+                    "type": "integer",
+                    "description": "Maximum number of task attempt retries for megahit assembly steps only.",
+                    "default": 3,
+                    "fa_icon": "fas fa-repeat",
+                    "hidden": true,
+                    "help_text": "Each retry will increase the memory by 50%. Use to limit how many times this increase-and-retry happens."
                 }
             }
         },

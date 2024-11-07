@@ -1,0 +1,2 @@
+study_accession,reads_accession,fastq_1,fastq_2,library_layout,library_strategy,assembler,assembly_memory
+SRP115494,SRR5949318,https://github.com/EBI-Metagenomics/miassembler/raw/main/tests/test_reads/SRR5949318_1.fastq.gz,https://github.com/EBI-Metagenomics/miassembler/raw/main/tests/test_reads/SRR5949318_2.fastq.gz,paired,metagenomic,,
