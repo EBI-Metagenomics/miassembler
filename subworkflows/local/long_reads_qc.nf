@@ -1,5 +1,4 @@
 include { FASTP as FASTP_LR                       } from '../../modules/nf-core/fastp/main'
-include { RAW_READ_QUALITY_CHECK                  } from '../../modules/local/raw_read_quality_check/'
 include { MINIMAP2_ALIGN as HUMAN_DECONTAMINATION } from '../../modules/nf-core/minimap2/align/main'
 include { MINIMAP2_ALIGN as HOST_DECONTAMINATION  } from '../../modules/nf-core/minimap2/align/main'
 
@@ -22,6 +21,21 @@ workflow LONG_READS_QC {
     )
 
     ch_versions = ch_versions.mix(FASTP_LR.out.versions)
+
+    quality_levels_ch = FASTP_LR.out.json.map { meta, json -> {
+        json_txt = new JsonSlurper().parseText(json.text)
+        q20bases = json_txt?.summary?.before_filtering?.q20_bases ?: 0;
+        total_bases = json_txt?.summary?.before_filtering?.total_bases ?: 0;
+
+        q20_percentage = q20_bases / total_bases * 100
+
+        quality = [
+            "high_quality": q20_percentage >= 80, 
+            "low_quality": q20_percentage < 80,
+        ]
+        return [meta, quality]
+        } 
+    }
 
     RAW_READ_QUALITY_CHECK(
         FASTP_LR.out.json
