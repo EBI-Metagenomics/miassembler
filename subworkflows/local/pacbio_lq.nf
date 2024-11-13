@@ -1,4 +1,4 @@
-include { CANU as CANU_PACBIO                  } from '../../modules/nf-core/canu/main'
+include { CANU as CANU_PACBIO } from '../../modules/nf-core/canu/main'
 
 workflow PACBIO_LQ {
     take:

@@ -1,3 +1,5 @@
+import groovy.json.JsonSlurper
+
 include { FASTP as FASTP_LR                      } from '../../modules/nf-core/fastp/main'
 include { MINIMAP2_ALIGN as MINIMAP2_ALIGN_HUMAN } from '../../modules/nf-core/minimap2/align/main'
 include { MINIMAP2_ALIGN as MINIMAP2_ALIGN_HOST  } from '../../modules/nf-core/minimap2/align/main'
@@ -63,9 +65,9 @@ workflow LONG_READS_QC {
             true     // allow for long CIGAR
         )
 
-        ch_versions = ch_versions.mix(HUMAN_DECONTAMINATION.out.versions)
+        ch_versions = ch_versions.mix(MINIMAP2_ALIGN_HUMAN.out.versions)
 
-        decontaminated_reads = HUMAN_DECONTAMINATION.out.filtered_fastq
+        decontaminated_reads = MINIMAP2_ALIGN_HUMAN.out.filtered_fastq
 
     } else {
         decontaminated_reads = FASTP_LR.out.reads

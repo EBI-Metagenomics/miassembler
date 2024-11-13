@@ -80,13 +80,13 @@ workflow SHORT_READS_ASSEMBLER {
     FASTQC_BEFORE (
         reads_by_assembler
     )
-
     ch_versions = ch_versions.mix(FASTQC_BEFORE.out.versions)
 
     SHORT_READS_QC(
         reads_by_assembler,
         params.reference_genome
     )
+    ch_versions = ch_versions.mix(SHORT_READS_QC.out.versions)
 
     FASTQC_AFTER (
         SHORT_READS_QC.out.qc_reads
@@ -118,8 +118,6 @@ workflow SHORT_READS_ASSEMBLER {
         xspades: ["metaspades", "spades"].contains(meta.assembler)
     }.set { qc_filtered_reads }
 
-    ch_versions = ch_versions.mix(SHORT_READS_QC.out.versions)
-
     /*********************/
     /*     Assembly     */
     /********************/
@@ -128,23 +126,20 @@ workflow SHORT_READS_ASSEMBLER {
         [], // yml input parameters, which we don't use
         []  // hmm, not used
     )
-
     ch_versions = ch_versions.mix(SPADES.out.versions)
 
     MEGAHIT(
         qc_filtered_reads.megahit.map { meta, reads, _ -> [meta, reads] }
     )
-
-    assembly = SPADES.out.contigs.mix( MEGAHIT.out.contigs )
-
     ch_versions = ch_versions.mix(MEGAHIT.out.versions)
+    
+    assembly = SPADES.out.contigs.mix( MEGAHIT.out.contigs )
 
     // Clean the assembly contigs //
     SHORT_READS_ASSEMBLY_QC(
         assembly,
         params.reference_genome
     )
-
     ch_versions = ch_versions.mix(SHORT_READS_ASSEMBLY_QC.out.versions)
 
     // Coverage //

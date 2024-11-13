@@ -5,12 +5,12 @@ workflow ONT_HQ {
     reads                   // [ val(meta), path(reads) ]
 
     main:
-    PORECHOP_ONT(
+    PORECHOP_ABI(
         reads
     )
-    PORECHOP_ONT.out.reads.view()
+    PORECHOP_ABI.out.reads.view()
 
     // temporary just to test the module
     emit:
-    contigs = PORECHOP_ONT.out.reads
+    contigs = PORECHOP_ABI.out.reads
 }
