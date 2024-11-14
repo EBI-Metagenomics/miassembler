@@ -5,7 +5,7 @@ include { BWAMEM2DECONTNOBAMS as HOST_DECONTAMINATION       } from '../../module
 workflow SHORT_READS_QC {
 
     take:
-    reads                 // [ val(meta), path(reads) ]
+    reads            // [ val(meta), path(reads) ]
     reference_genome // [ val(meta2), path(reference_genome) ] | meta2 contains the name of the reference genome
 
     main:
