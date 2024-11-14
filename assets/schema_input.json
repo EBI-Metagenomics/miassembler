@@ -47,6 +47,9 @@
                 "enum": ["metagenomic", "metatranscriptomic", "genomic", "transcriptomic", "other"],
                 "errorMessage": "library strategy should be only value from list: 'metagenomic', 'metatranscriptomic', 'genomic', 'transcriptomic', 'other'"
             },
+            "platform": {
+                "type": "string"
+            },
             "assembler": {
                 "type": "string",
                 "enum": ["spades", "metaspades", "megahit"],
@@ -57,6 +60,9 @@
                 "type": "integer",
                 "default": null,
                 "description": "Default memory (in GB) allocated for the assembly process for the run."
+            },
+            "assembler_config": {
+                "type": "string"
             }
         },
         "required": ["study_accession", "reads_accession", "fastq_1", "library_layout", "library_strategy"]
