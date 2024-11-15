@@ -8,13 +8,15 @@
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
 
-include { FETCHTOOL_READS } from '../modules/local/fetchtool_reads'
-include { LONG_READS_QC   } from '../subworkflows/local/long_reads_qc'
+include { FETCHTOOL_READS        } from '../modules/local/fetchtool_reads'
+include { LONG_READS_QC          } from '../subworkflows/local/long_reads_qc'
 
-include { ONT_LQ          } from '../subworkflows/local/ont_lq'
-include { ONT_HQ          } from '../subworkflows/local/ont_hq'
-include { PACBIO_LQ       } from '../subworkflows/local/pacbio_lq'
-include { PACBIO_HIFI     } from '../subworkflows/local/pacbio_hifi'
+include { ONT_LQ                 } from '../subworkflows/local/ont_lq'
+include { ONT_HQ                 } from '../subworkflows/local/ont_hq'
+include { PACBIO_LQ              } from '../subworkflows/local/pacbio_lq'
+include { PACBIO_HIFI            } from '../subworkflows/local/pacbio_hifi'
+
+include { LONG_READS_ASSEMBLY_QC } from '../subworkflows/local/long_reads_assembly_qc'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -56,7 +58,7 @@ workflow LONG_READS_ASSEMBLER {
         The selection process ensures that:
         - The user selected assembler configuration is always used (either from the samplesheet assembler column (with precedence) or the params.assembler)
         - Low-quality ONT reads are trimmed with canu and assembled with flye --nano-corr/raw), unless specified otherwise.
-        - High-quality ONT reads are trimmed with porechob_abi and assembled with flye --nano-hq), unless specified otherwise.
+        - High-quality ONT reads are trimmed with porechop_abi and assembled with flye --nano-hq), unless specified otherwise.
         - Low-quality pacbio reads are trimmed with canu and assembled with flye --pacbio-corr/raw), unless specified otherwise.
         - High-quality pacbio reads are trimmed with HiFiAdapterFilt and assembled with flye --pacbio-hifi), unless specified otherwise.
         Extra polishing steps are applied to low-quality reads. All subworkflows also apply post-assembly host decontamination.
@@ -80,37 +82,6 @@ workflow LONG_READS_ASSEMBLER {
         }
     }
 
-    /*********************************************************************************/
-    /* Selecting the combination of adapter trimming, assembler, and post-processing */
-    /*********************************************************************************/
-    /*
-        The selection process ensures that:
-        - The user selected assembler configuration is always used (either from the samplesheet assembler column (with precedence) or the params.assembler)
-        - Low-quality ONT reads are trimmed with canu and assembled with flye --nano-corr/raw), unless specified otherwise.
-        - High-quality ONT reads are trimmed with porechob_abi and assembled with flye --nano-hq), unless specified otherwise.
-        - Low-quality pacbio reads are trimmed with canu and assembled with flye --pacbio-corr/raw), unless specified otherwise.
-        - High-quality pacbio reads are trimmed with HiFiAdapterFilt and assembled with flye --pacbio-hifi), unless specified otherwise.
-        Extra polishing steps are applied to low-quality reads. All subworkflows also apply post-assembly host decontamination.
-    */
-
-    reads_assembler_config = LONG_READS_QC.out.qc_reads.map { meta, reads ->
-        if (meta.platform == "ont") {
-            if (params.long_reads_assembler_config == "nano-raw" || meta.quality == "low") {
-                return [meta + ["long_reads_assembler_config": "nano-raw"], reads]
-            } else if (params.long_reads_assembler_config == "nano-hq" || meta.quality == "high") {
-                return [meta + ["long_reads_assembler_config": "nano-hq"], reads]
-            }
-        } else if (meta.platform == "pacbio") {
-            if (params.long_reads_assembler_config == "pacbio-raw" || meta.quality == "low") {
-                return [meta + ["long_reads_assembler_config": "pacbio-raw"], reads]
-            } else if (params.long_reads_assembler_config == "pacbio-hifi" || meta.quality == "high") {
-                return [meta + ["long_reads_assembler_config": "pacbio-hifi"], reads]
-            }
-        } else {
-            error "Incompatible configuration"
-        }
-    }
-
     reads_assembler_config.branch { meta, reads ->
         lq_ont: meta.long_reads_assembler_config == "nano-raw"
         hq_ont: meta.long_reads_assembler_config == "pacbio-raw"
@@ -126,19 +97,37 @@ workflow LONG_READS_ASSEMBLER {
         subworkflow_platform_reads.hq_ont
     )
 
-    // PACBIO_LQ(
-    //     subworkflow_platform_reads.lq_pacbio.map { meta, reads -> [meta, reads] }
-    // )
+    PACBIO_LQ(
+        subworkflow_platform_reads.lq_pacbio.map { meta, reads -> [meta, reads] }
+    )
 
-    // PACBIO_HIFI(
-    //     subworkflow_platform_reads.hq_pacbio.map { meta, reads -> [meta, reads] }
-    // )
+    PACBIO_HIFI(
+        subworkflow_platform_reads.hq_pacbio.map { meta, reads -> [meta, reads] }
+    )
 
-    assembly = ONT_LQ.out.contigs.mix( ONT_HQ.out.contigs )//, PACBIO_LQ.out.contigs, PACBIO_HIFI.out.contigs )
+    assembly = ONT_LQ.out.contigs.mix(ONT_HQ.out.contigs,
+                                      PACBIO_LQ.out.contigs,
+                                      PACBIO_HIFI.out.contigs)
+    assembly.view()
 
     /*************************************/
     /* Post-assembly: coverage and stats */
     /*************************************/
+
+    LONG_READS_ASSEMBLY_QC{
+        assembly,
+        params.host_reference_genome
+    }
+    ch_versions = ch_versions.mix(LONG_READS_ASSEMBLY_QC.out.versions)
+
+    assembly.branch { meta, contigs ->
+        lq: meta.quality == "low"
+        hq: meta.quality == "high"
+    }.set {subworkflow_quality_contigs}
+
+    FRAMESHIFT_CORRECTION{
+        subworkflow_quality_contigs.lq.map { meta, contigs -> [meta, contigs] }
+    }
 
     //
     // MODULE: Run FastQC
