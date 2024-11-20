@@ -3,7 +3,7 @@ process FETCHTOOL_READS {
 
     label 'process_single'
 
-    container "quay.io/microbiome-informatics/fetch-tool:v1.0.2"
+    container "quay.io/microbiome-informatics/fetch-tool:v1.0.4"
 
     input:
     tuple val(meta), val(study_accession), val(reads_accession)

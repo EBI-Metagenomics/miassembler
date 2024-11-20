@@ -81,53 +81,54 @@ workflow LONG_READS_ASSEMBLER {
             error "Incompatible configuration"
         }
     }
+    reads_assembler_config.view()
 
-    reads_assembler_config.branch { meta, reads ->
-        lq_ont: meta.long_reads_assembler_config == "nano-raw"
-        hq_ont: meta.long_reads_assembler_config == "pacbio-raw"
-        lq_pacbio: meta.long_reads_assembler_config == "nano-hq"
-        hq_pacbio: meta.long_reads_assembler_config == "pacbio-hifi"
-    }.set {subworkflow_platform_reads}
+    // reads_assembler_config.branch { meta, reads ->
+    //     lq_ont: meta.long_reads_assembler_config == "nano-raw"
+    //     hq_ont: meta.long_reads_assembler_config == "pacbio-raw"
+    //     lq_pacbio: meta.long_reads_assembler_config == "nano-hq"
+    //     hq_pacbio: meta.long_reads_assembler_config == "pacbio-hifi"
+    // }.set {subworkflow_platform_reads}
 
-    ONT_LQ(
-        subworkflow_platform_reads.lq_ont
-    )
+    // ONT_LQ(
+    //     subworkflow_platform_reads.lq_ont
+    // )
 
-    ONT_HQ(
-        subworkflow_platform_reads.hq_ont
-    )
+    // ONT_HQ(
+    //     subworkflow_platform_reads.hq_ont
+    // )
 
-    PACBIO_LQ(
-        subworkflow_platform_reads.lq_pacbio.map { meta, reads -> [meta, reads] }
-    )
+    // PACBIO_LQ(
+    //     subworkflow_platform_reads.lq_pacbio.map { meta, reads -> [meta, reads] }
+    // )
 
-    PACBIO_HIFI(
-        subworkflow_platform_reads.hq_pacbio.map { meta, reads -> [meta, reads] }
-    )
+    // PACBIO_HIFI(
+    //     subworkflow_platform_reads.hq_pacbio.map { meta, reads -> [meta, reads] }
+    // )
 
-    assembly = ONT_LQ.out.contigs.mix(ONT_HQ.out.contigs,
-                                      PACBIO_LQ.out.contigs,
-                                      PACBIO_HIFI.out.contigs)
-    assembly.view()
+    // assembly = ONT_LQ.out.contigs.mix(ONT_HQ.out.contigs,
+    //                                   PACBIO_LQ.out.contigs,
+    //                                   PACBIO_HIFI.out.contigs)
+    // assembly.view()
 
-    /*************************************/
-    /* Post-assembly: coverage and stats */
-    /*************************************/
+    // /*************************************/
+    // /* Post-assembly: coverage and stats */
+    // /*************************************/
 
-    LONG_READS_ASSEMBLY_QC{
-        assembly,
-        params.host_reference_genome
-    }
-    ch_versions = ch_versions.mix(LONG_READS_ASSEMBLY_QC.out.versions)
+    // LONG_READS_ASSEMBLY_QC{
+    //     assembly,
+    //     params.host_reference_genome
+    // }
+    // ch_versions = ch_versions.mix(LONG_READS_ASSEMBLY_QC.out.versions)
 
-    assembly.branch { meta, contigs ->
-        lq: meta.quality == "low"
-        hq: meta.quality == "high"
-    }.set {subworkflow_quality_contigs}
+    // assembly.branch { meta, contigs ->
+    //     lq: meta.quality == "low"
+    //     hq: meta.quality == "high"
+    // }.set {subworkflow_quality_contigs}
 
-    FRAMESHIFT_CORRECTION{
-        subworkflow_quality_contigs.lq.map { meta, contigs -> [meta, contigs] }
-    }
+    // FRAMESHIFT_CORRECTION{
+    //     subworkflow_quality_contigs.lq.map { meta, contigs -> [meta, contigs] }
+    // }
 
     //
     // MODULE: Run FastQC

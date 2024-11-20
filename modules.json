@@ -90,6 +90,16 @@
                         "git_sha": "870f9af2eaf0000c94d74910d762cf153752af98",
                         "installed_by": ["modules"]
                     },
+                    "proovframe/fix": {
+                        "branch": "master",
+                        "git_sha": "a591752e1c323547d107a408ee1cbbd2c270f0c8",
+                        "installed_by": ["modules"]
+                    },
+                    "proovframe/map": {
+                        "branch": "master",
+                        "git_sha": "a591752e1c323547d107a408ee1cbbd2c270f0c8",
+                        "installed_by": ["modules"]
+                    },
                     "quast": {
                         "branch": "master",
                         "git_sha": "3f5420aa22e00bd030a2556dfdffc9e164ec0ec5",

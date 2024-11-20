@@ -1,6 +1,6 @@
 include { CANU as CANU_PACBIO       } from '../../modules/nf-core/canu/main'
 include { FLYE                      } from '../../modules/nf-core/flye/main'
-include { MINIMAP as MINIMAP2_ALIGN } from '../../modules/nf-core/minimap2/align/main'
+include { MINIMAP2_ALIGN } from '../../modules/nf-core/minimap2/align/main'
 include { RACON                     } from '../../modules/nf-core/racon/main'
 
 workflow PACBIO_LQ {
@@ -27,7 +27,7 @@ workflow PACBIO_LQ {
     ch_versions = ch_versions.mix(RACON.out.versions)
 
     // TODO: CALL FOR BOTH HOST AND HUMAN
-    MINIMAP(
+    MINIMAP2_ALIGN(
         CANU_PACBIO.out.corrected_trimmed_reads,
         RACON.out.improved_assembly,
         "",
@@ -36,7 +36,7 @@ workflow PACBIO_LQ {
         false,
         false
     )
-    ch_versions = ch_versions.mix(MINIMAP.out.versions)
+    ch_versions = ch_versions.mix(MINIMAP2_ALIGN.out.versions)
 
     emit:
     contigs  = RACON.out.improved_assembly
