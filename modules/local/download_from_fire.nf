@@ -29,7 +29,7 @@ process DOWNLOAD_FROM_FIRE {
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         python: \$(python --version 2>&1 | sed 's/Python //g')
-        boto: \$(python -c "import boto3; print(boto3.__version__)")
+        boto3: \$(python -c "import boto3; print(boto3.__version__)")
     END_VERSIONS
     """
 
@@ -43,7 +43,7 @@ process DOWNLOAD_FROM_FIRE {
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         python: \$(python --version 2>&1 | sed 's/Python //g')
-        boto: \$(python -c "import boto3; print(boto3.__version__)")
+        boto3: \$(python -c "import boto3; print(boto3.__version__)")
     END_VERSIONS
     """
 }

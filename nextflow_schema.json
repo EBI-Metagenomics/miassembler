@@ -10,9 +10,7 @@
             "type": "object",
             "fa_icon": "fas fa-terminal",
             "description": "Define where the pipeline should find input data and save output data.",
-            "required": [
-                "outdir"
-            ],
+            "required": ["outdir"],
             "properties": {
                 "samplesheet": {
                     "type": "string",
@@ -43,7 +41,7 @@
                 },
                 "private_study": {
                     "type": "boolean",
-                    "description": "To use if the ENA study is private"
+                    "description": "To use if the ENA study is private, *this feature ony works on EBI infrastructure at the moment*"
                 },
                 "assembler": {
                     "type": "string",
@@ -52,7 +50,7 @@
                 },
                 "long_reads_assembler_config": {
                     "type": "string",
-                    "description": "Configuration to use flye with. Pick from nano-raw, nano-corr, nano-hq, pacbio-raw, pacbio-corr, pacbio-hifi", 
+                    "description": "Configuration to use flye with. Pick from nano-raw, nano-corr, nano-hq, pacbio-raw, pacbio-corr, pacbio-hifi",
                     "default": ""
                 },
                 "single_end": {
