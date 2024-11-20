@@ -94,7 +94,7 @@ workflow SHORT_READS_ASSEMBLER {
 
     /******************************************/
     /*  Reads that fail the following rules:  */
-    /*  - Reads discarded by fastp > 90% (default value) */
+    /*  - Reads kept by fastp < 10% (default value) */
     /*  - Less than 1k reads                  */
     /******************************************/
     extended_qc = SHORT_READS_QC.out.fastp_json.map { meta, json -> {
