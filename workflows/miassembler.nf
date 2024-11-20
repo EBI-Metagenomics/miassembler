@@ -68,6 +68,7 @@ include { LONG_READS_ASSEMBLER    } from '../workflows/long_reads_assembler'
 */
 
 include { FETCHTOOL_READS       } from '../modules/local/fetchtool_reads'
+include { DOWNLOAD_FROM_FIRE    } from '../modules/local/download_from_fire.nf'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -173,7 +174,7 @@ workflow MIASSEMBLER {
         }
     }
 
-    classified_reads.branch { meta, reads ->
+    classified_reads.branch { meta, _reads ->
         short_reads: meta.short_reads
         long_reads: meta.long_reads
     }.set { reads_to_assemble }
@@ -182,8 +183,27 @@ workflow MIASSEMBLER {
     /* Assemble short reads and long reads */
     /***************************************/
 
+    def short_reads_to_assemble = channel.empty()
+
+    // If running for a private study on EBI infrastructure //
+    if ( params.private_study ) {
+        /*
+         * For private studies we need to bypass Nextflow S3 integration until https://github.com/nextflow-io/nextflow/issues/4873 is fixed
+         * The EBI parameter is needed as this only works on EBI network, FIRE is not accessible otherwise
+        */
+        DOWNLOAD_FROM_FIRE(
+            reads_to_assemble.short_reads
+        )
+
+        short_reads_to_assemble = DOWNLOAD_FROM_FIRE.out.reads
+
+    } else {
+        // Carry on
+        short_reads_to_assemble = reads_to_assemble.short_reads
+    }
+
     SHORT_READS_ASSEMBLER(
-        reads_to_assemble.short_reads
+        short_reads_to_assemble
     )
 
     ch_versions = ch_versions.mix( SHORT_READS_ASSEMBLER.out.versions )
