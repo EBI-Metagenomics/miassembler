@@ -15,9 +15,6 @@ This pipeline is still in early development. It's mostly a direct port of the mi
 
 ## Usage
 
-> [!WARNING]
-> It only runs in EBI Codon cluster using Slurm ATM.
-
 Pipeline help:
 
 ```bash
@@ -149,6 +146,18 @@ study_accession,reads_accession,fastq_1,fastq_2,library_layout,library_strategy,
 PRJ1,ERR1,/path/to/reads/ERR1_1.fq.gz,/path/to/reads/ERR1_2.fq.gz,paired,metagenomic,spades,16
 PRJ2,ERR2,/path/to/reads/ERR2.fq.gz,,single,genomic,megahit,32
 ```
+
+### ENA Private Data
+
+The pipeline includes a module to download private data from ENA using the EMBL-EBI FIRE (File Replication) system. This system is restricted for use within the EMBL-EBI network and will not work unless connected to that network.
+
+If you have private data to assemble, you must provide the full path to the files on a system that Nextflow can access.
+
+#### Microbiome Informatics Team
+
+To process private data, the pipeline should be launched with the `--private_study` flag, and the samplesheet must include the private FTP (transfer services) paths. The `download_from_fire` module will be utilized to download the files.
+
+This module uses [Nextflow secrets](https://www.nextflow.io/docs/latest/secrets.html#how-it-works). Specifically, it requires the `FIRE_ACCESS_KEY` and `FIRE_SECRET_KEY` secrets to authenticate and download the files.
 
 ## Outputs
 
