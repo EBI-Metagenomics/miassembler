@@ -33,11 +33,6 @@ process MEGAHIT {
             $args \\
             --out-prefix $prefix
 
-        if [ ! -s megahit_out/*.fa ]; then
-            echo "No contigs assembled" | tee /dev/stderr
-            exit 1
-        fi
-
         pigz \\
             --no-name \\
             -p $task.cpus \\
@@ -58,11 +53,6 @@ process MEGAHIT {
             -t $task.cpus \\
             $args \\
             --out-prefix $prefix
-
-        if [ ! -s megahit_out/*.fa ]; then
-            echo "No contigs assembled" | tee /dev/stderr
-            exit 1
-        fi
 
         pigz \\
             --no-name \\
