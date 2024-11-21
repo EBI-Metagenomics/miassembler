@@ -51,3 +51,4 @@ lint:
     - custom_config
   readme:
     - nextflow_badge
+nf_core_version: 3.0.2
