@@ -19,7 +19,7 @@ nextflow_pipeline {
         then {
             with(workflow) {
                 assert success
-                assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 1
+                assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 2
                 assert trace.succeeded().count{ task -> task.name.contains("MEGAHIT") } == 1
             }
         }
@@ -53,7 +53,7 @@ nextflow_pipeline {
                 assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 0
                 assert trace.succeeded().count{ task -> task.name.contains("MEGAHIT") } == 0
                 // This process should not have been called
-                assert trace.succeeded().count{ task -> task.name.contains("DOWNLOAD_FROM_FIRE") == 0}
+                assert trace.succeeded().count{ task -> task.name.contains("DOWNLOAD_FROM_FIRE") } == 0
             }
         }
 
@@ -216,11 +216,13 @@ nextflow_pipeline {
             params {
                 outdir = "tests/results"
                 assembler = "spades"
-                bwamem2_reference_genomes_folder = "${projectDir}/tests/human_phix/bwa2mem"
-                blast_reference_genomes_folder   = "${projectDir}/tests/human_phix/blast"
                 samplesheet                      = "${projectDir}/tests/samplesheet/test_mem.csv"
                 assembly_memory                  = 0.5
-                // will will be [0.5GB, 0.75GB, 1.13GB, ...] which rounds down to [0, 0, 1, ...] so should definitely fail twice before succeeding. after a few trys.
+                /* Memory jumping testing */
+                /* will try with [0.5GB, 0.75GB, 1.13GB, ...]
+                /* which rounds down to [0, 0, 1, ...]
+                /* so should definitely fail twice before succeeding. after a few trys.
+                /* ~~~ */
                 max_spades_retries               = 5
             }
         }
@@ -247,8 +249,6 @@ nextflow_pipeline {
             params {
                 outdir = "tests/results"
                 assembler = "spades"
-                bwamem2_reference_genomes_folder = "${projectDir}/tests/human_phix/bwa2mem"
-                blast_reference_genomes_folder   = "${projectDir}/tests/human_phix/blast"
                 samplesheet                      = "${projectDir}/tests/samplesheet/test.csv"
                 private_study                    = true
             }

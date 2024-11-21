@@ -4,13 +4,7 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include {
-    validateParameters ;
-    paramsSummaryLog ;
-    paramsSummaryMap ;
-    samplesheetToList ;
-    paramsHelp
-} from 'plugin/nf-schema'
+include { paramsSummaryLog; paramsSummaryMap; samplesheetToList } from 'plugin/nf-schema'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -66,13 +60,6 @@ workflow MIASSEMBLER {
 
     // Print parameter summary log to screen
     log.info(logo + paramsSummaryLog(workflow) + citation)
-
-    validateParameters()
-
-    if (params.help) {
-        log.info(paramsHelp("nextflow run ebi-metagenomics/miassembler --help"))
-        exit(0)
-    }
 
     /*
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
