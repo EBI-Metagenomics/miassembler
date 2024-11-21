@@ -105,13 +105,8 @@ def download_files(ftp_paths: List[str], outdir: str, access_key: Optional[str],
     :type secret_key: Optional[str]
     """
     for ftp_path in ftp_paths:
-        try:
-            s3_key, bucket = transform_ftp_to_s3(ftp_path)
-            download_file_from_fire(s3_key, bucket, outdir, access_key, secret_key)
-        except ValueError as ve:
-            logger.error(f"Skipping download due to error: {ve}")
-        except Exception as e:
-            logger.error(f"Unexpected error while downloading {ftp_path}: {e}")
+        s3_key, bucket = transform_ftp_to_s3(ftp_path)
+        download_file_from_fire(s3_key, bucket, outdir, access_key, secret_key)
 
 
 def main() -> None:
@@ -119,7 +114,7 @@ def main() -> None:
         description="Download multiple files from FTP paths via FIRE S3 (supports public and private files)."
     )
     parser.add_argument(
-        "--ftp_paths",
+        "--ftp-paths",
         nargs="+",
         required=True,
         help="Space-separated list of FTP paths to download (e.g., ftp.sra.ebi.ac.uk/vol1/.../file1 ftp.sra.ebi.ac.uk/vol1/.../file2).",
@@ -129,12 +124,9 @@ def main() -> None:
     parser.add_argument("--secret-key", required=False, help="S3 secret key (required for private files).")
     args = parser.parse_args()
 
-    try:
-        logger.info("Starting the file download process...")
-        download_files(args.ftp_paths, args.outdir, args.access_key, args.secret_key)
-        logger.info("All files have been processed.")
-    except Exception as e:
-        logger.error(f"Unexpected error: {e}")
+    logger.info("Starting the file download process...")
+    download_files(args.ftp_paths, args.outdir, args.access_key, args.secret_key)
+    logger.info("All files have been processed.")
 
 
 if __name__ == "__main__":

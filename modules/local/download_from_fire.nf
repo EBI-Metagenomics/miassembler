@@ -23,7 +23,7 @@ process DOWNLOAD_FROM_FIRE {
     s3fire_downloader.py \\
         --access-key \${FIRE_ACCESS_KEY} \\
         --secret-key \${FIRE_SECRET_KEY} \\
-        --ftp_paths ${input_reads.join(" ")} \\
+        --ftp-paths ${input_reads.join(" ")} \\
         --outdir fastq_files
 
     cat <<-END_VERSIONS > versions.yml

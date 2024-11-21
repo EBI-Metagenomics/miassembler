@@ -50,7 +50,8 @@
                 },
                 "long_reads_assembler_config": {
                     "type": "string",
-                    "description": "Configuration to use flye with. Pick from nano-raw, nano-corr, nano-hq, pacbio-raw, pacbio-corr, pacbio-hifi",
+                    "enum": ["nano-raw", "nano-corr", "nano-hq", "pacbio-raw", "pacbio-corr", "pacbio-hifi"],
+                    "description": "Configuration to use flye with.",
                     "default": null
                 },
                 "single_end": {
