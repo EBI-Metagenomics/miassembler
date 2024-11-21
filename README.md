@@ -231,10 +231,10 @@ SRR6180434,short_reads_filter_ratio_threshold_exceeded
 
 ##### Runs exclusion messages
 
-| Exclusion Message                             | Description                                                                                                                                                                                                                                                              |
-| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `short_reads_filter_ratio_threshold_exceeded` | The maximum fraction of reads that are allowed to be filtered out. If exceeded, it flags excessive filtering. The default value is 0.9, meaning that if more than 90% of the reads are filtered out, the threshold is considered exceeded, and the run is not assembled. |
-| `short_reads_low_reads_count_threshold`       | The minimum number of reads required after filtering. If below, it flags a low read count, and the run is not assembled.                                                                                                                                                 |
+| Exclusion Message                             | Description                                                                                                                                                                                                                                                                          |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `short_reads_filter_ratio_threshold_exceeded` | The maximum fraction of reads that are allowed to be filtered out. If exceeded, it flags excessive filtering. The default value is 0.1, meaning that if less than 10% of the reads are retained after filtering, the threshold is considered exceeded, and the run is not assembled. |
+| `short_reads_low_reads_count_threshold`       | The minimum number of reads required after filtering. If below, it flags a low read count, and the run is not assembled.                                                                                                                                                             |
 
 #### Assembled Runs
 
