@@ -15,9 +15,6 @@ This pipeline is still in early development. It's mostly a direct port of the mi
 
 ## Usage
 
-> [!WARNING]
-> It only runs in EBI Codon cluster using Slurm ATM.
-
 Pipeline help:
 
 ```bash
@@ -28,14 +25,14 @@ Typical pipeline command:
 Input/output options
   --study_accession                       [string]  The ENA Study secondary accession
   --reads_accession                       [string]  The ENA Run primary accession
-  --private_study                         [boolean] To use if the ENA study is private
+  --private_study                         [boolean] To use if the ENA study is private, *this feature only works on EBI infrastructure at the moment*
   --samplesheet                           [string]  Path to comma-separated file containing information about the raw reads with the prefix to be used.
   --assembler                             [string]  The short reads assembler (accepted: spades, metaspades, megahit)
   --single_end                            [boolean] Force the single_end value for the study / reads
   --library_strategy                      [string]  Force the library_strategy value for the study / reads (accepted: metagenomic, metatranscriptomic,
                                                     genomic, transcriptomic, other)
   --library_layout                        [string]  Force the library_layout value for the study / reads (accepted: single, paired)
-  --platform                              [string]  Force the sequencing_platform value for the study / reads 
+  --platform                              [string]  Force the sequencing_platform value for the study / reads
   --spades_version                        [string]  null [default: 3.15.5]
   --megahit_version                       [string]  null [default: 1.2.9]
   --flye_version                          [string]  null [default: 2.9]
@@ -45,7 +42,7 @@ Input/output options
   --blast_reference_genomes_folder        [string]  The folder with the reference genome blast indexes, defaults to the Microbiome Informatics internal
                                                     directory.
   --bwamem2_reference_genomes_folder      [string]  The folder with the reference genome bwa-mem2 indexes, defaults to the Microbiome Informatics internal
-  
+
   --reference_genomes_folder              [string]  The folder with reference genomes, defaults to the Microbiome Informatics internal
                                                     directory.
   --remove_human_phix                     [boolean] Remove human and phiX reads pre assembly, and contigs matching those genomes. [default: true]
@@ -64,7 +61,6 @@ Generic options
   --multiqc_methods_description           [string]  Custom MultiQC yaml file containing HTML including a methods description.
 ```
 
-
 Example:
 
 ```bash
@@ -78,6 +74,7 @@ nextflow run ebi-metagenomics/miassembler \
 ```
 
 ### Required DBs:
+
 - `--reference_genome`: reference genome in FASTA format
 - `--blast_reference_genomes_folder`: mandatory **human_phiX** is provided on [FTP](https://ftp.ebi.ac.uk/pub/databases/metagenomics/pipelines/references/)
 - `--bwamem2_reference_genomes_folder`: mandatory **human_phiX** is provided on [FTP](https://ftp.ebi.ac.uk/pub/databases/metagenomics/pipelines/references/)
@@ -85,7 +82,9 @@ nextflow run ebi-metagenomics/miassembler \
 Blast and bwa-mem2 reference databases can be generated for any reference genome to polish input sequences with.
 
 #### BWA-MEM2
+
 As explained in [bwa-mem2's README](https://github.com/bwa-mem2/bwa-mem2?tab=readme-ov-file#getting-started):
+
 ```
 # Use precompiled binaries (recommended)
 curl -L https://github.com/bwa-mem2/bwa-mem2/releases/download/v2.2.1/bwa-mem2-2.2.1_x64-linux.tar.bz2 \
@@ -98,6 +97,7 @@ bwa-mem2-2.2.1_x64-linux/bwa-mem2 index ref.fa
 This will generate multiple index files in a folder. The folder containing them is the one to use as `bwamem2_reference_genomes_folder`.
 
 #### BLAST
+
 ```
 makeblastdb -in <ref.fa> -dbtype nucl -out <my_db_file>
 ```
@@ -146,6 +146,18 @@ study_accession,reads_accession,fastq_1,fastq_2,library_layout,library_strategy,
 PRJ1,ERR1,/path/to/reads/ERR1_1.fq.gz,/path/to/reads/ERR1_2.fq.gz,paired,metagenomic,spades,16
 PRJ2,ERR2,/path/to/reads/ERR2.fq.gz,,single,genomic,megahit,32
 ```
+
+### ENA Private Data
+
+The pipeline includes a module to download private data from ENA using the EMBL-EBI FIRE (File Replication) system. This system is restricted for use within the EMBL-EBI network and will not work unless connected to that network.
+
+If you have private data to assemble, you must provide the full path to the files on a system that Nextflow can access.
+
+#### Microbiome Informatics Team
+
+To process private data, the pipeline should be launched with the `--private_study` flag, and the samplesheet must include the private FTP (transfer services) paths. The `download_from_fire` module will be utilized to download the files.
+
+This module uses [Nextflow secrets](https://www.nextflow.io/docs/latest/secrets.html#how-it-works). Specifically, it requires the `FIRE_ACCESS_KEY` and `FIRE_SECRET_KEY` secrets to authenticate and download the files.
 
 ## Outputs
 
@@ -219,10 +231,10 @@ SRR6180434,short_reads_filter_ratio_threshold_exceeded
 
 ##### Runs exclusion messages
 
-| Exclusion Message                 | Description                                                                                                                                                                                                                                                                            |
-| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Exclusion Message                             | Description                                                                                                                                                                                                                                                                          |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `short_reads_filter_ratio_threshold_exceeded` | The maximum fraction of reads that are allowed to be filtered out. If exceeded, it flags excessive filtering. The default value is 0.1, meaning that if less than 10% of the reads are retained after filtering, the threshold is considered exceeded, and the run is not assembled. |
-| `short_reads_low_reads_count_threshold`       | The minimum number of reads required after filtering. If below, it flags a low read count, and the run is not assembled.                                                                                                                                                               |
+| `short_reads_low_reads_count_threshold`       | The minimum number of reads required after filtering. If below, it flags a low read count, and the run is not assembled.                                                                                                                                                             |
 
 #### Assembled Runs
 

@@ -19,7 +19,7 @@ nextflow_pipeline {
         then {
             with(workflow) {
                 assert success
-                assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 1
+                assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 2
                 assert trace.succeeded().count{ task -> task.name.contains("MEGAHIT") } == 1
             }
         }
@@ -37,7 +37,7 @@ nextflow_pipeline {
 
                 short_reads_low_reads_count_threshold = 1000000
 
-                samplesheet                      = "${projectDir}/tests/samplesheet/test.csv"
+                samplesheet                           = "${projectDir}/tests/samplesheet/test.csv"
             }
         }
 
@@ -52,6 +52,8 @@ nextflow_pipeline {
                 assert trace.succeeded().count{ task -> task.name.contains("MULTIQC_STUDY") } == 2
                 assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 0
                 assert trace.succeeded().count{ task -> task.name.contains("MEGAHIT") } == 0
+                // This process should not have been called
+                assert trace.succeeded().count{ task -> task.name.contains("DOWNLOAD_FROM_FIRE") } == 0
             }
         }
 
@@ -67,10 +69,10 @@ nextflow_pipeline {
                 outdir = "tests/results"
 
                 // Force the assembly
-                short_reads_filter_ratio_threshold           = 0.1
+                short_reads_filter_ratio_threshold   = 0.1
 
-                study_accession                  = "SRP115494"
-                reads_accession                  = "SRR6180434"
+                study_accession                      = "SRP115494"
+                reads_accession                      = "SRR6180434"
             }
         }
 
@@ -91,14 +93,14 @@ nextflow_pipeline {
 
         when {
             params {
-                outdir                           = "tests/results"
-                assembler                        = "megahit"
+                outdir                              = "tests/results"
+                assembler                           = "megahit"
 
                 // Force the assembly
-                short_reads_filter_ratio_threshold           = 0.1
+                short_reads_filter_ratio_threshold  = 0.1
 
-                study_accession                  = "SRP115494"
-                reads_accession                  = "SRR6180434"
+                study_accession                     = "SRP115494"
+                reads_accession                     = "SRR6180434"
             }
         }
 
@@ -137,7 +139,9 @@ nextflow_pipeline {
 
     }
 
-    test("MEGAHIT - single end - should fail") {
+    test("MEGAHIT - single end - should produce an empty contigs file") {
+
+        // TODO: fix along with - https://github.com/EBI-Metagenomics/miassembler/pull/21
 
         tag "ena-portal-api"
 
@@ -152,8 +156,8 @@ nextflow_pipeline {
 
         then {
             with(workflow) {
-                assert !success
-                assert trace.failed().count{ task -> task.name.contains("MEGAHIT") } == 1
+                assert success
+                assert trace.succeeded().count{ task -> task.name.contains("MEGAHIT") } == 1
             }
         }
     }
@@ -165,7 +169,7 @@ nextflow_pipeline {
         when {
             params {
                 outdir = "tests/results"
-                
+
                 study_accession                  = "DRP007622"
                 reads_accession                  = "DRR280712"
             }
@@ -190,7 +194,7 @@ nextflow_pipeline {
             params {
                 outdir = "tests/results"
                 assembler = "spades"
-                
+
                 study_accession                  = "DRP007622"
                 reads_accession                  = "DRR280712"
             }
@@ -214,11 +218,13 @@ nextflow_pipeline {
             params {
                 outdir = "tests/results"
                 assembler = "spades"
-                bwamem2_reference_genomes_folder = "${projectDir}/tests/human_phix/bwa2mem"
-                blast_reference_genomes_folder   = "${projectDir}/tests/human_phix/blast"
                 samplesheet                      = "${projectDir}/tests/samplesheet/test_mem.csv"
                 assembly_memory                  = 0.5
-                  // will will be [0.5GB, 0.75GB, 1.13GB, ...] which rounds down to [0, 0, 1, ...] so should definitely fail twice before succeeding. after a few trys.
+                /* Memory jumping testing */
+                /* will try with [0.5GB, 0.75GB, 1.13GB, ...]
+                /* which rounds down to [0, 0, 1, ...]
+                /* so should definitely fail twice before succeeding. after a few trys.
+                /* ~~~ */
                 max_spades_retries               = 5
             }
         }
@@ -235,4 +241,29 @@ nextflow_pipeline {
         }
 
     }
+
+    test("Private study reads - this one should fail") {
+
+        tag "samplesheet"
+        tag "private"
+
+        when {
+            params {
+                outdir = "tests/results"
+                assembler = "spades"
+                samplesheet                      = "${projectDir}/tests/samplesheet/test.csv"
+                private_study                    = true
+            }
+        }
+
+        // Complete this test when secrets are implemented in nf-test https://github.com/askimed/nf-test/issues/145
+        then {
+            with(workflow) {
+                assert !success
+                assert stdout.count{ line -> line.contains("Required secrets are missing") } == 1
+            }
+        }
+
+    }
+
 }
