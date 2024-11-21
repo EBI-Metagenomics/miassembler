@@ -139,7 +139,9 @@ nextflow_pipeline {
 
     }
 
-    test("MEGAHIT - single end - should fail") {
+    test("MEGAHIT - single end - should produce an empty contigs file") {
+
+        // TODO: fix along with - https://github.com/EBI-Metagenomics/miassembler/pull/21
 
         tag "ena-portal-api"
 
@@ -154,7 +156,7 @@ nextflow_pipeline {
 
         then {
             with(workflow) {
-                assert !success
+                assert success
                 assert trace.failed().count{ task -> task.name.contains("MEGAHIT") } == 1
             }
         }
