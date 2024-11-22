@@ -96,7 +96,7 @@ workflow MIASSEMBLER {
                               "single_end": true,
                               "assembler": assembler ?: params.assembler,
                               "assembly_memory": assembly_memory ?: params.assembly_memory,
-                              "assembler_config": params.long_reads_assembler_config
+                              "assembler_config": assembler_config ?: params.long_reads_assembler_config
                             ],
                             [fq1]
                         )
@@ -108,7 +108,7 @@ workflow MIASSEMBLER {
                               "single_end": false,
                               "assembler": assembler ?: params.assembler,
                               "assembly_memory": assembly_memory ?: params.assembly_memory,
-                              "assembler_config": params.long_reads_assembler_config,
+                              "assembler_config": assembler_config ?: params.long_reads_assembler_config,
                               "platform": params.platform ?: platform
                             ],
                             [fq1, fq2])

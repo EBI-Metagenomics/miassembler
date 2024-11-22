@@ -6,6 +6,9 @@ workflow ONT_HQ {
     reads                   // [ val(meta), path(reads) ]
 
     main:
+
+    ch_versions = Channel.empty()
+
     PORECHOP_ABI(
         reads
     )

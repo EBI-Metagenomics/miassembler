@@ -64,28 +64,34 @@ workflow LONG_READS_ASSEMBLER {
         Extra polishing steps are applied to low-quality reads. All subworkflows also apply post-assembly host decontamination.
     */
 
+    // meta.assembler_config is never overriden if provided as input.
+    // If no input was provided, quality and platform will determine the assembly type
     reads_assembler_config = LONG_READS_QC.out.qc_reads.map { meta, reads ->
-        if (meta.platform == "ont") {
-            if (params.long_reads_assembler_config == "nano-raw" || meta.quality == "low") {
-                return [meta + ["assembler_config": "nano-raw"], reads]
-            } else if (params.long_reads_assembler_config == "nano-hq" || meta.quality == "high") {
-                return [meta + ["assembler_config": "nano-hq"], reads]
-            }
-        } else if (meta.platform == "pacbio") {
-            if (params.long_reads_assembler_config == "pacbio-raw" || meta.quality == "low") {
-                return [meta + ["assembler_config": "pacbio-raw"], reads]
-            } else if (params.long_reads_assembler_config == "pacbio-hifi" || meta.quality == "high") {
-                return [meta + ["assembler_config": "pacbio-hifi"], reads]
+        if (meta.assembler_config == null) {
+            if (meta.platform == "ont") {
+                if (meta.quality == "low") {
+                    return [meta + ["assembler_config": "nano-raw"], reads]
+                } else if (meta.quality == "high") {
+                    return [meta + ["assembler_config": "nano-hq"], reads]
+                }
+            } else if (meta.platform == "pacbio") {
+                if (meta.quality == "low") {
+                    return [meta + ["assembler_config": "pacbio-raw"], reads]
+                } else if (meta.quality == "high") {
+                    return [meta + ["assembler_config": "pacbio-hifi"], reads]
+                }
+            } else {
+                error "Incompatible configuration"
             }
         } else {
-            error "Incompatible configuration"
+            return [meta, reads]
         }
     }
 
     reads_assembler_config.branch { meta, reads ->
         lq_ont: meta.assembler_config == "nano-raw"
-        hq_ont: meta.assembler_config == "pacbio-raw"
-        lq_pacbio: meta.assembler_config == "nano-hq"
+        hq_ont: meta.assembler_config == "nano-hq"
+        lq_pacbio: meta.assembler_config == "pacbio-raw"
         hq_pacbio: meta.assembler_config == "pacbio-hifi"
     }.set {subworkflow_platform_reads}
 
@@ -93,22 +99,22 @@ workflow LONG_READS_ASSEMBLER {
         subworkflow_platform_reads.lq_ont
     )
 
-    // ONT_HQ(
-    //     subworkflow_platform_reads.hq_ont
-    // )
+    ONT_HQ(
+        subworkflow_platform_reads.hq_ont
+    )
 
-    // PACBIO_LQ(
-    //     subworkflow_platform_reads.lq_pacbio.map { meta, reads -> [meta, reads] }
-    // )
+    PACBIO_LQ(
+        subworkflow_platform_reads.lq_pacbio.map { meta, reads -> [meta, reads] }
+    )
 
-    // PACBIO_HIFI(
-    //     subworkflow_platform_reads.hq_pacbio.map { meta, reads -> [meta, reads] }
-    // )
+    PACBIO_HIFI(
+        subworkflow_platform_reads.hq_pacbio.map { meta, reads -> [meta, reads] }
+    )
 
-    // assembly = ONT_LQ.out.contigs.mix(ONT_HQ.out.contigs,
-    //                                   PACBIO_LQ.out.contigs,
-    //                                   PACBIO_HIFI.out.contigs)
-    // assembly.view()
+    assembly = ONT_LQ.out.contigs.mix(ONT_HQ.out.contigs,
+                                      PACBIO_LQ.out.contigs,
+                                      PACBIO_HIFI.out.contigs)
+    assembly.view()
 
     // /*************************************/
     // /* Post-assembly: coverage and stats */

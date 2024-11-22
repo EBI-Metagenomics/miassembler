@@ -7,6 +7,9 @@ workflow PACBIO_HIFI {
     reads                   // [ val(meta), path(reads) ]
 
     main:
+
+    ch_versions = Channel.empty()
+
     // HIFIADAPTERFILT(
     //     reads
     // )
