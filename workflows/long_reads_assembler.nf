@@ -81,18 +81,17 @@ workflow LONG_READS_ASSEMBLER {
             error "Incompatible configuration"
         }
     }
-    reads_assembler_config.view()
 
-    // reads_assembler_config.branch { meta, reads ->
-    //     lq_ont: meta.long_reads_assembler_config == "nano-raw"
-    //     hq_ont: meta.long_reads_assembler_config == "pacbio-raw"
-    //     lq_pacbio: meta.long_reads_assembler_config == "nano-hq"
-    //     hq_pacbio: meta.long_reads_assembler_config == "pacbio-hifi"
-    // }.set {subworkflow_platform_reads}
+    reads_assembler_config.branch { meta, reads ->
+        lq_ont: meta.assembler_config == "nano-raw"
+        hq_ont: meta.assembler_config == "pacbio-raw"
+        lq_pacbio: meta.assembler_config == "nano-hq"
+        hq_pacbio: meta.assembler_config == "pacbio-hifi"
+    }.set {subworkflow_platform_reads}
 
-    // ONT_LQ(
-    //     subworkflow_platform_reads.lq_ont
-    // )
+    ONT_LQ(
+        subworkflow_platform_reads.lq_ont
+    )
 
     // ONT_HQ(
     //     subworkflow_platform_reads.hq_ont

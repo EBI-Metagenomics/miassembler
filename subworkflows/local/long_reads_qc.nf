@@ -24,19 +24,18 @@ workflow LONG_READS_QC {
 
     ch_versions = ch_versions.mix(FASTP_LR.out.versions)
 
-    quality_levels_ch = FASTP_LR.out.json.map { meta, json -> {
-        json_txt = new JsonSlurper().parseText(json.text)
-        q20bases = json_txt?.summary?.before_filtering?.q20_bases ?: 0;
-        total_bases = json_txt?.summary?.before_filtering?.total_bases ?: 0;
+    reads_json = FASTP_LR.out.reads.join( FASTP_LR.out.json )
 
-        q20_percentage = q20_bases / total_bases * 100
+    reads_quality_levels = reads_json.map { meta, reads, json ->
+        def json_txt = new JsonSlurper().parseText(json.text)
+        
+        def q20_percentage = json_txt?.summary?.before_filtering?.q20_rate ?: 0;
 
-        quality = [
-            "high_quality": q20_percentage >= 80, 
-            "low_quality": q20_percentage < 80,
-        ]
-        return [meta, quality]
-        } 
+        if ( q20_percentage >= 0.8 ) {
+            return [ meta + [quality: "high"], reads]
+        } else {
+            return [ meta + [quality: "low"], reads]
+        }
     }
 
     // TODO: add filter if too many reads are removed
@@ -56,7 +55,7 @@ workflow LONG_READS_QC {
         // TODO: can we change the way human/host are given via prefixes?
 
         MINIMAP2_ALIGN_HUMAN(
-            FASTP_LR.out.reads,
+            reads_quality_levels,
             human_reference,
             "human",
             true,    // output bam format
@@ -70,7 +69,7 @@ workflow LONG_READS_QC {
         decontaminated_reads = MINIMAP2_ALIGN_HUMAN.out.filtered_fastq
 
     } else {
-        decontaminated_reads = FASTP_LR.out.reads
+        decontaminated_reads = reads_quality_levels
     }
 
     if ( reference_genome != null ) {

@@ -9,6 +9,9 @@ workflow ONT_LQ {
     reads                   // [ val(meta), path(reads) ]
 
     main:
+
+    ch_versions = Channel.empty()
+
     CANU_ONT(
         reads,
         "-nanopore",
@@ -27,26 +30,29 @@ workflow ONT_LQ {
         FLYE.out.fasta,
         "",
         false,
-        bai,
+        "bai",
         false,
         false
     )
     ch_versions = ch_versions.mix(MINIMAP2_ALIGN.out.versions)
 
+    reads_flye_contigs_paf = CANU_ONT.out.corrected_trimmed_reads
+            .join(FLYE.out.fasta)
+            .join(MINIMAP2_ALIGN.out.paf)
+
     RACON(
-        tuple(CANU_ONT.out.corrected_trimmed_reads,
-              FLYE.out.fasta,
-              MINIMAP2_ALIGN.out.paf)
+        reads_flye_contigs_paf
     )
     ch_versions = ch_versions.mix(RACON.out.versions)
 
+    reads_racon_contigs = CANU_ONT.out.corrected_trimmed_reads.join(RACON.out.improved_assembly)
+
     MEDAKA(
-        tuple(CANU_ONT.out.corrected_trimmed_reads,
-        RACON.out.improved_assembly)
+        reads_racon_contigs
     )
     ch_versions = ch_versions.mix(MEDAKA.out.versions)
 
     emit:
-    contigs  = MEDAKA.out.improved_assembly
+    contigs  = MEDAKA.out.assembly
     versions = ch_versions
 }
