@@ -1,3 +1,0 @@
-study_accession,reads_accession,fastq_1,fastq_2,library_layout,library_strategy,platform,assembler,assembly_memory,assembler_config
-ERP118188,ERR3792762,/hps/nobackup/rdf/metagenomics/service-team/users/germanab/miassembler_tests/ERR3792762.fastq.gz,,single,metagenomic,ont,,,
-ERP124924,ERR5888702,/hps/nobackup/rdf/metagenomics/service-team/users/germanab/miassembler_tests/ERR5888702.fastq.gz,,single,metagenomic,ont,,,nano-hq

@@ -165,7 +165,7 @@ workflow MIASSEMBLER {
 
     classified_reads = fetch_reads_transformed.map { meta, reads ->
         // Long reads //
-        if ( ["ont", "pacbio"].contains( meta.platform ) ) {
+        if ( ["ont", "pb"].contains( meta.platform ) ) {
             return [ meta + [long_reads: true], reads]
         // Short reads //
         } else {

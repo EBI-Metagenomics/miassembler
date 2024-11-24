@@ -74,7 +74,7 @@ workflow LONG_READS_ASSEMBLER {
                 } else if (meta.quality == "high") {
                     return [meta + ["assembler_config": "nano-hq"], reads]
                 }
-            } else if (meta.platform == "pacbio") {
+            } else if (meta.platform == "pb") {
                 if (meta.quality == "low") {
                     return [meta + ["assembler_config": "pacbio-raw"], reads]
                 } else if (meta.quality == "high") {
@@ -116,23 +116,25 @@ workflow LONG_READS_ASSEMBLER {
                                       PACBIO_HIFI.out.contigs)
     assembly.view()
 
-    // /*************************************/
-    // /* Post-assembly: coverage and stats */
-    // /*************************************/
+    // /**********************************************************************************/
+    // /* Post-assembly: host decontamination, frame-shift correction, coverage and stats */
+    // /**********************************************************************************/
 
-    // LONG_READS_ASSEMBLY_QC{
-    //     assembly,
-    //     params.host_reference_genome
-    // }
-    // ch_versions = ch_versions.mix(LONG_READS_ASSEMBLY_QC.out.versions)
+    LONG_READS_ASSEMBLY_QC(
+        assembly,
+        params.reference_genome
+    )
+    ch_versions = ch_versions.mix(LONG_READS_ASSEMBLY_QC.out.versions)
 
-    // assembly.branch { meta, contigs ->
+    decontaminated_assembly = LONG_READS_ASSEMBLY_QC.out.contigs
+    
+    // decontaminated_assembly.branch { meta, contigs ->
     //     lq: meta.quality == "low"
     //     hq: meta.quality == "high"
     // }.set {subworkflow_quality_contigs}
 
     // FRAMESHIFT_CORRECTION{
-    //     subworkflow_quality_contigs.lq.map { meta, contigs -> [meta, contigs] }
+    //     decontaminated_assembly.lq.map { meta, contigs -> [meta, contigs] }
     // }
 
     //

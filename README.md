@@ -48,7 +48,8 @@ Input/output options
   
   --reference_genomes_folder              [string]  The folder with reference genomes, defaults to the Microbiome Informatics internal
                                                     directory.
-  --remove_human_phix                     [boolean] Remove human and phiX reads pre assembly, and contigs matching those genomes. [default: true]
+  --remove_human_phix                     [boolean] In short-reads assembly mode, remove human and phiX reads pre-assembly, and contigs matching those genomes. [default: true]
+  --remove_human                          [boolean] In long-reads assembly mode, remove human reads pre-assembly, and contigs matching those genomes. [default: true]
   --human_phix_blast_index_name           [string]  Combined Human and phiX BLAST db. [default: human_phix]
   --human_phix_bwamem2_index_name         [string]  Combined Human and phiX bwa-mem2 index. [default: human_phix]
   --short_reads_min_contig_length         [integer] Minimum contig length filter. [default: 500]

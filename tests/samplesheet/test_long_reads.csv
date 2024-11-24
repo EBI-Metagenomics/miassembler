@@ -1,0 +1,5 @@
+study_accession,reads_accession,fastq_1,fastq_2,library_layout,library_strategy,platform,assembler,assembly_memory,assembler_config
+ERP118188,ERR3792762,/hps/nobackup/rdf/metagenomics/service-team/users/germanab/miassembler_tests/ERR3792762.fastq.gz,,single,metagenomic,ont,,,
+ERP124924,ERR5888702,/hps/nobackup/rdf/metagenomics/service-team/users/germanab/miassembler_tests/ERR5888702.fastq.gz,,single,metagenomic,ont,,,nano-hq
+SRP040735,SRR1211893,/hps/nobackup/rdf/metagenomics/service-team/users/germanab/miassembler_tests/SRR1211893_subreads.fastq.gz,,single,metagenomic,pb,,,
+SRP384046,SRR19888830,/hps/nobackup/rdf/metagenomics/service-team/users/germanab/miassembler_tests/SRR19888830_subreads.fastq.gz,,single,metagenomic,pb,,,

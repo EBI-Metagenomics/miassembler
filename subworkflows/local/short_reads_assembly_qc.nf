@@ -21,7 +21,7 @@ process PUBLISH_CLEANED_CONTIGS {
 workflow SHORT_READS_ASSEMBLY_QC {
 
     take:
-    assembly                    // [ val(meta), path(assembly_fasta) ]
+    assembly               // [ val(meta), path(assembly_fasta) ]
     reference_genome       // [ val(meta2), path(reference_genome) ] | meta2 contains the name of the reference genome
 
     main:
