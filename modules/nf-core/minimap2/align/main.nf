@@ -12,16 +12,12 @@ process MINIMAP2_ALIGN {
     tuple val(meta), path(reads)
     tuple val(meta2), path(reference)
     val prefix2
-    val bam_format
-    val bam_index_extension
+    val fa_fq_format
     val cigar_paf_format
-    val cigar_bam
 
     output:
-    tuple val(meta), path("*.minimap*")                  , optional: true, emit: filtered_fastq
+    tuple val(meta), path("*.minimap*")                  , optional: true, emit: filtered_output
     tuple val(meta), path("*.paf")                       , optional: true, emit: paf
-    tuple val(meta), path("*.bam")                       , optional: true, emit: bam
-    tuple val(meta), path("*.bam.${bam_index_extension}"), optional: true, emit: index
     path "versions.yml"                                  , emit: versions
 
     when:
@@ -33,18 +29,13 @@ process MINIMAP2_ALIGN {
     def args3 = task.ext.args3 ?: ''
     def args4 = task.ext.args4 ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def bam_index = bam_index_extension ? "${prefix}.bam##idx##${prefix}.bam.${bam_index_extension} --write-index" : "${prefix}.bam"
     def map_mode = "${meta.platform}" ? "-x map-${meta.platform}" : ''
-    def bam_output = bam_format ? "-a | samtools fastq -f 4 | gzip > ${prefix}.${prefix2}.minimap.fastq.gz" : "-o ${prefix}.paf"
-    def cigar_paf = cigar_paf_format && !bam_format ? "-c" : ''
-    def set_cigar_bam = cigar_bam && bam_format ? "-L" : ''
-    def bam_input = "${reads.extension}".matches('sam|bam|cram')
-    def samtools_reset_fastq = bam_input ? "samtools reset --threads ${task.cpus-1} $args3 $reads | samtools fastq --threads ${task.cpus-1} $args4 |" : ''
-    def query = bam_input ? "-" : reads
-    def target = reference ?: (bam_input ? error("BAM input requires reference") : reads)
+    def output = fa_fq_format ? "-a | samtools ${fa_fq_format} -f 4 | gzip > ${prefix}.${prefix2}.minimap.${fa_fq_format}.gz" : "-o ${prefix}.paf"
+    def cigar_paf = cigar_paf_format ? "-c" : ''
+    def query = reads
+    def target = reference
 
     """
-    $samtools_reset_fastq \\
     minimap2 \\
         $args \\
         -t $task.cpus \\
@@ -52,8 +43,7 @@ process MINIMAP2_ALIGN {
         $target \\
         $query \\
         $cigar_paf \\
-        $set_cigar_bam \\
-        $bam_output
+        $output
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -63,15 +53,11 @@ process MINIMAP2_ALIGN {
     """
 
     stub:
-    def prefix = task.ext.prefix ?: c
-    def output_file = bam_format ? "${prefix}.bam" : "${prefix}.paf"
-    def bam_index = bam_index_extension ? "touch ${prefix}.bam.${bam_index_extension}" : ""
-    def bam_input = "${reads.extension}".matches('sam|bam|cram')
-    def target = reference ?: (bam_input ? error("BAM input requires reference") : reads)
+    def prefix = task.ext.prefix ?: "${meta.id}"
+    def output_file = fa_fq_format ? "${prefix}.${fa_fq_format}" : "${prefix}.paf"
 
     """
     touch $output_file
-    ${bam_index}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

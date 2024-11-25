@@ -164,6 +164,11 @@
                     "description": "Run SPAdes/metaSPAdes without the error correction step.",
                     "default": true
                 },
+                "diamond_db":{
+                    "type": "string",
+                    "format": "directory-path",
+                    "description":"Path to the Swiss-Prot or TREMBL db for diamond"
+                },
                 "outdir": {
                     "type": "string",
                     "format": "directory-path",

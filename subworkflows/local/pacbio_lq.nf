@@ -28,10 +28,8 @@ workflow PACBIO_LQ {
         CANU_PACBIO.out.corrected_trimmed_reads,
         FLYE.out.fasta,
         "",
-        false,
-        "bai",
-        false,
-        false
+        "",      // paf generation
+        false    // no CIGAR in paf format
     )
     ch_versions = ch_versions.mix(MINIMAP2_ALIGN.out.versions)
 

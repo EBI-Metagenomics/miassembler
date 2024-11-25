@@ -1,4 +1,4 @@
-include { HIFIADAPTERFILT } from '../../modules/ebi-metagenomics/hifiadapterfilt/main'
+include { HIFIADAPTERFILT } from '../../modules/local/hifiadapterfilt/main'
 include { FLYE            } from '../../modules/nf-core/flye/main'
 
 workflow PACBIO_HIFI {

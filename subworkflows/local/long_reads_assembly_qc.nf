@@ -22,16 +22,14 @@ workflow LONG_READS_ASSEMBLY_QC {
         MINIMAP2_ALIGN_HUMAN(
             assembly,
             human_reference,
-            "human",
-            true,    // output bam format
-            "bai",   // bam index extension
-            false,   // no CIGAR in paf format
-            true     // allow for long CIGAR
+            "human_post",
+            "fasta", // alignment output extension
+            false    // no CIGAR in paf format
         )
 
         ch_versions = ch_versions.mix(MINIMAP2_ALIGN_HUMAN.out.versions)
 
-        decontaminated_assembly = MINIMAP2_ALIGN_HUMAN.out.filtered_fastq
+        decontaminated_assembly = MINIMAP2_ALIGN_HUMAN.out.filtered_output
 
     } else {
         decontaminated_assembly = assembly
@@ -46,17 +44,15 @@ workflow LONG_READS_ASSEMBLY_QC {
 
         MINIMAP_ALIGN_HOST(
             decontaminated_assembly,
-            host_reference,
-            "host",
-            true,    // output bam format
-            "bai",   // bam index extension
-            false,   // no CIGAR in paf format
-            true     // allow for long CIGAR
+            human_reference,
+            "host_post",
+            "fasta", // alignment output extension
+            false    // no CIGAR in paf format
         )
 
         ch_versions = ch_versions.mix(MINIMAP_ALIGN_HOST.out.versions)
 
-        decontaminated_assembly = MINIMAP_ALIGN_HOST.out.filtered_fastq
+        decontaminated_assembly = MINIMAP_ALIGN_HOST.out.filtered_output
     }
 
     emit:

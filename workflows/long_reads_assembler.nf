@@ -17,6 +17,7 @@ include { PACBIO_LQ              } from '../subworkflows/local/pacbio_lq'
 include { PACBIO_HIFI            } from '../subworkflows/local/pacbio_hifi'
 
 include { LONG_READS_ASSEMBLY_QC } from '../subworkflows/local/long_reads_assembly_qc'
+include { FRAMESHIFT_CORRECTION  } from '../subworkflows/local/frameshift_correction'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -114,7 +115,6 @@ workflow LONG_READS_ASSEMBLER {
     assembly = ONT_LQ.out.contigs.mix(ONT_HQ.out.contigs,
                                       PACBIO_LQ.out.contigs,
                                       PACBIO_HIFI.out.contigs)
-    assembly.view()
 
     // /**********************************************************************************/
     // /* Post-assembly: host decontamination, frame-shift correction, coverage and stats */
@@ -128,14 +128,14 @@ workflow LONG_READS_ASSEMBLER {
 
     decontaminated_assembly = LONG_READS_ASSEMBLY_QC.out.contigs
     
-    // decontaminated_assembly.branch { meta, contigs ->
-    //     lq: meta.quality == "low"
-    //     hq: meta.quality == "high"
-    // }.set {subworkflow_quality_contigs}
+    decontaminated_assembly.branch { meta, contigs ->
+        lq: meta.quality == "low"
+        hq: meta.quality == "high"
+    }.set {subworkflow_quality_contigs}
 
-    // FRAMESHIFT_CORRECTION{
-    //     decontaminated_assembly.lq.map { meta, contigs -> [meta, contigs] }
-    // }
+    FRAMESHIFT_CORRECTION{
+        subworkflow_quality_contigs.lq.map { meta, contigs -> [meta, contigs] }
+    }
 
     //
     // MODULE: Run FastQC
