@@ -38,7 +38,7 @@ lint:
     - .gitignore
   multiqc_config:
     - report_comment
-  nextflow_config: False
+  nextflow_config:
     - params.input
     - params.validationSchemaIgnoreParams
     - params.custom_config_version
