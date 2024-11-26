@@ -15,23 +15,26 @@ process PROKKA {
     path "versions.yml",                             emit: versions
 
     script:
+    def is_compressed = assembly_file.getExtension() == "gz" ? true : false
+    def fasta_name = is_compressed ? assembly_file.getBaseName() : assembly_file
+
     if(assembly_file.size() > 0)
         """
+        if [ "${is_compressed}" == "true" ]; then
+            gzip -c -d ${assembly_file} > ${fasta_name}
+        fi
+
         # TMP folder issues in Prokka - https://github.com/tseemann/prokka/issues/402
         export TMPDIR="\$PWD/tmp"
         mkdir -p "\$PWD/tmp"
         # Disable the Java VM performane gathering tool, for improved performance
         export JAVA_TOOL_OPTIONS="-XX:-UsePerfData"
 
-        gunzip -c ${assembly_file} > unzipped_assembly.fasta
-
         prokka --outdir prokka_out \
         --prefix contigs \
         --cpus ${task.cpus} \
         --metagenome \
-        unzipped_assembly.fasta
-
-        rm unzipped_assembly.fasta
+        ${fasta_name}
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":

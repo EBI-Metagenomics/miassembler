@@ -21,12 +21,18 @@ process PROOVFRAME_FIX {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
+    def is_compressed = fa.getExtension() == "gz" ? true : false
+    def fasta_name = is_compressed ? fa.getBaseName() : fa
     """
+    if [ "${is_compressed}" == "true" ]; then
+        gzip -c -d ${fa} > ${fasta_name}
+    fi
+
     proovframe   \\
         fix \\
         ${args} \\
         -o ${prefix}.fa  \\
-        ${fa} \\
+        ${fasta_name} \\
         ${tsv}
 
     cat <<-END_VERSIONS > versions.yml

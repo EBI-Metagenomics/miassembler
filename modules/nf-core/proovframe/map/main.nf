@@ -8,7 +8,8 @@ process PROOVFRAME_MAP {
         'biocontainers/proovframe:0.9.7--hdfd78af_1' }"
 
     input:
-    tuple val(meta), path(faa), path(fasta)
+    tuple val(meta), path(faa)
+    tuple val(meta), path(fasta)
 
     output:
     tuple val(meta), path("*.tsv"), emit: tsv

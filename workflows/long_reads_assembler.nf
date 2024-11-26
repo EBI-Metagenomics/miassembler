@@ -131,10 +131,10 @@ workflow LONG_READS_ASSEMBLER {
     decontaminated_assembly.branch { meta, contigs ->
         lq: meta.quality == "low"
         hq: meta.quality == "high"
-    }.set {subworkflow_quality_contigs}
+    }.set{low_high_quality_contigs}
 
     FRAMESHIFT_CORRECTION{
-        subworkflow_quality_contigs.lq.map { meta, contigs -> [meta, contigs] }
+        low_high_quality_contigs.lq.map { meta, contigs -> [meta, contigs] }
     }
 
     //
