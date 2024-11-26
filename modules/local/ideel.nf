@@ -5,6 +5,7 @@ process IDEEL {
 
     input:
     tuple val(meta), val(stats)
+    val(before_after)
     
     output:
     tuple val(meta), env(platform),     emit: reads
@@ -15,10 +16,9 @@ process IDEEL {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def out = "output.png"
+    def out = "${prefix}_${before_after}.png"
     """
     ideel.py ${stats} ${out}
-
 
     """
 }

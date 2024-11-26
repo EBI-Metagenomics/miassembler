@@ -34,7 +34,8 @@ workflow FRAMESHIFT_CORRECTION {
     ch_versions = ch_versions.mix(DIAMOND_BLASTP_BEFORE.out.versions)
 
     IDEEL_BEFORE(
-        DIAMOND_BLASTP_BEFORE.out.txt
+        DIAMOND_BLASTP_BEFORE.out.txt,
+        "before"
     )
 
     PROOVFRAME_MAP(
@@ -63,7 +64,8 @@ workflow FRAMESHIFT_CORRECTION {
     ch_versions = ch_versions.mix(DIAMOND_BLASTP_AFTER.out.versions)
 
     IDEEL_AFTER(
-        DIAMOND_BLASTP_AFTER.out.txt
+        DIAMOND_BLASTP_AFTER.out.txt,
+        "after"
     )
 
     emit:
