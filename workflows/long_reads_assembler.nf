@@ -8,17 +8,16 @@
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
 
-include { FETCHTOOL_READS        } from '../modules/local/fetchtool_reads'
-include { LONG_READS_QC          } from '../subworkflows/local/long_reads_qc'
+include { LONG_READS_QC                } from '../subworkflows/local/long_reads_qc'
 
-include { ONT_LQ                 } from '../subworkflows/local/ont_lq'
-include { ONT_HQ                 } from '../subworkflows/local/ont_hq'
-include { PACBIO_LQ              } from '../subworkflows/local/pacbio_lq'
-include { PACBIO_HIFI            } from '../subworkflows/local/pacbio_hifi'
+include { ONT_LQ                       } from '../subworkflows/local/ont_lq'
+include { ONT_HQ                       } from '../subworkflows/local/ont_hq'
+include { PACBIO_LQ                    } from '../subworkflows/local/pacbio_lq'
+include { PACBIO_HIFI                  } from '../subworkflows/local/pacbio_hifi'
 
-include { LONG_READS_ASSEMBLY_QC } from '../subworkflows/local/long_reads_assembly_qc'
-include { FRAMESHIFT_CORRECTION  } from '../subworkflows/local/frameshift_correction'
-
+include { LONG_READS_ASSEMBLY_QC       } from '../subworkflows/local/long_reads_assembly_qc'
+include { FRAMESHIFT_CORRECTION        } from '../subworkflows/local/frameshift_correction'
+include { LONG_READS_ASSEMBLY_COVERAGE } from '../subworkflows/local/long_reads_assembly_coverage'
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     IMPORT NF-CORE MODULES/SUBWORKFLOWS
@@ -28,6 +27,10 @@ include { FRAMESHIFT_CORRECTION  } from '../subworkflows/local/frameshift_correc
 //
 // MODULE: Installed directly from nf-core/modules
 //
+
+include { FASTQC as FASTQC_BEFORE      } from '../modules/nf-core/fastqc/main'
+include { FASTQC as FASTQC_AFTER       } from '../modules/nf-core/fastqc/main'
+include { QUAST                        } from '../modules/nf-core/quast/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -46,11 +49,21 @@ workflow LONG_READS_ASSEMBLER {
 
     ch_versions = Channel.empty()
 
+    FASTQC_BEFORE (
+        reads
+    )
+    ch_versions = ch_versions.mix(FASTQC_BEFORE.out.versions)
+
     LONG_READS_QC (
         reads,
         params.reference_genome
     )
     ch_versions = ch_versions.mix(LONG_READS_QC.out.versions)
+
+    FASTQC_AFTER (
+        reads
+    )
+    ch_versions = ch_versions.mix(FASTQC_AFTER.out.versions)
 
     /*********************************************************************************/
     /* Selecting the combination of adapter trimming, assembler, and post-processing */
@@ -133,42 +146,34 @@ workflow LONG_READS_ASSEMBLER {
         hq: meta.quality == "high"
     }.set{low_high_quality_contigs}
 
-    FRAMESHIFT_CORRECTION{
+    FRAMESHIFT_CORRECTION(
         low_high_quality_contigs.lq.map { meta, contigs -> [meta, contigs] }
-    }
+    )
 
-    //
-    // MODULE: Run FastQC
-    //
-    // FASTQC (
-    //     INPUT_CHECK.out.reads
-    // )
-    // ch_versions = ch_versions.mix(FASTQC.out.versions.first())
+    final_contigs = FRAMESHIFT_CORRECTION.out.corrected_contigs.mix(
+                        low_high_quality_contigs.hq.map { meta, contigs -> [meta, contigs] })
 
-    //
-    // MODULE: MultiQC
-    //
-    // workflow_summary    = WorkflowLongreadsassembly.paramsSummaryMultiqc(workflow, summary_params)
-    // ch_workflow_summary = Channel.value(workflow_summary)
+    LONG_READS_ASSEMBLY_COVERAGE(
+        final_contigs.join( reads_assembler_config, remainder: false )
+    )
 
-    // methods_description    = WorkflowLongreadsassembly.methodsDescriptionText(workflow, ch_multiqc_custom_methods_description, params)
-    // ch_methods_description = Channel.value(methods_description)
+    ch_versions = ch_versions.mix(LONG_READS_ASSEMBLY_COVERAGE.out.versions)
 
-    // ch_multiqc_files = Channel.empty()
-    // ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
-    // ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
-    // ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
-    // ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect{it[1]}.ifEmpty([]))
+    // Stats //
+    /* The QUAST module was modified to run metaQUAST instead */
+    QUAST(
+        final_contigs,
+        [ [], [] ], // reference
+        [ [], [] ]  // gff
+    )
 
-    // MULTIQC (
-    //     ch_multiqc_files.collect(),
-    //     ch_multiqc_config.toList(),
-    //     ch_multiqc_custom_config.toList(),
-    //     ch_multiqc_logo.toList()
-    // )
-    // multiqc_report = MULTIQC.out.report.toList()
+    ch_versions = ch_versions.mix(QUAST.out.versions)
 
     emit:
+    fastqc_before_zip                    = FASTQC_BEFORE.out.zip                              // tuple(meta)
+    fastqc_after_zip                     = FASTQC_AFTER.out.zip                               // tuple(meta)
+    assembly_coverage_samtools_idxstats  = LONG_READS_ASSEMBLY_COVERAGE.out.samtools_idxstats // tuple(meta)
+    quast_results                        = QUAST.out.results                                  // tuple(meta)
     versions                             = ch_versions
 }
 
