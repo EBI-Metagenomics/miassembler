@@ -70,5 +70,5 @@ workflow FRAMESHIFT_CORRECTION {
 
     emit:
     corrected_contigs  = PROOVFRAME_FIX.out.out_fa
-    versions = ch_versions
+    versions           = ch_versions
 }

@@ -58,8 +58,11 @@ workflow LONG_READS_QC {
             reads_quality_levels,
             human_reference,
             "human",
-            "fastq", // alignment output extension
-            false    // no CIGAR in paf format
+            "fastq", // out sequence extension
+            true,    // output bam format
+            "bai",   // bam index extension
+            false,   // no CIGAR in paf format
+            true     // allow for long CIGAR
         )
 
         ch_versions = ch_versions.mix(MINIMAP2_ALIGN_HUMAN.out.versions)
@@ -81,8 +84,11 @@ workflow LONG_READS_QC {
             decontaminated_reads,
             host_reference,
             "host",
-            "fastq", // alignment output extension
-            false    // no CIGAR in paf format
+            "fastq", // out sequence extension
+            true,    // output bam format
+            "bai",   // bam index extension
+            false,   // no CIGAR in paf format
+            true     // allow for long CIGAR
         )
 
         ch_versions = ch_versions.mix(MINIMAP2_ALIGN_HOST.out.versions)

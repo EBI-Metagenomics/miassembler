@@ -23,8 +23,11 @@ workflow LONG_READS_ASSEMBLY_QC {
             assembly,
             human_reference,
             "human_post",
-            "fasta", // alignment output extension
-            false    // no CIGAR in paf format
+            "fasta",    // out sequence extension
+            true,       // output bam format
+            "bai",      // bam index extension
+            false,      // no CIGAR in paf format
+            true        // allow for long CIGAR
         )
 
         ch_versions = ch_versions.mix(MINIMAP2_ALIGN_HUMAN.out.versions)
@@ -46,8 +49,11 @@ workflow LONG_READS_ASSEMBLY_QC {
             decontaminated_assembly,
             human_reference,
             "host_post",
-            "fasta", // alignment output extension
-            false    // no CIGAR in paf format
+            "fasta",    // out sequence extension
+            true,       // output bam format
+            "bai",      // bam index extension
+            false,      // no CIGAR in paf format
+            true        // allow for long CIGAR
         )
 
         ch_versions = ch_versions.mix(MINIMAP_ALIGN_HOST.out.versions)
