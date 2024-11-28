@@ -68,7 +68,7 @@ process MINIMAP2_ALIGN {
     """
 
     stub:
-    def prefix = task.ext.prefix ?: c
+    def prefix = task.ext.prefix ?: "${meta.id}"
     def output_file = bam_format ? "${prefix}.bam" : "${prefix}.paf"
     def bam_index = bam_index_extension ? "touch ${prefix}.bam.${bam_index_extension}" : ""
     def bam_input = "${reads.extension}".matches('sam|bam|cram')
