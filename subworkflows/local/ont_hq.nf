@@ -7,7 +7,7 @@ workflow ONT_HQ {
 
     main:
 
-    ch_versions = Channel.empty()
+    def ch_versions = Channel.empty()
 
     PORECHOP_ABI(
         reads

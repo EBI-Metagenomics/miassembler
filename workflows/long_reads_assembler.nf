@@ -118,11 +118,11 @@ workflow LONG_READS_ASSEMBLER {
     )
 
     PACBIO_LQ(
-        subworkflow_platform_reads.lq_pacbio.map { meta, reads -> [meta, reads] }
+        subworkflow_platform_reads.lq_pacbio
     )
 
     PACBIO_HIFI(
-        subworkflow_platform_reads.hq_pacbio.map { meta, reads -> [meta, reads] }
+        subworkflow_platform_reads.hq_pacbio
     )
 
     assembly = ONT_LQ.out.contigs.mix(ONT_HQ.out.contigs,
@@ -147,14 +147,14 @@ workflow LONG_READS_ASSEMBLER {
     }.set{low_high_quality_contigs}
 
     FRAMESHIFT_CORRECTION(
-        low_high_quality_contigs.lq.map { meta, contigs -> [meta, contigs] }
+        low_high_quality_contigs.lq
     )
 
     final_contigs = FRAMESHIFT_CORRECTION.out.corrected_contigs.mix(
-                        low_high_quality_contigs.hq.map { meta, contigs -> [meta, contigs] })
+                        low_high_quality_contigs.hq)
 
     LONG_READS_ASSEMBLY_COVERAGE(
-        final_contigs.join( reads_assembler_config, remainder: false )
+        final_contigs.join( reads_assembler_config )
     )
 
     ch_versions = ch_versions.mix(LONG_READS_ASSEMBLY_COVERAGE.out.versions)

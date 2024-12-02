@@ -10,7 +10,7 @@ workflow LONG_READS_ASSEMBLY_QC {
     main:
 
     ch_versions = Channel.empty()
-    decontaminated_assembly = Channel.empty()
+    decontaminated_assembly = assembly
 
     if ( params.remove_human ) {
         human_reference = Channel.fromPath(
@@ -34,8 +34,6 @@ workflow LONG_READS_ASSEMBLY_QC {
 
         decontaminated_assembly = MINIMAP2_ALIGN_HUMAN.out.filtered_output
 
-    } else {
-        decontaminated_assembly = assembly
     }
 
     if ( reference_genome != null ) {
