@@ -84,10 +84,10 @@ workflow ASSEMBLY_QC {
     }
 
     PUBLISH_CLEANED_CONTIGS(
-        filtered_contigs
+        cleaned_contigs
     )
 
     emit:
-    filtered_contigs = filtered_contigs
+    filtered_contigs = cleaned_contigs
     versions         = ch_versions
 }
