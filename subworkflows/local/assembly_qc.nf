@@ -78,16 +78,16 @@ workflow ASSEMBLY_QC {
             filtered_contigs.join( BLAST_BLASTN_HOST.out.txt )
         )
 
-        cleaned_contigs = SEQKIT_GREP_HOST.out.filter
+        filtered_contigs = SEQKIT_GREP_HOST.out.filter
 
         ch_versions = ch_versions.mix(SEQKIT_GREP_HOST.out.versions)
     }
 
     PUBLISH_CLEANED_CONTIGS(
-        cleaned_contigs
+        filtered_contigs
     )
 
     emit:
-    filtered_contigs = cleaned_contigs
+    filtered_contigs = filtered_contigs
     versions         = ch_versions
 }
