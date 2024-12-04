@@ -43,25 +43,25 @@ include { QUAST                        } from '../modules/nf-core/quast/main'
 workflow LONG_READS_ASSEMBLER {
 
     take:
-    reads // tuple(meta), path(reads)
+    input_reads // tuple(meta), path(input_reads)
 
     main:
 
     ch_versions = Channel.empty()
 
     FASTQC_BEFORE (
-        reads
+        input_reads
     )
     ch_versions = ch_versions.mix(FASTQC_BEFORE.out.versions)
 
     LONG_READS_QC (
-        reads,
+        input_reads,
         params.reference_genome
     )
     ch_versions = ch_versions.mix(LONG_READS_QC.out.versions)
 
     FASTQC_AFTER (
-        reads
+        LONG_READS_QC.out.qc_reads
     )
     ch_versions = ch_versions.mix(FASTQC_AFTER.out.versions)
 

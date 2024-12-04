@@ -1,4 +1,7 @@
 Changes in module 'nf-core/megahit'
+'modules/nf-core/megahit/meta.yml' is unchanged
+'modules/nf-core/megahit/environment.yml' is unchanged
+Changes in 'megahit/main.nf':
 --- modules/nf-core/megahit/main.nf
 +++ modules/nf-core/megahit/main.nf
 @@ -33,6 +33,11 @@

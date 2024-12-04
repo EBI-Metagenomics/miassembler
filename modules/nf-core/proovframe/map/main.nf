@@ -9,18 +9,18 @@ process PROOVFRAME_MAP {
 
     input:
     tuple val(meta), path(faa)
-    tuple val(meta), path(fasta)
+    tuple val(meta2), path(fasta)
 
     output:
-    tuple val(meta), path("*.tsv"), emit: tsv
-    path "versions.yml"           , emit: versions
+    tuple val(meta2), path("*.tsv"), emit: tsv
+    path "versions.yml"            , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
     def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: "${meta2.id}"
     """
     proovframe \\
         map \\
@@ -37,7 +37,7 @@ process PROOVFRAME_MAP {
 
     stub:
     def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: "${meta2.id}"
     """
     touch ${prefix}.tsv
 

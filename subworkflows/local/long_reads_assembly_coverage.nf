@@ -11,8 +11,8 @@ workflow LONG_READS_ASSEMBLY_COVERAGE {
 
     ch_versions = Channel.empty()
 
-    reads = assembly_reads.map { meta, _, reads -> [meta, reads] }
-    assembly = assembly_reads.map { meta, assembly, _ -> [meta, assembly] }
+    reads = assembly_reads.map { meta, __, reads -> [meta, reads] }
+    assembly = assembly_reads.map { meta, assembly, __ -> [meta, assembly] }
 
     MINIMAP_COVERAGE(
         reads,
