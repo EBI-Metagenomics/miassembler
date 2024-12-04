@@ -10,6 +10,8 @@ workflow SHORT_READS_QC {
 
     main:
     def ch_versions = Channel.empty()
+    def ch_bwamem2_human_phix_refs = Channel.empty()
+    def ch_bwamem2_host_refs = Channel.empty()
 
     FASTP(
         reads,
@@ -26,7 +28,7 @@ workflow SHORT_READS_QC {
 
     if ( params.remove_human_phix ) {
 
-        def ch_bwamem2_human_phix_refs = Channel.fromPath( "${params.bwamem2_reference_genomes_folder}/${params.human_phix_blast_index_name}*", checkIfExists: true)
+        ch_bwamem2_human_phix_refs = Channel.fromPath( "${params.bwamem2_reference_genomes_folder}/${params.human_phix_blast_index_name}*", checkIfExists: true)
             .collect().map {
                 files -> [ ["id": params.human_phix_blast_index_name], files ]
             }
@@ -46,7 +48,7 @@ workflow SHORT_READS_QC {
 
     if ( reference_genome != null ) {
 
-        def ch_bwamem2_host_refs = Channel.fromPath( "${params.bwamem2_reference_genomes_folder}/${reference_genome}*", checkIfExists: true)
+        ch_bwamem2_host_refs = Channel.fromPath( "${params.bwamem2_reference_genomes_folder}/${reference_genome}*", checkIfExists: true)
             .collect().map {
                 files -> [ ["id": reference_genome], files ]
             }

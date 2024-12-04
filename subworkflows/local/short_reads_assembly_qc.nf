@@ -27,6 +27,8 @@ workflow SHORT_READS_ASSEMBLY_QC {
     main:
 
     def ch_versions = Channel.empty()
+    def ch_blast_human_phix_refs = Channel.empty()
+    def ch_blast_host_refs = Channel.empty()
 
     /* Len filter using the parameter "short_reads_min_contig_length" */
     SEQKIT_SEQ(
@@ -35,11 +37,11 @@ workflow SHORT_READS_ASSEMBLY_QC {
 
     ch_versions = ch_versions.mix(SEQKIT_SEQ.out.versions)
 
-    def filtered_contigs = SEQKIT_SEQ.out.fastx
+    def cleaned_contigs = SEQKIT_SEQ.out.fastx
 
     if ( params.remove_human_phix ) {
 
-        def ch_blast_human_phix_refs = Channel.fromPath( "${params.blast_reference_genomes_folder}/${params.human_phix_blast_index_name}*", checkIfExists: true)
+        ch_blast_human_phix_refs = Channel.fromPath( "${params.blast_reference_genomes_folder}/${params.human_phix_blast_index_name}*", checkIfExists: true)
             .collect().map {
                 files -> [ ["id": params.human_phix_blast_index_name], files ]
             }
@@ -52,42 +54,42 @@ workflow SHORT_READS_ASSEMBLY_QC {
         ch_versions = ch_versions.mix(BLAST_BLASTN_HUMAN_PHIX.out.versions.first())
 
         SEQKIT_GREP_HUMAN_PHIX(
-            filtered_contigs.join( BLAST_BLASTN_HUMAN_PHIX.out.txt )
+            cleaned_contigs.join( BLAST_BLASTN_HUMAN_PHIX.out.txt )
         )
 
-        filtered_contigs = SEQKIT_GREP_HUMAN_PHIX.out.filter
+        cleaned_contigs = SEQKIT_GREP_HUMAN_PHIX.out.filter
 
         ch_versions = ch_versions.mix(SEQKIT_GREP_HUMAN_PHIX.out.versions)
     }
 
     if ( reference_genome != null ) {
 
-        def ch_blast_host_refs = Channel.fromPath( "${params.blast_reference_genomes_folder}/${reference_genome}*", checkIfExists: true)
+        ch_blast_host_refs = Channel.fromPath( "${params.blast_reference_genomes_folder}/${reference_genome}*", checkIfExists: true)
             .collect().map {
                 files -> [ ["id": reference_genome], files ]
             }
 
         BLAST_BLASTN_HOST(
-            filtered_contigs,
+            cleaned_contigs,
             ch_blast_host_refs
         )
 
         ch_versions = ch_versions.mix(BLAST_BLASTN_HOST.out.versions.first())
 
         SEQKIT_GREP_HOST(
-            filtered_contigs.join( BLAST_BLASTN_HOST.out.txt )
+            cleaned_contigs.join( BLAST_BLASTN_HOST.out.txt )
         )
 
-        filtered_contigs = SEQKIT_GREP_HOST.out.filter
+        cleaned_contigs = SEQKIT_GREP_HOST.out.filter
 
         ch_versions = ch_versions.mix(SEQKIT_GREP_HOST.out.versions)
     }
 
     PUBLISH_CLEANED_CONTIGS(
-        filtered_contigs
+        cleaned_contigs
     )
 
     emit:
-    filtered_contigs = filtered_contigs
+    filtered_contigs = cleaned_contigs
     versions         = ch_versions
 }

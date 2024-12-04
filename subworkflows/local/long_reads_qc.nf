@@ -10,6 +10,8 @@ workflow LONG_READS_QC {
 
     main:
     def ch_versions = Channel.empty()
+    def human_reference = Channel.empty()
+    def host_reference = Channel.empty()
 
     FASTP_LR(
         input_reads,
@@ -45,7 +47,7 @@ workflow LONG_READS_QC {
         // can we use the same flag, even if one has phix but not the other?
         // Check file extensions too
 
-        def human_reference = Channel.fromPath( "${params.reference_genomes_folder}/${params.human_fasta_prefix}.fna", checkIfExists: true)
+        human_reference = Channel.fromPath( "${params.reference_genomes_folder}/${params.human_fasta_prefix}.fna", checkIfExists: true)
             .collect().map {
                 files -> [ ["id": params.human_fasta_prefix], files ]
             }
@@ -73,7 +75,7 @@ workflow LONG_READS_QC {
 
     if ( reference_genome != null ) {
 
-        def host_reference = Channel.fromPath( "${params.reference_genomes_folder}/${reference_genome}*", checkIfExists: true)
+        host_reference = Channel.fromPath( "${params.reference_genomes_folder}/${reference_genome}*", checkIfExists: true)
             .collect().map {
                 files -> [ ["id": reference_genome], files ]
             }

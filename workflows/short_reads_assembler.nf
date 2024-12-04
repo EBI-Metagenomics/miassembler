@@ -8,8 +8,6 @@
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
 
-include { DOWNLOAD_FROM_FIRE            } from '../modules/local/download_from_fire.nf'
-
 include { SHORT_READS_QC                } from '../subworkflows/local/short_reads_qc'
 include { SHORT_READS_ASSEMBLY_QC       } from '../subworkflows/local/short_reads_assembly_qc'
 include { SHORT_READS_ASSEMBLY_COVERAGE } from '../subworkflows/local/short_reads_assembly_coverage'

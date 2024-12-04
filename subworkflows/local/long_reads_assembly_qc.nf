@@ -10,10 +10,12 @@ workflow LONG_READS_ASSEMBLY_QC {
     main:
 
     def ch_versions = Channel.empty()
+    def human_reference = Channel.empty()
+    def host_reference = Channel.empty()
     def decontaminated_assembly = assembly
 
     if ( params.remove_human ) {
-        def human_reference = Channel.fromPath(
+        human_reference = Channel.fromPath(
             "${params.reference_genomes_folder}/${params.human_fasta_prefix}.fna", checkIfExists: true)
             .collect().map {
                 files -> [ ["id": params.human_fasta_prefix], files ]
@@ -38,7 +40,7 @@ workflow LONG_READS_ASSEMBLY_QC {
 
     if ( reference_genome != null ) {
 
-        def host_reference = Channel.fromPath( "${params.reference_genomes_folder}/${reference_genome}*", checkIfExists: true)
+        host_reference = Channel.fromPath( "${params.reference_genomes_folder}/${reference_genome}*", checkIfExists: true)
             .collect().map {
                 files -> [ ["id": reference_genome], files ]
             }
