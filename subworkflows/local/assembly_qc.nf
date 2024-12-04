@@ -35,7 +35,7 @@ workflow ASSEMBLY_QC {
 
     ch_versions = ch_versions.mix(SEQKIT_SEQ.out.versions)
 
-    filtered_contigs = SEQKIT_SEQ.out.fastx
+    cleaned_contigs = SEQKIT_SEQ.out.fastx
 
     if ( params.remove_human_phix ) {
 
@@ -52,10 +52,10 @@ workflow ASSEMBLY_QC {
         ch_versions = ch_versions.mix(BLAST_BLASTN_HUMAN_PHIX.out.versions.first())
 
         SEQKIT_GREP_HUMAN_PHIX(
-            filtered_contigs.join( BLAST_BLASTN_HUMAN_PHIX.out.txt )
+            cleaned_contigs.join( BLAST_BLASTN_HUMAN_PHIX.out.txt )
         )
 
-        filtered_contigs = SEQKIT_GREP_HUMAN_PHIX.out.filter
+        cleaned_contigs = SEQKIT_GREP_HUMAN_PHIX.out.filter
 
         ch_versions = ch_versions.mix(SEQKIT_GREP_HUMAN_PHIX.out.versions)
     }
@@ -68,26 +68,26 @@ workflow ASSEMBLY_QC {
             }
 
         BLAST_BLASTN_HOST(
-            filtered_contigs,
+            cleaned_contigs,
             ch_blast_host_refs
         )
 
         ch_versions = ch_versions.mix(BLAST_BLASTN_HOST.out.versions.first())
 
         SEQKIT_GREP_HOST(
-            filtered_contigs.join( BLAST_BLASTN_HOST.out.txt )
+            cleaned_contigs.join( BLAST_BLASTN_HOST.out.txt )
         )
 
-        filtered_contigs = SEQKIT_GREP_HOST.out.filter
+        cleaned_contigs = SEQKIT_GREP_HOST.out.filter
 
         ch_versions = ch_versions.mix(SEQKIT_GREP_HOST.out.versions)
     }
 
     PUBLISH_CLEANED_CONTIGS(
-        filtered_contigs
+        cleaned_contigs
     )
 
     emit:
-    filtered_contigs = filtered_contigs
+    filtered_contigs = cleaned_contigs
     versions         = ch_versions
 }
