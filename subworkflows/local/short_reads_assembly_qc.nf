@@ -26,7 +26,7 @@ workflow SHORT_READS_ASSEMBLY_QC {
 
     main:
 
-    ch_versions = Channel.empty()
+    def ch_versions = Channel.empty()
 
     /* Len filter using the parameter "short_reads_min_contig_length" */
     SEQKIT_SEQ(
@@ -35,11 +35,11 @@ workflow SHORT_READS_ASSEMBLY_QC {
 
     ch_versions = ch_versions.mix(SEQKIT_SEQ.out.versions)
 
-    filtered_contigs = SEQKIT_SEQ.out.fastx
+    def filtered_contigs = SEQKIT_SEQ.out.fastx
 
     if ( params.remove_human_phix ) {
 
-        ch_blast_human_phix_refs = Channel.fromPath( "${params.blast_reference_genomes_folder}/${params.human_phix_blast_index_name}*", checkIfExists: true)
+        def ch_blast_human_phix_refs = Channel.fromPath( "${params.blast_reference_genomes_folder}/${params.human_phix_blast_index_name}*", checkIfExists: true)
             .collect().map {
                 files -> [ ["id": params.human_phix_blast_index_name], files ]
             }
@@ -62,7 +62,7 @@ workflow SHORT_READS_ASSEMBLY_QC {
 
     if ( reference_genome != null ) {
 
-        ch_blast_host_refs = Channel.fromPath( "${params.blast_reference_genomes_folder}/${reference_genome}*", checkIfExists: true)
+        def ch_blast_host_refs = Channel.fromPath( "${params.blast_reference_genomes_folder}/${reference_genome}*", checkIfExists: true)
             .collect().map {
                 files -> [ ["id": reference_genome], files ]
             }
@@ -78,7 +78,7 @@ workflow SHORT_READS_ASSEMBLY_QC {
             filtered_contigs.join( BLAST_BLASTN_HOST.out.txt )
         )
 
-        cleaned_contigs = SEQKIT_GREP_HOST.out.filter
+        filtered_contigs = SEQKIT_GREP_HOST.out.filter
 
         ch_versions = ch_versions.mix(SEQKIT_GREP_HOST.out.versions)
     }

@@ -13,7 +13,7 @@ workflow FRAMESHIFT_CORRECTION {
     contigs                   // [ val(meta), path(contigs) ]
 
     main:
-    ch_versions = Channel.empty()
+    def ch_versions = Channel.empty()
 
     PROKKA_BEFORE(
         contigs

@@ -4,7 +4,7 @@
     "title": "ebi-metagenomics/miassembler pipeline parameters",
     "description": "Microbiome Informatics metagenomes assembly pipeline",
     "type": "object",
-    "defs": {
+    "$defs": {
         "input_output_options": {
             "title": "Input/output options",
             "type": "object",
@@ -167,7 +167,8 @@
                 "diamond_db":{
                     "type": "string",
                     "format": "file-path",
-                    "description":"Path to the Swiss-Prot or TREMBL db for diamond"
+                    "description":"Path to the Swiss-Prot or TREMBL db for diamond",
+                    "default": ""
                 },
                 "outdir": {
                     "type": "string",
@@ -348,16 +349,16 @@
     },
     "allOf": [
         {
-            "$ref": "#/defs/input_output_options"
+            "$ref": "#/$defs/input_output_options"
         },
         {
-            "$ref": "#/defs/reads_qc"
+            "$ref": "#/$defs/reads_qc"
         },
         {
-            "$ref": "#/defs/max_job_request_options"
+            "$ref": "#/$defs/max_job_request_options"
         },
         {
-            "$ref": "#/defs/generic_options"
+            "$ref": "#/$defs/generic_options"
         }
     ]
 }

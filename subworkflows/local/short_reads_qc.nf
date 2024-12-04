@@ -9,7 +9,7 @@ workflow SHORT_READS_QC {
     reference_genome // [ val(meta2), path(reference_genome) ] | meta2 contains the name of the reference genome
 
     main:
-    ch_versions = Channel.empty()
+    def ch_versions = Channel.empty()
 
     FASTP(
         reads,
@@ -22,11 +22,11 @@ workflow SHORT_READS_QC {
 
     ch_versions = ch_versions.mix(FASTP.out.versions)
 
-    decontaminated_reads = channel.empty()
+    def decontaminated_reads = channel.empty()
 
     if ( params.remove_human_phix ) {
 
-        ch_bwamem2_human_phix_refs = Channel.fromPath( "${params.bwamem2_reference_genomes_folder}/${params.human_phix_blast_index_name}*", checkIfExists: true)
+        def ch_bwamem2_human_phix_refs = Channel.fromPath( "${params.bwamem2_reference_genomes_folder}/${params.human_phix_blast_index_name}*", checkIfExists: true)
             .collect().map {
                 files -> [ ["id": params.human_phix_blast_index_name], files ]
             }
@@ -46,7 +46,7 @@ workflow SHORT_READS_QC {
 
     if ( reference_genome != null ) {
 
-        ch_bwamem2_host_refs = Channel.fromPath( "${params.bwamem2_reference_genomes_folder}/${reference_genome}*", checkIfExists: true)
+        def ch_bwamem2_host_refs = Channel.fromPath( "${params.bwamem2_reference_genomes_folder}/${reference_genome}*", checkIfExists: true)
             .collect().map {
                 files -> [ ["id": reference_genome], files ]
             }

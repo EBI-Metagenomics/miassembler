@@ -9,11 +9,11 @@ workflow LONG_READS_ASSEMBLY_QC {
 
     main:
 
-    ch_versions = Channel.empty()
-    decontaminated_assembly = assembly
+    def ch_versions = Channel.empty()
+    def decontaminated_assembly = assembly
 
     if ( params.remove_human ) {
-        human_reference = Channel.fromPath(
+        def human_reference = Channel.fromPath(
             "${params.reference_genomes_folder}/${params.human_fasta_prefix}.fna", checkIfExists: true)
             .collect().map {
                 files -> [ ["id": params.human_fasta_prefix], files ]
@@ -38,14 +38,14 @@ workflow LONG_READS_ASSEMBLY_QC {
 
     if ( reference_genome != null ) {
 
-        host_reference = Channel.fromPath( "${params.reference_genomes_folder}/${reference_genome}*", checkIfExists: true)
+        def host_reference = Channel.fromPath( "${params.reference_genomes_folder}/${reference_genome}*", checkIfExists: true)
             .collect().map {
                 files -> [ ["id": reference_genome], files ]
             }
 
         MINIMAP_ALIGN_HOST(
             decontaminated_assembly,
-            human_reference,
+            host_reference,
             "host_post",
             "fasta",    // out sequence extension
             true,       // output bam format

@@ -1,5 +1,3 @@
-import groovy.json.JsonSlurper
-
 include { FASTP as FASTP_LR                      } from '../../modules/nf-core/fastp/main'
 include { MINIMAP2_ALIGN as MINIMAP2_ALIGN_HUMAN } from '../../modules/nf-core/minimap2/align/main'
 include { MINIMAP2_ALIGN as MINIMAP2_ALIGN_HOST  } from '../../modules/nf-core/minimap2/align/main'
@@ -7,14 +5,14 @@ include { MINIMAP2_ALIGN as MINIMAP2_ALIGN_HOST  } from '../../modules/nf-core/m
 workflow LONG_READS_QC {
 
     take:
-    reads              // [ val(meta), path(reads) ]
+    input_reads        // [ val(meta), path(reads) ]
     reference_genome   // [ val(meta2), path(reference_genome) ]
 
     main:
-    ch_versions = Channel.empty()
+    def ch_versions = Channel.empty()
 
     FASTP_LR(
-        reads,
+        input_reads,
         [],      // no input adapters
         false,   // keep passing reads in the output
         false,   // omit trimmed reads in the output
@@ -24,10 +22,10 @@ workflow LONG_READS_QC {
 
     ch_versions = ch_versions.mix(FASTP_LR.out.versions)
 
-    reads_json = FASTP_LR.out.reads.join( FASTP_LR.out.json )
+    def reads_json = FASTP_LR.out.reads.join( FASTP_LR.out.json )
 
-    reads_quality_levels = reads_json.map { meta, reads, json ->
-        def json_txt = new JsonSlurper().parseText(json.text)
+    def reads_quality_levels = reads_json.map { meta, reads, json ->
+        def json_txt = new groovy.json.JsonSlurper().parseText(json.text)
         
         def q20_percentage = json_txt?.summary?.before_filtering?.q20_rate ?: 0;
 
@@ -40,14 +38,14 @@ workflow LONG_READS_QC {
 
     // TODO: add filter if too many reads are removed
 
-    decontaminated_reads = channel.empty()
+    def decontaminated_reads = channel.empty()
 
     if ( params.remove_human ) {
         // TODO: make this consistent with short_reads
         // can we use the same flag, even if one has phix but not the other?
         // Check file extensions too
 
-        human_reference = Channel.fromPath( "${params.reference_genomes_folder}/${params.human_fasta_prefix}.fna", checkIfExists: true)
+        def human_reference = Channel.fromPath( "${params.reference_genomes_folder}/${params.human_fasta_prefix}.fna", checkIfExists: true)
             .collect().map {
                 files -> [ ["id": params.human_fasta_prefix], files ]
             }
@@ -75,7 +73,7 @@ workflow LONG_READS_QC {
 
     if ( reference_genome != null ) {
 
-        host_reference = Channel.fromPath( "${params.reference_genomes_folder}/${reference_genome}*", checkIfExists: true)
+        def host_reference = Channel.fromPath( "${params.reference_genomes_folder}/${reference_genome}*", checkIfExists: true)
             .collect().map {
                 files -> [ ["id": reference_genome], files ]
             }

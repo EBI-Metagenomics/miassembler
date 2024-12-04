@@ -1,39 +1,10 @@
-// Groovy //
-import groovy.json.JsonSlurper
-
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    PRINT PARAMS SUMMARY
+    IMPORT PLUGINS AND OTHER BITS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { validateParameters; paramsSummaryLog; paramsSummaryMap; samplesheetToList } from 'plugin/nf-schema'
-
-def logo = NfcoreTemplate.logo(workflow, params.monochrome_logs)
-def citation = '\n' + WorkflowMain.citation(workflow) + '\n'
-def summary_params = paramsSummaryMap(workflow)
-
-// Print parameter summary log to screen
-log.info logo + paramsSummaryLog(workflow) + citation
-
-validateParameters()
-
-if (params.help) {
-   log.info paramsHelp("nextflow run ebi-metagenomics/miassembler --help")
-   exit 0
-}
-
-/*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    CONFIG FILES
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*/
-
-ch_multiqc_config          = file("$projectDir/assets/multiqc_config.yml", checkIfExists: true)
-ch_multiqc_custom_config   = params.multiqc_config ? file( params.multiqc_config, checkIfExists: true ) : []
-ch_multiqc_logo            = params.multiqc_logo   ? file( params.multiqc_logo, checkIfExists: true ) : file("$projectDir/assets/mgnify_logo.png", checkIfExists: true)
-ch_multiqc_custom_methods_description = params.multiqc_methods_description ? file(params.multiqc_methods_description, checkIfExists: true) : file("$projectDir/assets/methods_description_template.yml", checkIfExists: true)
-
+include { validateParameters; paramsSummaryLog; paramsSummaryMap; samplesheetToList; paramsHelp } from 'plugin/nf-schema@2.0.0'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -75,18 +46,54 @@ include { FETCHTOOL_READS       } from '../modules/local/fetchtool_reads'
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-// Info required for completion email and summary
-def multiqc_report = []
-
-
 workflow MIASSEMBLER {
 
-    ch_versions = Channel.empty()
-    fetch_tool_metadata = Channel.empty()
+    /*
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        PRINT PARAMS SUMMARY
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    */
+    def logo = NfcoreTemplate.logo(workflow, params.monochrome_logs)
+    def citation = '\n' + WorkflowMain.citation(workflow) + '\n'
+    def summary_params = paramsSummaryMap(workflow)
+
+    // Print parameter summary log to screen
+    log.info logo + paramsSummaryLog(workflow) + citation
+
+    validateParameters()
+
+    if (params.help) {
+        log.info paramsHelp("nextflow run ebi-metagenomics/miassembler --help")
+        exit 0
+    }
+
+    // Custom validation //
+    // The conditional validation doesn't work yet -> https://github.com/nf-core/tools/issues/2619
+    if ( !params.samplesheet && ( !params.study_accession || !params.reads_accession ) ) {
+        error "Either --samplesheet or both --study_accession and --reads_accession are required."
+        exit 1
+    }
+
+    log.info paramsSummaryLog(workflow)
+
+    /*
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        CONFIG FILES
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    */
+
+    def ch_multiqc_config          = file("$projectDir/assets/multiqc_config.yml", checkIfExists: true)
+    def ch_multiqc_custom_config   = params.multiqc_config ? file( params.multiqc_config, checkIfExists: true ) : []
+    def ch_multiqc_logo            = params.multiqc_logo   ? file( params.multiqc_logo, checkIfExists: true ) : file("$projectDir/assets/mgnify_logo.png", checkIfExists: true)
+    def ch_multiqc_custom_methods_description = params.multiqc_methods_description ? file(params.multiqc_methods_description, checkIfExists: true) : file("$projectDir/assets/methods_description_template.yml", checkIfExists: true)
+
+    def ch_versions = Channel.empty()
+    def fetch_tool_metadata = Channel.empty()
+    def fetch_reads_transformed = Channel.empty()
 
     if ( params.samplesheet ) {
 
-        groupReads = { study_accession, reads_accession, fq1, fq2, library_layout, library_strategy, platform, assembler, assembly_memory, assembler_config ->
+        def groupReads = { study_accession, reads_accession, fq1, fq2, library_layout, library_strategy, platform, assembler, assembly_memory, assembler_config ->
             if (fq2 == []) {
                 return tuple(["id": reads_accession,
                               "study_accession": study_accession,
@@ -115,14 +122,14 @@ workflow MIASSEMBLER {
             }
         }
 
-        samplesheet = Channel.fromList(samplesheetToList(params.samplesheet, "./assets/schema_input.json"))
+        def samplesheet = Channel.fromList(samplesheetToList(params.samplesheet, "./assets/schema_input.json"))
 
         // [ study, sample, read1, [read2], library_layout, library_strategy, platform, assembly_memory]
         fetch_reads_transformed = samplesheet.map(groupReads)
 
     } else {
         // TODO: remove when the fetch tools get's published on bioconda
-        fetch_tool_config = file("${projectDir}/assets/fetch_tool_anonymous.json", checkIfExists: true)
+        def fetch_tool_config = file("${projectDir}/assets/fetch_tool_anonymous.json", checkIfExists: true)
 
         if ( params.private_study ) {
             fetch_tool_config = file("${projectDir}/assets/fetch_tool_credentials.json", checkIfExists: true)
@@ -163,7 +170,7 @@ workflow MIASSEMBLER {
     /* Selecting the assembly pipeline flavour */
     /*******************************************/
 
-    classified_reads = fetch_reads_transformed.map { meta, reads ->
+    def classified_reads = fetch_reads_transformed.map { meta, reads ->
         // Long reads //
         if ( ["ont", "pb"].contains( meta.platform ) ) {
             return [ meta + [long_reads: true], reads]
@@ -173,7 +180,7 @@ workflow MIASSEMBLER {
         }
     }
 
-    classified_reads.branch { meta, reads ->
+    classified_reads.branch { meta, _reads ->
         short_reads: meta.short_reads
         long_reads: meta.long_reads
     }.set { reads_to_assemble }
@@ -201,13 +208,13 @@ workflow MIASSEMBLER {
     //
     // MODULE: MultiQC
     //
-    workflow_summary    = WorkflowMiassembler.paramsSummaryMultiqc(workflow, summary_params)
-    ch_workflow_summary = Channel.value(workflow_summary)
+    def workflow_summary    = WorkflowMiassembler.paramsSummaryMultiqc(workflow, summary_params)
+    def ch_workflow_summary = Channel.value(workflow_summary)
 
-    methods_description    = WorkflowMiassembler.methodsDescriptionText(workflow, ch_multiqc_custom_methods_description, params)
-    ch_methods_description = Channel.value(methods_description)
+    def methods_description    = WorkflowMiassembler.methodsDescriptionText(workflow, ch_multiqc_custom_methods_description, params)
+    def ch_methods_description = Channel.value(methods_description)
 
-    ch_multiqc_base_files = Channel.empty()
+    def ch_multiqc_base_files = Channel.empty()
     ch_multiqc_base_files = ch_multiqc_base_files.mix( CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect() )
     ch_multiqc_base_files = ch_multiqc_base_files.mix( ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml') )
     ch_multiqc_base_files = ch_multiqc_base_files.mix( ch_methods_description.collectFile(name: 'methods_description_mqc.yaml') )
@@ -240,12 +247,12 @@ workflow MIASSEMBLER {
         }
     }
 
-    ch_multiqc_study_tools_files = Channel.empty()
+    def ch_multiqc_study_tools_files = Channel.empty()
 
-    study_multiqc_files = SHORT_READS_ASSEMBLER.out.fastqc_before_zip.map(meta_by_study)
+    def study_multiqc_files = SHORT_READS_ASSEMBLER.out.fastqc_before_zip.map(meta_by_study)
         .join( SHORT_READS_ASSEMBLER.out.fastqc_after_zip.map(meta_by_study) )
         .join( SHORT_READS_ASSEMBLER.out.assembly_coverage_samtools_idxstats.map(meta_by_study), remainder: true ) // the assembly step could fail
-        .join( SHORT_READS_ASSEMBLER.out.quast_results.map(meta_by_study), remainder: true )                          // the assembly step could fail
+        .join( SHORT_READS_ASSEMBLER.out.quast_results.map(meta_by_study), remainder: true )                       // the assembly step could fail
 
     ch_multiqc_study_tools_files = study_multiqc_files.flatMap( combineFiles ).groupTuple()
 
@@ -266,13 +273,13 @@ workflow MIASSEMBLER {
         [ meta.subMap("study_accession", "id", "assembler", "assembler_version"), result_artifact ]
     }
 
-    run_multiqc_files = SHORT_READS_ASSEMBLER.out.fastqc_before_zip.map(meta_by_run)
+    def run_multiqc_files = SHORT_READS_ASSEMBLER.out.fastqc_before_zip.map(meta_by_run)
         .join( SHORT_READS_ASSEMBLER.out.fastqc_after_zip.map(meta_by_run) )
         .join( SHORT_READS_ASSEMBLER.out.assembly_coverage_samtools_idxstats.map(meta_by_run), remainder: true ) // the assembly step could fail
-        .join( SHORT_READS_ASSEMBLER.out.quast_results.map(meta_by_run), remainder: true )                          // the assembly step could fail
+        .join( SHORT_READS_ASSEMBLER.out.quast_results.map(meta_by_run), remainder: true )                       // the assembly step could fail
 
     // Filter out the non-assembled runs //
-    ch_multiqc_run_tools_files = run_multiqc_files.filter { meta, fastqc_before, fastqc_after, assembly_coverage, quast -> {
+    def ch_multiqc_run_tools_files = run_multiqc_files.filter { meta, fastqc_before, fastqc_after, assembly_coverage, quast -> {
             return assembly_coverage != null && quast != null
         }
     } .flatMap( combineFiles ).groupTuple()
@@ -294,14 +301,14 @@ workflow MIASSEMBLER {
 
     // Short reads asssembled runs //
     SHORT_READS_ASSEMBLER.out.assembly_coverage_samtools_idxstats.map {
-        meta, _ -> {
+        meta, __ -> {
             return "${meta.id},${meta.assembler},${meta.assembler_version}"
         }
      }.collectFile(name: "assembled_runs.csv", storeDir: "${params.outdir}", newLine: true, cache: false)
 
     // Short reads QC failed //
-    short_reads_qc_failed_entries = SHORT_READS_ASSEMBLER.out.qc_failed.map {
-        meta, _, extended_meta -> {
+    def short_reads_qc_failed_entries = SHORT_READS_ASSEMBLER.out.qc_failed.map {
+        meta, __, extended_meta -> {
             if ( extended_meta.low_reads_count ) {
                 return "${meta.id},low_reads_count"
             }
@@ -320,3 +327,4 @@ workflow MIASSEMBLER {
     THE END
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
+
