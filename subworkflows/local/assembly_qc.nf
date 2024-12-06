@@ -88,6 +88,6 @@ workflow ASSEMBLY_QC {
     )
 
     emit:
-    filtered_contigs = cleaned_contigs
+    cleaned_contigs = cleaned_contigs
     versions         = ch_versions
 }

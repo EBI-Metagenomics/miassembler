@@ -246,7 +246,7 @@ workflow MIASSEMBLER {
 
     // Coverage //
     ASSEMBLY_COVERAGE(
-        ASSEMBLY_QC.out.filtered_contigs.join( READS_QC.out.qc_reads, remainder: false ),
+        ASSEMBLY_QC.out.cleaned_contigs.join( READS_QC.out.qc_reads, remainder: false ),
         READS_QC.out.fastp_json
     )
 
@@ -255,7 +255,7 @@ workflow MIASSEMBLER {
     // Stats //
     /* The QUAST module was modified to run metaQUAST instead */
     QUAST(
-        ASSEMBLY_QC.out.filtered_contigs,
+        ASSEMBLY_QC.out.cleaned_contigs,
         [ [], [] ], // reference
         [ [], [] ]  // gff
     )
