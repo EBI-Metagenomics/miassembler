@@ -4,19 +4,13 @@
     "title": "ebi-metagenomics/miassembler pipeline parameters",
     "description": "Microbiome Informatics metagenomes assembly pipeline",
     "type": "object",
-    "defs": {
+    "$defs": {
         "input_output_options": {
             "title": "Input/output options",
             "type": "object",
             "fa_icon": "fas fa-terminal",
             "description": "Define where the pipeline should find input data and save output data.",
-            "required": [
-                "blast_reference_genomes_folder",
-                "bwamem2_reference_genomes_folder",
-                "human_phix_blast_index_name",
-                "human_phix_bwamem2_index_name",
-                "outdir"
-            ],
+            "required": ["outdir"],
             "properties": {
                 "samplesheet": {
                     "type": "string",
@@ -40,14 +34,25 @@
                     "fa_icon": "far fa-address-card",
                     "minLength": 3
                 },
+                "long_reads_min_read_length": {
+                    "type": "integer",
+                    "description": "Minimum read length for pre-assembly quality filtering",
+                    "default": 200
+                },
                 "private_study": {
                     "type": "boolean",
-                    "description": "To use if the ENA study is private"
+                    "description": "To use if the ENA study is private, *this feature ony works on EBI infrastructure at the moment*"
                 },
                 "assembler": {
                     "type": "string",
-                    "enum": ["spades", "metaspades", "megahit"],
-                    "description": "The short reads assembler"
+                    "enum": ["spades", "metaspades", "megahit", "flye"],
+                    "description": "The short or long reads assembler"
+                },
+                "long_reads_assembler_config": {
+                    "type": "string",
+                    "enum": ["nano-raw", "nano-corr", "nano-hq", "pacbio-raw", "pacbio-corr", "pacbio-hifi"],
+                    "description": "Configuration to use flye with.",
+                    "default": null
                 },
                 "single_end": {
                     "type": "boolean",
@@ -62,6 +67,15 @@
                     "type": "string",
                     "description": "Force the library_layout value for the study / reads",
                     "enum": ["single", "paired"]
+                },
+                "platform": {
+                    "type": "string",
+                    "description": "Force the instrument_platform value for the study / reads",
+                    "default": null
+                },
+                "flye_version": {
+                    "type": "string",
+                    "default": "2.9"
                 },
                 "spades_version": {
                     "type": "string",
@@ -89,6 +103,11 @@
                         "zebrafish.fna"
                     ]
                 },
+                "reference_genomes_folder": {
+                    "type": "string",
+                    "description": "The folder with the reference genomes, defaults to the Microbiome Informatics internal directory.",
+                    "format": "directory-path"
+                },
                 "blast_reference_genomes_folder": {
                     "type": "string",
                     "description": "The folder with the reference genome blast indexes, defaults to the Microbiome Informatics internal directory.",
@@ -104,6 +123,11 @@
                     "description": "Remove human and phiX reads pre assembly, and contigs matching those genomes.",
                     "default": true
                 },
+                "remove_human": {
+                    "type": "boolean",
+                    "description": "Remove human reads pre assembly, and contigs matching those genomes.",
+                    "default": true
+                },
                 "human_phix_blast_index_name": {
                     "type": "string",
                     "description": "Combined Human and phiX BLAST db.",
@@ -114,18 +138,23 @@
                     "description": "Combined Human and phiX bwa-mem2 index.",
                     "default": "human_phix"
                 },
-                "min_contig_length": {
+                "human_fasta_prefix": {
+                    "type": "string",
+                    "description": "Human prefix name.",
+                    "default": "human"
+                },
+                "short_reads_min_contig_length": {
                     "type": "integer",
                     "default": 500,
-                    "description": "Minimum contig length filter."
+                    "description": "Minimum contig length filter for short reads."
                 },
-                "min_contig_length_metatranscriptomics": {
+                "short_reads_min_contig_length_metat": {
                     "type": "integer",
                     "default": 200,
-                    "description": "Minimum contig length filter for metaT."
+                    "description": "Minimum contig length filter for short reads metaT."
                 },
                 "assembly_memory": {
-                    "type": "integer",
+                    "type": "number",
                     "default": 100,
                     "description": "Default memory allocated for the assembly process."
                 },
@@ -162,14 +191,14 @@
             "description": "Set the thresholds for the reads QC/filtering steps. Reads that fail QC won't be assembled.",
             "help_text": "Use these options to define the quality control thresholds for your reads. You can specify the maximum allowed filtering ratio and the minimum acceptable read count. If the filtering ratio exceeds the set limit or the read count falls below the threshold, the reads will be flagged and excluded from further assembly. The information about those runs that failed are aggregated in the qc_failed_runs.csv file.",
             "properties": {
-                "filter_ratio_threshold": {
+                "short_reads_filter_ratio_threshold": {
                     "type": "number",
-                    "description": "The maximum fraction of reads that are allowed to be filtered out. If exceeded, it flags excessive filtering. The default value is 0.9, meaning that if more than 90% of the reads are filtered out, the threshold is considered exceeded, and the run is not assembled.",
-                    "default": 0.9,
+                    "description": "The maximum fraction of reads that are allowed to be filtered out. If exceeded, it flags excessive filtering. The default value is 0.1, meaning that if less than 10% of the reads are retained after filtering, the threshold is considered exceeded, and the run is not assembled.",
+                    "default": 0.1,
                     "minimum": 0.0,
                     "maximum": 1.0
                 },
-                "low_reads_count_threshold": {
+                "short_reads_low_reads_count_threshold": {
                     "type": "number",
                     "description": "The minimum number of reads required after filtering. If below, it flags a low read count and the run is not assembled.",
                     "default": 1000
@@ -183,31 +212,21 @@
             "description": "Set the top limit for requested resources for any single job.",
             "help_text": "If you are running on a smaller system, a pipeline step requesting more resources than are available may cause the Nextflow to stop the run with an error. These options allow you to cap the maximum resources requested by any single job so that the pipeline will run on your system.\n\nNote that you can not _increase_ the resources requested by any job using these options. For that you will need your own configuration file. See [the nf-core website](https://nf-co.re/usage/configuration) for details.",
             "properties": {
-                "max_cpus": {
+                "max_spades_retries": {
                     "type": "integer",
-                    "description": "Maximum number of CPUs that can be requested for any single job.",
-                    "default": 32,
-                    "fa_icon": "fas fa-microchip",
+                    "description": "Maximum number of task attempt retries for (meta)spades assembly steps only.",
+                    "default": 3,
+                    "fa_icon": "fas fa-repeat",
                     "hidden": true,
-                    "help_text": "Use to set an upper-limit for the CPU requirement for each process. Should be an integer e.g. `--max_cpus 1`"
+                    "help_text": "Each retry will increase the memory by 50%. Use to limit how many times this increase-and-retry happens."
                 },
-                "max_memory": {
-                    "type": "string",
-                    "description": "Maximum amount of memory that can be requested for any single job.",
-                    "default": "1.TB",
-                    "fa_icon": "fas fa-memory",
-                    "pattern": "^\\d+(\\.\\d+)?\\.?\\s*(K|M|G|T)?B$",
+                "max_megahit_retries": {
+                    "type": "integer",
+                    "description": "Maximum number of task attempt retries for megahit assembly steps only.",
+                    "default": 3,
+                    "fa_icon": "fas fa-repeat",
                     "hidden": true,
-                    "help_text": "Use to set an upper-limit for the memory requirement for each process. Should be a string in the format integer-unit e.g. `--max_memory '8.GB'`"
-                },
-                "max_time": {
-                    "type": "string",
-                    "description": "Maximum amount of time that can be requested for any single job.",
-                    "default": "168.h",
-                    "fa_icon": "far fa-clock",
-                    "pattern": "^(\\d+\\.?\\s*(s|m|h|d|day)\\s*)+$",
-                    "hidden": true,
-                    "help_text": "Use to set an upper-limit for the time requirement for each process. Should be a string in the format integer-unit e.g. `--max_time '2.h'`"
+                    "help_text": "Each retry will increase the memory by 50%. Use to limit how many times this increase-and-retry happens."
                 }
             }
         },
@@ -297,16 +316,16 @@
     },
     "allOf": [
         {
-            "$ref": "#/defs/input_output_options"
+            "$ref": "#/$defs/input_output_options"
         },
         {
-            "$ref": "#/defs/reads_qc"
+            "$ref": "#/$defs/reads_qc"
         },
         {
-            "$ref": "#/defs/max_job_request_options"
+            "$ref": "#/$defs/max_job_request_options"
         },
         {
-            "$ref": "#/defs/generic_options"
+            "$ref": "#/$defs/generic_options"
         }
     ]
 }

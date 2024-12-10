@@ -2,11 +2,11 @@ include { FASTP                                             } from '../../module
 include { BWAMEM2DECONTNOBAMS as HUMAN_PHIX_DECONTAMINATION } from '../../modules/ebi-metagenomics/bwamem2decontnobams/main'
 include { BWAMEM2DECONTNOBAMS as HOST_DECONTAMINATION       } from '../../modules/ebi-metagenomics/bwamem2decontnobams/main'
 
-workflow READS_QC {
+workflow SHORT_READS_QC {
 
     take:
     reads                 // [ val(meta), path(reads) ]
-    host_reference_genome // [ val(meta2), path(reference_genome) ] | meta2 contains the name of the reference genome
+    reference_genome // [ val(meta2), path(reference_genome) ] | meta2 contains the name of the reference genome
 
     main:
     ch_versions = Channel.empty()
@@ -14,6 +14,7 @@ workflow READS_QC {
     FASTP(
         reads,
         [],
+        false,
         false,
         false,
         false
@@ -43,11 +44,11 @@ workflow READS_QC {
         decontaminated_reads = FASTP.out.reads
     }
 
-    if ( host_reference_genome != null ) {
+    if ( reference_genome != null ) {
 
-        ch_bwamem2_host_refs = Channel.fromPath( "${params.bwamem2_reference_genomes_folder}/${host_reference_genome}*", checkIfExists: true)
+        ch_bwamem2_host_refs = Channel.fromPath( "${params.bwamem2_reference_genomes_folder}/${reference_genome}*", checkIfExists: true)
             .collect().map {
-                files -> [ ["id": host_reference_genome], files ]
+                files -> [ ["id": reference_genome], files ]
             }
 
         HOST_DECONTAMINATION(

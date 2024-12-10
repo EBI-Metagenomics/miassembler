@@ -1,4 +1,6 @@
 Changes in module 'nf-core/blast/blastn'
+'modules/nf-core/blast/blastn/environment.yml' is unchanged
+Changes in 'blast/blastn/main.nf':
 --- modules/nf-core/blast/blastn/main.nf
 +++ modules/nf-core/blast/blastn/main.nf
 @@ -20,7 +20,7 @@
@@ -11,4 +13,9 @@ Changes in module 'nf-core/blast/blastn'
      def fasta_name = is_compressed ? fasta.getBaseName() : fasta
  
 
+'modules/nf-core/blast/blastn/meta.yml' is unchanged
+'modules/nf-core/blast/blastn/tests/tags.yml' is unchanged
+'modules/nf-core/blast/blastn/tests/nextflow.config' is unchanged
+'modules/nf-core/blast/blastn/tests/main.nf.test.snap' is unchanged
+'modules/nf-core/blast/blastn/tests/main.nf.test' is unchanged
 ************************************************************

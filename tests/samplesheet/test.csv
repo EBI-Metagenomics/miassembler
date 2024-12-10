@@ -1,4 +1,4 @@
-study_accession,reads_accession,fastq_1,fastq_2,library_layout,library_strategy,assembler,assembly_memory
-SRP115494,SRR6180434,https://github.com/EBI-Metagenomics/miassembler/raw/main/tests/test_reads/SRR6180434_1.fastq.gz,https://github.com/EBI-Metagenomics/miassembler/raw/main/tests/test_reads/SRR6180434_2.fastq.gz,paired,metagenomic,,
-SRP115494,SRR5949318,https://github.com/EBI-Metagenomics/miassembler/raw/main/tests/test_reads/SRR5949318_1.fastq.gz,https://github.com/EBI-Metagenomics/miassembler/raw/main/tests/test_reads/SRR5949318_2.fastq.gz,paired,metagenomic,,
-DRP007622,DRR280712,https://github.com/EBI-Metagenomics/miassembler/raw/main/tests/test_reads/DRR280712.fastq.gz,,single,metatranscriptomic,megahit,
+study_accession,reads_accession,fastq_1,fastq_2,library_layout,library_strategy,platform,assembler,assembly_memory,assembler_config
+SRP115494,SRR6180434,https://github.com/EBI-Metagenomics/miassembler/raw/main/tests/test_reads/SRR6180434_1.fastq.gz,https://github.com/EBI-Metagenomics/miassembler/raw/main/tests/test_reads/SRR6180434_2.fastq.gz,paired,metagenomic,,,,,
+SRP115494,SRR5949318,https://github.com/EBI-Metagenomics/miassembler/raw/main/tests/test_reads/SRR5949318_1.fastq.gz,https://github.com/EBI-Metagenomics/miassembler/raw/main/tests/test_reads/SRR5949318_2.fastq.gz,paired,metagenomic,,,,,
+DRP007622,DRR280712,https://github.com/EBI-Metagenomics/miassembler/raw/main/tests/test_reads/DRR280712.fastq.gz,,single,metatranscriptomic,,megahit,,,
