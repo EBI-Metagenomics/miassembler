@@ -81,7 +81,7 @@ nextflow_pipeline {
                 assert success
                 assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 1
                 assert trace.succeeded().count{ task -> task.name.contains("MEGAHIT") } == 0
-                assert trace.succeeded().size() == 18
+                assert trace.succeeded().size() == 19
             }
         }
 
@@ -109,7 +109,7 @@ nextflow_pipeline {
                 assert success
                 assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 0
                 assert trace.succeeded().count{ task -> task.name.contains("MEGAHIT") } == 1
-                assert trace.tasks().size() == 18
+                assert trace.tasks().size() == 19
             }
         }
 
@@ -126,6 +126,9 @@ nextflow_pipeline {
 
                 study_accession                  = "ERP012810"
                 reads_accession                  = "ERR1076564"
+
+                bwamem2_reference_genomes_folder = "${projectDir}/tests/human_phix/bwa2mem"
+                blast_reference_genomes_folder   = "${projectDir}/tests/human_phix/blast"
             }
         }
 
@@ -151,6 +154,9 @@ nextflow_pipeline {
 
                 study_accession                  = "ERP012810"
                 reads_accession                  = "ERR1076564"
+
+                bwamem2_reference_genomes_folder = "${projectDir}/tests/human_phix/bwa2mem"
+                blast_reference_genomes_folder   = "${projectDir}/tests/human_phix/blast"
             }
         }
 
@@ -172,6 +178,9 @@ nextflow_pipeline {
 
                 study_accession                  = "DRP007622"
                 reads_accession                  = "DRR280712"
+
+                bwamem2_reference_genomes_folder = "${projectDir}/tests/human_phix/bwa2mem"
+                blast_reference_genomes_folder   = "${projectDir}/tests/human_phix/blast"
             }
         }
 
@@ -180,7 +189,7 @@ nextflow_pipeline {
                 assert success
                 assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 0
                 assert trace.succeeded().count{ task -> task.name.contains("MEGAHIT") } == 1
-                assert trace.tasks().size() == 18
+                assert trace.tasks().size() == 19
             }
         }
 
@@ -197,6 +206,9 @@ nextflow_pipeline {
 
                 study_accession                  = "DRP007622"
                 reads_accession                  = "DRR280712"
+
+                blast_reference_genomes_folder   = "${projectDir}/tests/human_phix/blast"
+                bwamem2_reference_genomes_folder = "${projectDir}/tests/human_phix/bwa2mem"
             }
         }
 
