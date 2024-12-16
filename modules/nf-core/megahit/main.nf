@@ -34,8 +34,12 @@ process MEGAHIT {
         -t ${task.cpus} \\
         --out-prefix ${prefix}
 
-    export kmax=\$(grep "k-max reset to" megahit_out/*log | rev | cut -f 2 -d ' ' | rev)
-    megahit_toolkit contig2fastg \$kmax megahit_out/*.fa > megahit_out/${prefix}.contigs.fastg
+    if [ -s megahit_out/*.fa ]; then
+        export kmax=\$(grep "k-max reset to" megahit_out/*log | rev | cut -f 2 -d ' ' | rev)
+        megahit_toolkit contig2fastg \$kmax megahit_out/*.fa > megahit_out/${prefix}.contigs.fastg
+    else
+        touch megahit_out/${prefix}.contigs.fastg
+    fi
 
     pigz \\
         --no-name \\
