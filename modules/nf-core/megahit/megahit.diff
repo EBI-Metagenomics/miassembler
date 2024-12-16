@@ -26,12 +26,16 @@ Changes in 'megahit/main.nf':
      """
      megahit \\
          ${reads_command} \\
-@@ -33,11 +34,15 @@
+@@ -33,11 +34,19 @@
          -t ${task.cpus} \\
          --out-prefix ${prefix}
  
-+    export kmax=\$(grep "k-max reset to" megahit_out/*log | rev | cut -f 2 -d ' ' | rev)
-+    megahit_toolkit contig2fastg \$kmax megahit_out/*.fa > megahit_out/${prefix}.contigs.fastg
++    if [ -s megahit_out/*.fa ]; then
++        export kmax=\$(grep "k-max reset to" megahit_out/*log | rev | cut -f 2 -d ' ' | rev)
++        megahit_toolkit contig2fastg \$kmax megahit_out/*.fa > megahit_out/${prefix}.contigs.fastg
++    else
++        touch megahit_out/${prefix}.contigs.fastg
++    fi
 +
      pigz \\
          --no-name \\
@@ -42,7 +46,7 @@ Changes in 'megahit/main.nf':
          megahit_out/intermediate_contigs/*.fa
  
      mv megahit_out/* .
-@@ -52,10 +57,11 @@
+@@ -52,10 +61,11 @@
      def args = task.ext.args ?: ''
      def args2 = task.ext.args2 ?: ''
      def prefix = task.ext.prefix ?: "${meta.id}"
