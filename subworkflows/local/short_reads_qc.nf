@@ -9,7 +9,9 @@ workflow SHORT_READS_QC {
     reference_genome // [ val(meta2), path(reference_genome) ] | meta2 contains the name of the reference genome
 
     main:
-    ch_versions = Channel.empty()
+    def ch_versions = Channel.empty()
+    def ch_bwamem2_human_phix_refs = Channel.empty()
+    def ch_bwamem2_host_refs = Channel.empty()
 
     FASTP(
         reads,
@@ -22,7 +24,7 @@ workflow SHORT_READS_QC {
 
     ch_versions = ch_versions.mix(FASTP.out.versions)
 
-    decontaminated_reads = channel.empty()
+    def decontaminated_reads = channel.empty()
 
     if ( params.remove_human_phix ) {
 
