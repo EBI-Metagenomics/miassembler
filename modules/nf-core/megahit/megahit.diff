@@ -1,9 +1,10 @@
 Changes in module 'nf-core/megahit'
+'modules/nf-core/megahit/meta.yml' is unchanged
 'modules/nf-core/megahit/environment.yml' is unchanged
 Changes in 'megahit/main.nf':
 --- modules/nf-core/megahit/main.nf
 +++ modules/nf-core/megahit/main.nf
-@@ -7,7 +7,7 @@
+@@ -7,10 +7,11 @@
          'community.wave.seqera.io/library/megahit_pigz:87a590163e594224' }"
  
      input:
@@ -12,7 +13,11 @@ Changes in 'megahit/main.nf':
  
      output:
      tuple val(meta), path("*.contigs.fa.gz")                            , emit: contigs
-@@ -25,7 +25,7 @@
++    tuple val(meta), path("*.fastg.gz")                                 , emit: graph
+     tuple val(meta), path("intermediate_contigs/k*.contigs.fa.gz")      , emit: k_contigs
+     tuple val(meta), path("intermediate_contigs/k*.addi.fa.gz")         , emit: addi_contigs
+     tuple val(meta), path("intermediate_contigs/k*.local.fa.gz")        , emit: local_contigs
+@@ -25,7 +26,7 @@
      def args = task.ext.args ?: ''
      def args2 = task.ext.args2 ?: ''
      def prefix = task.ext.prefix ?: "${meta.id}"
@@ -21,7 +26,27 @@ Changes in 'megahit/main.nf':
      """
      megahit \\
          ${reads_command} \\
-@@ -52,7 +52,7 @@
+@@ -33,11 +34,19 @@
+         -t ${task.cpus} \\
+         --out-prefix ${prefix}
+ 
++    if [ -s megahit_out/*.fa ]; then
++        export kmax=\$(grep "k-max reset to" megahit_out/*log | rev | cut -f 2 -d ' ' | rev)
++        megahit_toolkit contig2fastg \$kmax megahit_out/*.fa > megahit_out/${prefix}.contigs.fastg
++    else
++        touch megahit_out/${prefix}.contigs.fastg
++    fi
++
+     pigz \\
+         --no-name \\
+         -p ${task.cpus} \\
+         ${args2} \\
+         megahit_out/*.fa \\
++        megahit_out/*.fastg \\
+         megahit_out/intermediate_contigs/*.fa
+ 
+     mv megahit_out/* .
+@@ -52,10 +61,11 @@
      def args = task.ext.args ?: ''
      def args2 = task.ext.args2 ?: ''
      def prefix = task.ext.prefix ?: "${meta.id}"
@@ -30,9 +55,12 @@ Changes in 'megahit/main.nf':
      """
      mkdir -p intermediate_contigs
      echo "" | gzip > ${prefix}.contigs.fa.gz
++    echo "" | gzip > ${prefix}.contigs.fastg.gz
+     echo "" | gzip > intermediate_contigs/k21.contigs.fa.gz
+     echo "" | gzip > intermediate_contigs/k21.addi.fa.gz
+     echo "" | gzip > intermediate_contigs/k21.local.fa.gz
 
-'modules/nf-core/megahit/meta.yml' is unchanged
 'modules/nf-core/megahit/tests/tags.yml' is unchanged
-'modules/nf-core/megahit/tests/main.nf.test.snap' is unchanged
 'modules/nf-core/megahit/tests/main.nf.test' is unchanged
+'modules/nf-core/megahit/tests/main.nf.test.snap' is unchanged
 ************************************************************
