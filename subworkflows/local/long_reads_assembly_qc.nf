@@ -9,8 +9,10 @@ workflow LONG_READS_ASSEMBLY_QC {
 
     main:
 
-    ch_versions = Channel.empty()
-    decontaminated_assembly = assembly
+    def ch_versions = Channel.empty()
+    def human_reference = Channel.empty()
+    def host_reference = Channel.empty()
+    def decontaminated_assembly = assembly
 
     if ( params.remove_human ) {
         human_reference = Channel.fromPath(
@@ -45,7 +47,7 @@ workflow LONG_READS_ASSEMBLY_QC {
 
         MINIMAP_ALIGN_HOST(
             decontaminated_assembly,
-            human_reference,
+            host_reference,
             "host_post",
             "fasta",    // out sequence extension
             true,       // output bam format
