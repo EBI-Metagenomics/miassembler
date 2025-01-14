@@ -1,5 +1,5 @@
-include { PROOVFRAME_FIX        } from '../../modules/nf-core/proovframe/fix/main'
-include { PROOVFRAME_MAP        } from '../../modules/nf-core/proovframe/map/main'
+include { PROOVFRAME_FIX } from '../../modules/nf-core/proovframe/fix/main'
+include { PROOVFRAME_MAP } from '../../modules/nf-core/proovframe/map/main'
 
 workflow FRAMESHIFT_CORRECTION {
     take:
