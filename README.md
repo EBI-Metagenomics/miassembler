@@ -50,6 +50,7 @@ Input/output options
   --human_phix_bwamem2_index_name         [string]  Combined Human and phiX bwa-mem2 index. [default: human_phix]
   --short_reads_min_contig_length         [integer] Minimum contig length filter. [default: 500]
   --short_reads_min_contig_length_metat   [integer] Minimum contig length filter for metaT. [default: 200]
+  --short_reads_contig_threshold          [integer] Minimum number of contigs in final assembly. [default: 2]
   --assembly_memory                       [integer] Default memory allocated for the assembly process. [default: 100]
   --spades_only_assembler                 [boolean] Run SPAdes/metaSPAdes without the error correction step. [default: true]
   --outdir                                [string]  The output directory where the results will be saved. You have to use absolute paths to storage on Cloud
@@ -278,6 +279,7 @@ SRR6180434,short_reads_filter_ratio_threshold_exceeded
 | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `short_reads_filter_ratio_threshold_exceeded` | The maximum fraction of reads that are allowed to be filtered out. If exceeded, it flags excessive filtering. The default value is 0.1, meaning that if less than 10% of the reads are retained after filtering, the threshold is considered exceeded, and the run is not assembled. |
 | `short_reads_low_reads_count_threshold`       | The minimum number of reads required after filtering. If below, it flags a low read count, and the run is not assembled.                                                                                                                                                             |
+| `short_reads_contig_threshold`                | The minimum number of contigs allowed after host cleaning. If below it flags a low contig count and the cleaned assembly isn't generated.                                                                                                                                            |
 
 #### Assembled Runs
 

@@ -83,11 +83,44 @@ workflow SHORT_READS_ASSEMBLY_QC {
         ch_versions = ch_versions.mix(SEQKIT_GREP_HOST.out.versions)
     }
 
+    if(reference_genome == null) {
+
+        cleaned_contigs = filtered_contigs
+    }
+
+    /******************************************/
+    /*  Cleaned assemblies that fail the following rule:  */
+    /*  - Less than 2 contigs                  */
+    /******************************************/
+
+    extended_qc_assembly = cleaned_contigs.map { meta, assembly_fasta ->
+        {
+            def con_count = assembly_fasta.countFasta()
+            def assem_qc_meta = [
+                "too_few_contigs": con_count < params.short_reads_contig_threshold,
+                "enough_contigs": con_count >= params.short_reads_contig_threshold
+            ]
+            return [meta + assem_qc_meta, assembly_fasta]
+        }
+    }
+
+    extended_qc_assembly
+        .branch { meta, assembly_fasta ->
+            qc_failed: meta.too_few_contigs
+            qc_passed: meta.enough_contigs
+        }
+    .set { qc_filtered_assemblies }
+
+    passed_cleaned_contigs = qc_filtered_assemblies.qc_passed.map { meta, assembly -> 
+            [ meta - [enough_contigs: true] - [too_few_contigs: false] , assembly ]
+    }
+
     PUBLISH_CLEANED_CONTIGS(
-        filtered_contigs
+        passed_cleaned_contigs
     )
 
     emit:
-    filtered_contigs = filtered_contigs
-    versions         = ch_versions
+    passed_cleaned_contigs = passed_cleaned_contigs // tuple(meta)
+    qc_assem_failed = qc_filtered_assemblies.qc_failed // tuple(meta)
+    versions        = ch_versions
 }

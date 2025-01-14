@@ -127,6 +127,7 @@ workflow SHORT_READS_ASSEMBLER {
         }
         .set { qc_filtered_reads }
 
+
     /*********************/
     /*     Assembly     */
     /********************/
@@ -153,7 +154,7 @@ workflow SHORT_READS_ASSEMBLER {
 
     // Coverage //
     SHORT_READS_ASSEMBLY_COVERAGE(
-        SHORT_READS_ASSEMBLY_QC.out.filtered_contigs.join(SHORT_READS_QC.out.qc_reads, remainder: false),
+        SHORT_READS_ASSEMBLY_QC.out.passed_cleaned_contigs.join(SHORT_READS_QC.out.qc_reads, remainder: false),
         SHORT_READS_QC.out.fastp_json
     )
 
@@ -162,16 +163,22 @@ workflow SHORT_READS_ASSEMBLER {
     // Stats //
     /* The QUAST module was modified to run metaQUAST instead */
     QUAST(
-        SHORT_READS_ASSEMBLY_QC.out.filtered_contigs,
+        SHORT_READS_ASSEMBLY_QC.out.passed_cleaned_contigs,
         [[], []],
         [[], []]
     )
+
+    // Quality results //
+
+    qc_reads_failed = qc_filtered_reads.qc_failed.map { meta, reads, qc_meta -> [ meta + qc_meta, reads]}
+
+    qc_all_failed = qc_reads_failed.concat(SHORT_READS_ASSEMBLY_QC.out.qc_assem_failed)
 
     ch_versions = ch_versions.mix(QUAST.out.versions)
 
     emit:
     fastqc_before_zip                   = FASTQC_BEFORE.out.zip // tuple(meta)
-    qc_failed                           = qc_filtered_reads.qc_failed // tuple(meta)
+    qc_all_failed                       = qc_all_failed // tuple(meta)
     fastqc_after_zip                    = FASTQC_AFTER.out.zip // tuple(meta)
     assembly_coverage_samtools_idxstats = SHORT_READS_ASSEMBLY_COVERAGE.out.samtools_idxstats // tuple(meta)
     quast_results                       = QUAST.out.results // tuple(meta)
