@@ -11,6 +11,7 @@ process MEGAHIT {
 
     output:
     tuple val(meta), path("*.contigs.fa.gz")                            , emit: contigs
+    tuple val(meta), path("*.fastg.gz")                                 , emit: graph
     tuple val(meta), path("intermediate_contigs/k*.contigs.fa.gz")      , emit: k_contigs
     tuple val(meta), path("intermediate_contigs/k*.addi.fa.gz")         , emit: addi_contigs
     tuple val(meta), path("intermediate_contigs/k*.local.fa.gz")        , emit: local_contigs
@@ -33,11 +34,19 @@ process MEGAHIT {
         -t ${task.cpus} \\
         --out-prefix ${prefix}
 
+    if [ -s megahit_out/*.fa ]; then
+        export kmax=\$(grep "k-max reset to" megahit_out/*log | rev | cut -f 2 -d ' ' | rev)
+        megahit_toolkit contig2fastg \$kmax megahit_out/*.fa > megahit_out/${prefix}.contigs.fastg
+    else
+        touch megahit_out/${prefix}.contigs.fastg
+    fi
+
     pigz \\
         --no-name \\
         -p ${task.cpus} \\
         ${args2} \\
         megahit_out/*.fa \\
+        megahit_out/*.fastg \\
         megahit_out/intermediate_contigs/*.fa
 
     mv megahit_out/* .
@@ -56,6 +65,7 @@ process MEGAHIT {
     """
     mkdir -p intermediate_contigs
     echo "" | gzip > ${prefix}.contigs.fa.gz
+    echo "" | gzip > ${prefix}.contigs.fastg.gz
     echo "" | gzip > intermediate_contigs/k21.contigs.fa.gz
     echo "" | gzip > intermediate_contigs/k21.addi.fa.gz
     echo "" | gzip > intermediate_contigs/k21.local.fa.gz

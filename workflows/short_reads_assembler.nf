@@ -141,6 +141,15 @@ workflow SHORT_READS_ASSEMBLER {
     MEGAHIT(
         qc_filtered_reads.megahit.map { meta, reads, __ -> [meta, reads] }
     )
+
+    /* MEGAHIT can report 0 contigs, and an empty file */
+    MEGAHIT.out.contigs.branch { _meta, contigs ->
+        empty: contigs.countFasta() == 0
+        assembled: contigs.countFasta() > 0
+    }.set {
+        megahit_contigs
+    }
+
     ch_versions = ch_versions.mix(MEGAHIT.out.versions)
 
     assembly = SPADES.out.contigs.mix(MEGAHIT.out.contigs)
@@ -177,10 +186,10 @@ workflow SHORT_READS_ASSEMBLER {
     ch_versions = ch_versions.mix(QUAST.out.versions)
 
     emit:
-    fastqc_before_zip                   = FASTQC_BEFORE.out.zip // tuple(meta)
-    qc_all_failed                       = qc_all_failed // tuple(meta)
-    fastqc_after_zip                    = FASTQC_AFTER.out.zip // tuple(meta)
+    fastqc_before_zip                   = FASTQC_BEFORE.out.zip                               // tuple(meta)
+    qc_all_failed                       = qc_all_failed                                       // tuple(meta)
+    fastqc_after_zip                    = FASTQC_AFTER.out.zip                                // tuple(meta)
     assembly_coverage_samtools_idxstats = SHORT_READS_ASSEMBLY_COVERAGE.out.samtools_idxstats // tuple(meta)
-    quast_results                       = QUAST.out.results // tuple(meta)
+    quast_results                       = QUAST.out.results                                   // tuple(meta)
     versions                            = ch_versions
 }

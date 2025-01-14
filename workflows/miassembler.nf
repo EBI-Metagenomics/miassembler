@@ -4,7 +4,7 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { paramsSummaryLog; paramsSummaryMap; samplesheetToList } from 'plugin/nf-schema'
+include { validateParameters; paramsSummaryLog; paramsSummaryMap; samplesheetToList; paramsHelp } from 'plugin/nf-schema'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -46,12 +46,11 @@ include { FETCHTOOL_READS             } from '../modules/local/fetchtool_reads'
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-
 workflow MIASSEMBLER {
 
     /*
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        INIT
+        PRINT PARAMS SUMMARY
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     */
     def logo = NfcoreTemplate.logo(workflow, params.monochrome_logs)
@@ -59,7 +58,14 @@ workflow MIASSEMBLER {
     def summary_params = paramsSummaryMap(workflow)
 
     // Print parameter summary log to screen
-    log.info(logo + paramsSummaryLog(workflow) + citation)
+    log.info logo + paramsSummaryLog(workflow) + citation
+
+    validateParameters()
+
+    if (params.help) {
+        log.info paramsHelp("nextflow run ebi-metagenomics/miassembler --help")
+        exit 0
+    }
 
     /*
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -67,18 +73,19 @@ workflow MIASSEMBLER {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     */
 
-    def ch_multiqc_config = file("${projectDir}/assets/multiqc_config.yml", checkIfExists: true)
-    def ch_multiqc_custom_config = params.multiqc_config ? file(params.multiqc_config, checkIfExists: true) : []
-    def ch_multiqc_logo = params.multiqc_logo ? file(params.multiqc_logo, checkIfExists: true) : file("${projectDir}/assets/mgnify_logo.png", checkIfExists: true)
-    def ch_multiqc_custom_methods_description = params.multiqc_methods_description ? file(params.multiqc_methods_description, checkIfExists: true) : file("${projectDir}/assets/methods_description_template.yml", checkIfExists: true)
-
+    def ch_multiqc_config          = file("$projectDir/assets/multiqc_config.yml", checkIfExists: true)
+    def ch_multiqc_custom_config   = params.multiqc_config ? file( params.multiqc_config, checkIfExists: true ) : []
+    def ch_multiqc_logo            = params.multiqc_logo   ? file( params.multiqc_logo, checkIfExists: true ) : file("$projectDir/assets/mgnify_logo.png", checkIfExists: true)
+    def ch_multiqc_custom_methods_description = params.multiqc_methods_description ? file(params.multiqc_methods_description, checkIfExists: true) : file("$projectDir/assets/methods_description_template.yml", checkIfExists: true)
 
     def ch_versions = Channel.empty()
     def fetch_tool_metadata = Channel.empty()
     def fetch_reads_transformed = Channel.empty()
 
-    if (params.samplesheet) {
+    // Print parameter summary log to screen
+    log.info(logo + paramsSummaryLog(workflow) + citation)
 
+    if (params.samplesheet) {
         def groupReads = { study_accession, reads_accession, fq1, fq2, library_layout, library_strategy, platform, assembler, assembly_memory, assembler_config ->
             if (fq2 == []) {
                 return tuple(
@@ -163,9 +170,10 @@ workflow MIASSEMBLER {
             )
     }
 
-    /********************************************/
+    /*******************************************/
     /* Selecting the assembly pipeline flavour */
     /*******************************************/
+
     def classified_reads = fetch_reads_transformed.map { meta, reads ->
         // Long reads //
         if (["ont", "pacbio"].contains(meta.platform)) {
@@ -186,6 +194,7 @@ workflow MIASSEMBLER {
     /***************************************/
     /* Assemble short reads and long reads */
     /***************************************/
+
     SHORT_READS_ASSEMBLER(
         reads_to_assemble.short_reads
     )
@@ -205,16 +214,16 @@ workflow MIASSEMBLER {
     //
     // MODULE: MultiQC
     //
-    def workflow_summary = WorkflowMiassembler.paramsSummaryMultiqc(workflow, summary_params)
+    def workflow_summary    = WorkflowMiassembler.paramsSummaryMultiqc(workflow, summary_params)
     def ch_workflow_summary = Channel.value(workflow_summary)
 
-    def methods_description = WorkflowMiassembler.methodsDescriptionText(workflow, ch_multiqc_custom_methods_description, params)
+    def methods_description    = WorkflowMiassembler.methodsDescriptionText(workflow, ch_multiqc_custom_methods_description, params)
     def ch_methods_description = Channel.value(methods_description)
 
     def ch_multiqc_base_files = Channel.empty()
-    ch_multiqc_base_files = ch_multiqc_base_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
-    ch_multiqc_base_files = ch_multiqc_base_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
-    ch_multiqc_base_files = ch_multiqc_base_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
+    ch_multiqc_base_files = ch_multiqc_base_files.mix( CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect() )
+    ch_multiqc_base_files = ch_multiqc_base_files.mix( ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml') )
+    ch_multiqc_base_files = ch_multiqc_base_files.mix( ch_methods_description.collectFile(name: 'methods_description_mqc.yaml') )
 
     /**************************************/
     /* MultiQC report for the whole study */
@@ -273,12 +282,13 @@ workflow MIASSEMBLER {
         [meta.subMap("study_accession", "id", "assembler", "assembler_version"), result_artifact]
     }
 
-    def run_multiqc_files = SHORT_READS_ASSEMBLER.out.fastqc_before_zip.map(meta_by_run).join(SHORT_READS_ASSEMBLER.out.fastqc_after_zip.map(meta_by_run)).join(SHORT_READS_ASSEMBLER.out.assembly_coverage_samtools_idxstats.map(meta_by_run), remainder: true).join(SHORT_READS_ASSEMBLER.out.quast_results.map(meta_by_run), remainder: true)
-    // the assembly step could fail
+    def run_multiqc_files = SHORT_READS_ASSEMBLER.out.fastqc_before_zip.map(meta_by_run)
+        .join(SHORT_READS_ASSEMBLER.out.fastqc_after_zip.map(meta_by_run))
+        .join(SHORT_READS_ASSEMBLER.out.assembly_coverage_samtools_idxstats.map(meta_by_run), remainder: true) // the assembly step could fail
+        .join(SHORT_READS_ASSEMBLER.out.quast_results.map(meta_by_run), remainder: true)                       // the assembly step could fail
 
     // Filter out the non-assembled runs //
-    def ch_multiqc_run_tools_files = run_multiqc_files.filter { _meta, _fastqc_before, _fastqc_after, assembly_coverage, quast ->
-        {
+    def ch_multiqc_run_tools_files = run_multiqc_files.filter { meta, fastqc_before, fastqc_after, assembly_coverage, quast -> {
             return assembly_coverage != null && quast != null
         }
     }.flatMap(combineFiles).groupTuple()
@@ -327,4 +337,16 @@ workflow MIASSEMBLER {
     }
 
     short_reads_qc_failed_entries.collectFile(name: "qc_failed_runs.csv", storeDir: "${params.outdir}", newLine: true, cache: false)
+
+    // Unassembled samples //
+    SHORT_READS_ASSEMBLER.out.unassembled_runs.map {
+        meta -> {
+            return "${meta.id},${meta.assembler},${meta.assembler_version}"
+        }
+    }.collectFile(
+        name: "unassembled_runs.csv",
+        storeDir: "${params.outdir}",
+        newLine: true,
+        cache: false
+    )
 }
