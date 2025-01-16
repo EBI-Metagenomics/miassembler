@@ -81,7 +81,8 @@ workflow LONG_READS_ASSEMBLER {
     // meta.assembler_config is never overriden if provided as input.
     // If no input was provided, quality and platform will determine the assembly type
     reads_assembler_config = LONG_READS_QC.out.qc_reads.map { meta, reads ->
-        if (meta.assembler_config == null) {
+        meta = meta + ["assembler": "flye", "assembler_version": params.flye_version]
+        if (meta.assembler_config == "") {
             if (meta.platform == "ont") {
                 if (meta.quality == "low") {
                     return [meta + ["assembler_config": "nano-raw"], reads]
@@ -98,7 +99,7 @@ workflow LONG_READS_ASSEMBLER {
                 error "Incompatible configuration"
             }
         } else {
-            return [meta, reads]
+            return [meta + ["assembler": "flye", "assembler_version": params.flye_version], reads]
         }
     }
 
@@ -112,18 +113,22 @@ workflow LONG_READS_ASSEMBLER {
     ONT_LQ(
         subworkflow_platform_reads.lq_ont
     )
+    ch_versions = ch_versions.mix(ONT_LQ.out.versions)
 
     ONT_HQ(
         subworkflow_platform_reads.hq_ont
     )
+    ch_versions = ch_versions.mix(ONT_HQ.out.versions)
 
     PACBIO_LQ(
         subworkflow_platform_reads.lq_pacbio
     )
+    ch_versions = ch_versions.mix(PACBIO_LQ.out.versions)
 
     PACBIO_HIFI(
         subworkflow_platform_reads.hq_pacbio
     )
+    ch_versions = ch_versions.mix(PACBIO_HIFI.out.versions)
 
     assembly = ONT_LQ.out.contigs.mix(ONT_HQ.out.contigs,
                                       PACBIO_LQ.out.contigs,
@@ -149,6 +154,7 @@ workflow LONG_READS_ASSEMBLER {
     FRAMESHIFT_CORRECTION(
         low_high_quality_contigs.lq
     )
+    ch_versions = ch_versions.mix(FRAMESHIFT_CORRECTION.out.versions)
 
     final_contigs = FRAMESHIFT_CORRECTION.out.corrected_contigs.mix(
                         low_high_quality_contigs.hq)
@@ -156,7 +162,6 @@ workflow LONG_READS_ASSEMBLER {
     LONG_READS_ASSEMBLY_COVERAGE(
         final_contigs.join( reads_assembler_config )
     )
-
     ch_versions = ch_versions.mix(LONG_READS_ASSEMBLY_COVERAGE.out.versions)
 
     // Stats //

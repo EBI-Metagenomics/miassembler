@@ -97,10 +97,10 @@ workflow MIASSEMBLER {
             if (fq2 == []) {
                 return tuple(["id": reads_accession,
                               "study_accession": study_accession,
+                              "single_end": true,
                               "library_layout": library_layout,
                               "library_strategy": library_strategy,
                               "platform": params.platform ?: platform,
-                              "single_end": true,
                               "assembler": assembler ?: params.assembler,
                               "assembly_memory": assembly_memory ?: params.assembly_memory,
                               "assembler_config": assembler_config ?: params.long_reads_assembler_config
@@ -110,13 +110,13 @@ workflow MIASSEMBLER {
             } else {
                 return tuple(["id": reads_accession,
                               "study_accession": study_accession,
-                              "library_strategy": library_strategy,
-                              "library_layout": library_layout,
                               "single_end": false,
+                              "library_layout": library_layout,
+                              "library_strategy": library_strategy,
+                              "platform": params.platform ?: platform,
                               "assembler": assembler ?: params.assembler,
                               "assembly_memory": assembly_memory ?: params.assembly_memory,
-                              "assembler_config": assembler_config ?: params.long_reads_assembler_config,
-                              "platform": params.platform ?: platform
+                              "assembler_config": assembler_config ?: params.long_reads_assembler_config
                             ],
                             [fq1, fq2])
             }
@@ -249,10 +249,19 @@ workflow MIASSEMBLER {
 
     def ch_multiqc_study_tools_files = Channel.empty()
 
-    def study_multiqc_files = SHORT_READS_ASSEMBLER.out.fastqc_before_zip.map(meta_by_study)
-        .join( SHORT_READS_ASSEMBLER.out.fastqc_after_zip.map(meta_by_study) )
-        .join( SHORT_READS_ASSEMBLER.out.assembly_coverage_samtools_idxstats.map(meta_by_study), remainder: true ) // the assembly step could fail
-        .join( SHORT_READS_ASSEMBLER.out.quast_results.map(meta_by_study), remainder: true )                       // the assembly step could fail
+    def fastqc_before_zip = SHORT_READS_ASSEMBLER.out.fastqc_before_zip
+        .mix(LONG_READS_ASSEMBLER.out.fastqc_before_zip)
+    def fastqc_after_zip = SHORT_READS_ASSEMBLER.out.fastqc_after_zip
+        .mix(LONG_READS_ASSEMBLER.out.fastqc_after_zip)
+    def assembly_coverage_samtools_idxstats = SHORT_READS_ASSEMBLER.out.assembly_coverage_samtools_idxstats
+        .mix(LONG_READS_ASSEMBLER.out.assembly_coverage_samtools_idxstats)
+    def quast_results = SHORT_READS_ASSEMBLER.out.quast_results
+        .mix(LONG_READS_ASSEMBLER.out.quast_results)
+
+    def study_multiqc_files = fastqc_before_zip.map(meta_by_study)
+        .join(fastqc_after_zip.map(meta_by_study))
+        .join(assembly_coverage_samtools_idxstats.map(meta_by_study), remainder: true) // the assembly step could fail
+        .join(quast_results.map(meta_by_study), remainder: true)                       // the assembly step could fail
 
     ch_multiqc_study_tools_files = study_multiqc_files.flatMap( combineFiles ).groupTuple()
 
