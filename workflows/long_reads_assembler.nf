@@ -96,7 +96,7 @@ workflow LONG_READS_ASSEMBLER {
                     return [meta + ["assembler_config": "pacbio-hifi"], reads]
                 }
             } else {
-                error "Incompatible configuration"
+                error "Invalid quality ${meta.quality} or platform ${meta.platform} for ${meta.id}"
             }
         } else {
             return [meta + ["assembler": "flye", "assembler_version": params.flye_version], reads]

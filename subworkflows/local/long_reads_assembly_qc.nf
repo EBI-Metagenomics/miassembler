@@ -35,7 +35,6 @@ workflow LONG_READS_ASSEMBLY_QC {
         ch_versions = ch_versions.mix(MINIMAP2_ALIGN_HUMAN.out.versions)
 
         decontaminated_assembly = MINIMAP2_ALIGN_HUMAN.out.filtered_output
-
     }
 
     if ( reference_genome != null ) {
