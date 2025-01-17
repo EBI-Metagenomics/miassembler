@@ -1,6 +1,6 @@
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    PRINT PARAMS SUMMARY
+    IMPORT PLUGINS AND OTHER BITS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
@@ -45,6 +45,7 @@ include { FETCHTOOL_READS             } from '../modules/local/fetchtool_reads'
     RUN MAIN WORKFLOW
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
+
 
 workflow MIASSEMBLER {
 
@@ -321,8 +322,8 @@ workflow MIASSEMBLER {
 
     // Short reads and assembly QC failed //
 
-    def short_reads_qc_failed_entries = SHORT_READS_ASSEMBLER.out.qc_all_failed.map { meta, __ ->
-        {
+    def short_reads_qc_failed_entries = SHORT_READS_ASSEMBLER.out.qc_all_failed.map { 
+        meta, __ -> {
             if (meta.low_reads_count) {
                 return "${meta.id},low_reads_count"
             }
@@ -337,16 +338,5 @@ workflow MIASSEMBLER {
     }
 
     short_reads_qc_failed_entries.collectFile(name: "qc_failed_runs.csv", storeDir: "${params.outdir}", newLine: true, cache: false)
-
-    // Unassembled samples //
-    SHORT_READS_ASSEMBLER.out.unassembled_runs.map {
-        meta -> {
-            return "${meta.id},${meta.assembler},${meta.assembler_version}"
-        }
-    }.collectFile(
-        name: "unassembled_runs.csv",
-        storeDir: "${params.outdir}",
-        newLine: true,
-        cache: false
-    )
 }
+

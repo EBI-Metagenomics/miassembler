@@ -70,6 +70,7 @@ nextflow_pipeline {
 
                 // Force the assembly
                 short_reads_filter_ratio_threshold   = 0.1
+                short_reads_contig_threshold         = 1
 
                 study_accession                      = "SRP115494"
                 reads_accession                      = "SRR6180434"
@@ -110,6 +111,35 @@ nextflow_pipeline {
                 assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 0
                 assert trace.succeeded().count{ task -> task.name.contains("MEGAHIT") } == 1
                 assert trace.tasks().size() == 19
+            }
+        }
+
+    }
+
+    test("metaSPAdes - too few contigs") {
+
+        tag "ena-portal-api"
+
+        when {
+
+            params {
+                outdir = "tests/results"
+
+                // Force the assembly
+                short_reads_filter_ratio_threshold   = 0.1
+
+                study_accession                      = "SRP115494"
+                reads_accession                      = "SRR6180434"
+            }
+        }
+
+        then {
+            with (workflow) {
+                // Cleaned assembly should contain 1 contig which fails the contig threshold and the pipeline stops
+                assert success
+                assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 1
+                assert trace.succeeded().count{ task -> task.name.contains("MEGAHIT") } == 0
+                assert trace.succeeded().size() == 11
             }
         }
 

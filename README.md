@@ -50,7 +50,7 @@ Input/output options
   --human_phix_bwamem2_index_name         [string]  Combined Human and phiX bwa-mem2 index. [default: human_phix]
   --short_reads_min_contig_length         [integer] Minimum contig length filter. [default: 500]
   --short_reads_min_contig_length_metat   [integer] Minimum contig length filter for metaT. [default: 200]
-  --short_reads_contig_threshold          [integer] Minimum number of contigs in final assembly. [default: 2]
+  --short_reads_contig_threshold          [integer] Minimum number of contigs in host cleaned assembly. [default: 2]
   --assembly_memory                       [integer] Default memory allocated for the assembly process. [default: 100]
   --spades_only_assembler                 [boolean] Run SPAdes/metaSPAdes without the error correction step. [default: true]
   --outdir                                [string]  The output directory where the results will be saved. You have to use absolute paths to storage on Cloud
