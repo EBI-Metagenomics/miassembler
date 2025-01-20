@@ -31,7 +31,7 @@ workflow LONG_READS_QC {
         
         def q20_percentage = json_txt?.summary?.before_filtering?.q20_rate ?: 0;
 
-        if ( q20_percentage >= 0.8 ) {
+        if ( q20_percentage >= params.long_reads_pacbio_quality_threshold ) {
             return [ meta + [quality: "high"], reads]
         } else {
             return [ meta + [quality: "low"], reads]

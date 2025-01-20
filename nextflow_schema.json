@@ -195,7 +195,7 @@
             "title": "Reads QC options",
             "type": "object",
             "fa_icon": "fab fa-acquisitions-incorporated",
-            "description": "Set the thresholds for the reads QC/filtering steps. Reads that fail QC won't be assembled.",
+            "description": "Set the thresholds for the reads QC/filtering steps. Short reads that fail relative QC steps won't be assembled.",
             "help_text": "Use these options to define the quality control thresholds for your reads. You can specify the maximum allowed filtering ratio and the minimum acceptable read count. If the filtering ratio exceeds the set limit or the read count falls below the threshold, the reads will be flagged and excluded from further assembly. The information about those runs that failed are aggregated in the qc_failed_runs.csv file.",
             "properties": {
                 "short_reads_filter_ratio_threshold": {
@@ -209,6 +209,13 @@
                     "type": "number",
                     "description": "The minimum number of reads required after filtering. If below, it flags a low read count and the run is not assembled.",
                     "default": 1000
+                },
+                "long_reads_pacbio_quality_threshold": {
+                    "type": "number",
+                    "description": "The Q20 threshold that a pacbio sample needs to exceed to be labelled as HiFi.",
+                    "default": 0.8,
+                    "minimum": 0.0,
+                    "maximum": 1.0
                 }
             }
         },
