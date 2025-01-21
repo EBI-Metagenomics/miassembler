@@ -6,6 +6,7 @@ nextflow_pipeline {
     test("Samplesheet spades") {
 
         tag "samplesheet"
+        tag "SR"
 
         when {
             params {
@@ -29,6 +30,7 @@ nextflow_pipeline {
     test("Samplesheet - no assembled - reads filtered ") {
 
         tag "samplesheet"
+        tag "SR"
 
         when {
             params {
@@ -60,6 +62,7 @@ nextflow_pipeline {
     test("metaSPAdes - paired end") {
 
         tag "ena-portal-api"
+        tag "SR"
 
         when {
 
@@ -88,6 +91,7 @@ nextflow_pipeline {
     test("MEGAHIT - paired end") {
 
         tag "ena-portal-api"
+        tag "SR"
 
         when {
             params {
@@ -116,6 +120,7 @@ nextflow_pipeline {
     test("metaSPAdes - single end - should fail") {
 
         tag "ena-portal-api"
+        tag "SR"
 
         when {
             params {
@@ -140,6 +145,7 @@ nextflow_pipeline {
     test("MEGAHIT - single end - should fail") {
 
         tag "ena-portal-api"
+        tag "SR"
 
         when {
             params {
@@ -161,6 +167,7 @@ nextflow_pipeline {
     test("MEGAHIT - metaT - single end") {
 
         tag "ena-portal-api"
+        tag "SR"
 
         when {
             params {
@@ -185,6 +192,7 @@ nextflow_pipeline {
     test("Spades - metaT - single end should fail") {
 
         tag "ena-portal-api"
+        tag "SR"
 
         when {
             params {
@@ -209,6 +217,7 @@ nextflow_pipeline {
 
         tag "samplesheet"
         tag "retries"
+        tag "SR"
 
         when {
             params {
@@ -234,5 +243,52 @@ nextflow_pipeline {
             }
         }
 
+    }
+
+    test("Samplesheet long reads - pacbio-hifi should fail") {
+
+        tag "samplesheet"
+        tag "LR"
+
+        when {
+            params {
+                outdir = "tests/results"
+
+                samplesheet                      = "${projectDir}/tests/samplesheet/test_long_reads.csv"
+            }
+        }
+
+        then {
+            with(workflow) {
+                assert trace.succeeded().count{ task -> task.name.contains("ONT_LQ:FLYE") } == 1
+                assert trace.succeeded().count{ task -> task.name.contains("ONT_HQ:FLYE") } == 1
+                assert trace.succeeded().count{ task -> task.name.contains("PACBIO_LQ:FLYE") } == 1
+                assert trace.failed().count{ task -> task.name.contains("PACBIO_HIFI:FLYE") } == 1
+            }
+        }
+
+    }
+
+    test("FLYE - pacbio-hifi - success") {
+
+        tag "ena-portal-api"
+        tag "LR"
+
+        when {
+            params {
+                outdir = "tests/results"
+
+                study_accession                  = "SRP384046"
+                reads_accession                  = "SRR19888830"
+                long_reads_assembler_config      = "pacbio-hifi"
+            }
+        }
+
+        then {
+            with(workflow) {
+                assert success
+                assert trace.succeeded().count{ task -> task.name.contains("PACBIO_HIFI:FLYE") } == 1
+            }
+        }
     }
 }
