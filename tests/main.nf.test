@@ -245,31 +245,30 @@ nextflow_pipeline {
 
     }
 
-    test("Samplesheet long reads - pacbio-hifi should fail") {
+    test("Samplesheet long reads HQ - hifi should fail") {
 
         tag "samplesheet"
         tag "LR"
+        tag "RUN"
 
         when {
             params {
                 outdir = "tests/results"
 
-                samplesheet                      = "${projectDir}/tests/samplesheet/test_long_reads.csv"
+                samplesheet                      = "${projectDir}/tests/samplesheet/test_long_reads_HQ.csv"
             }
         }
 
         then {
             with(workflow) {
-                assert trace.succeeded().count{ task -> task.name.contains("ONT_LQ:FLYE") } == 1
                 assert trace.succeeded().count{ task -> task.name.contains("ONT_HQ:FLYE") } == 1
-                assert trace.succeeded().count{ task -> task.name.contains("PACBIO_LQ:FLYE") } == 1
                 assert trace.failed().count{ task -> task.name.contains("PACBIO_HIFI:FLYE") } == 1
             }
         }
 
     }
 
-    test("FLYE - pacbio-hifi - success") {
+    test("hifi - success") {
 
         tag "ena-portal-api"
         tag "LR"

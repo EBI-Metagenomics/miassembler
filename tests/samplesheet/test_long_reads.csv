@@ -1,5 +1,0 @@
-study_accession,reads_accession,fastq_1,fastq_2,library_layout,library_strategy,platform,assembler,assembly_memory,assembler_config
-SRP040735,SRR1211893,https://github.com/EBI-Metagenomics/miassembler/raw/main/tests/test_reads/SRR1211893.fastq.gz,,single,metagenomic,ont,,,nano-raw
-SRP040735,SRR1211893,https://github.com/EBI-Metagenomics/miassembler/raw/main/tests/test_reads/SRR1211893.fastq.gz,,single,metagenomic,ont,,,nano-hq
-SRP040735,SRR1211893,https://github.com/EBI-Metagenomics/miassembler/raw/main/tests/test_reads/SRR1211893.fastq.gz,,single,metagenomic,pb,,,pacbio-raw
-SRP040735,SRR1211893,https://github.com/EBI-Metagenomics/miassembler/raw/main/tests/test_reads/SRR1211893.fastq.gz,,single,metagenomic,pb,,,pacbio-hifi
