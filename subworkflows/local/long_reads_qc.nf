@@ -47,7 +47,8 @@ workflow LONG_READS_QC {
         // can we use the same flag, even if one has phix but not the other?
         // Check file extensions too
 
-        human_reference = Channel.fromPath( "${params.reference_genomes_folder}/${params.human_fasta_prefix}.fna", checkIfExists: true)
+        human_reference = Channel.fromPath(
+            "${params.reference_genomes_folder}/${params.human_fasta_prefix}.f*a", checkIfExists: true)
             .collect().map {
                 files -> [ ["id": params.human_fasta_prefix], files ]
             }
