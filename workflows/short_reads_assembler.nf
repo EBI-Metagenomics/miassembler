@@ -170,15 +170,15 @@ workflow SHORT_READS_ASSEMBLER {
 
     // Quality results //
 
-    qc_reads_failed = qc_filtered_reads.qc_failed.map { meta, reads, qc_meta -> [ meta + qc_meta, reads]}
+    qc_failed_reads = qc_filtered_reads.qc_failed.map { meta, reads, qc_meta -> [ meta + qc_meta, reads]}
 
-    qc_all_failed = qc_reads_failed.concat(SHORT_READS_ASSEMBLY_QC.out.qc_assem_failed)
+    qc_failed_all = qc_failed_reads.concat(SHORT_READS_ASSEMBLY_QC.out.qc_failed_assemblies)
 
     ch_versions = ch_versions.mix(QUAST.out.versions)
 
     emit:
     fastqc_before_zip                    = FASTQC_BEFORE.out.zip                                // tuple(meta)
-    qc_all_failed                        = qc_all_failed                                        // tuple(meta)
+    qc_failed_all                        = qc_failed_all                                        // tuple(meta)
     fastqc_after_zip                     = FASTQC_AFTER.out.zip                                 // tuple(meta)
     assembly_coverage_samtools_idxstats  = SHORT_READS_ASSEMBLY_COVERAGE.out.samtools_idxstats  // tuple(meta)
     quast_results                        = QUAST.out.results                                    // tuple(meta)

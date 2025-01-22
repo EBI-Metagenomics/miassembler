@@ -322,7 +322,7 @@ workflow MIASSEMBLER {
 
     // Short reads and assembly QC failed //
 
-    def short_reads_qc_failed_entries = SHORT_READS_ASSEMBLER.out.qc_all_failed.map { 
+    def short_reads_qc_failed_entries = SHORT_READS_ASSEMBLER.out.qc_failed_all.map { 
         meta, __ -> {
             if (meta.low_reads_count) {
                 return "${meta.id},low_reads_count"
@@ -332,8 +332,8 @@ workflow MIASSEMBLER {
             }
             if (meta.too_few_contigs) {
                 return "${meta.id},too_few_contigs"
-            error("Unexpected. meta: ${meta}")
             }
+            error("Unexpected. meta: ${meta}")
         }
     }
 

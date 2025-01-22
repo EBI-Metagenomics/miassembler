@@ -156,7 +156,7 @@
                 "short_reads_contig_threshold": {
                     "type": "integer",
                     "default": 2,
-                    "description": "Minimum number of contigs in host cleaned assembly."
+                    "description": "Minimum number of contigs in human+phiX+host cleaned assembly."
                 },
                 "assembly_memory": {
                     "type": "number",
