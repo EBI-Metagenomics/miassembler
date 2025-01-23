@@ -21,7 +21,7 @@ process PUBLISH_CLEANED_CONTIGS {
 workflow SHORT_READS_ASSEMBLY_QC {
 
     take:
-    assembly                    // [ val(meta), path(assembly_fasta) ]
+    assembly               // [ val(meta), path(assembly_fasta) ]
     reference_genome       // [ val(meta2), path(reference_genome) ] | meta2 contains the name of the reference genome
 
     main:
@@ -86,10 +86,10 @@ workflow SHORT_READS_ASSEMBLY_QC {
         ch_versions = ch_versions.mix(SEQKIT_GREP_HOST.out.versions)
     }
 
-    /******************************************/
-    /*  Cleaned assemblies that fail the following rule:  */
-    /*  - Less than params.short_reads_contig_threshold (default is 2) contigs                  */
-    /******************************************/
+    /***************************************************************************/
+    /*  Cleaned assemblies that fail the following rule:                       */
+    /*  - Less than params.short_reads_contig_threshold (default is 2) contigs */
+    /***************************************************************************/
 
     cleaned_contigs.map { meta, assembly_fasta -> {
            [meta , ["contigs_count": assembly_fasta.countFasta()], assembly_fasta]
@@ -100,8 +100,13 @@ workflow SHORT_READS_ASSEMBLY_QC {
             qc_passed: meta2.contigs_count >= params.short_reads_contig_threshold
         }
     .set { qc_filtered_assemblies }
+    
     passed_cleaned_contigs = qc_filtered_assemblies.qc_passed.map { meta, _meta2, assembly -> 
             [ meta, assembly ]
+    }
+
+    qc_failed_assemblies = qc_filtered_assemblies.qc_failed.map { meta, _meta2, assembly -> 
+        [meta + ["too_few_contigs": true], assembly] 
     }
 
     PUBLISH_CLEANED_CONTIGS(
@@ -110,7 +115,6 @@ workflow SHORT_READS_ASSEMBLY_QC {
 
     emit:
     passed_cleaned_contigs = passed_cleaned_contigs // tuple(meta)
-    qc_failed_assemblies = qc_filtered_assemblies.qc_failed.map { meta, _meta2, assembly -> 
-        [meta + ["too_few_contigs": true], assembly] } // tuple(meta)
-    versions        = ch_versions
+    qc_failed_assemblies   = qc_failed_assemblies // tuple(meta)
+    versions               = ch_versions
 }
