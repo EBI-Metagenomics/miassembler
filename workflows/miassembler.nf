@@ -1,15 +1,15 @@
 /*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     IMPORT PLUGINS AND OTHER BITS
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
 include { validateParameters; paramsSummaryLog; paramsSummaryMap; samplesheetToList; paramsHelp } from 'plugin/nf-schema'
 
 /*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     IMPORT NF-CORE MODULES/SUBWORKFLOWS
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
 //
@@ -21,9 +21,9 @@ include { MULTIQC as MULTIQC_RUN      } from '../modules/nf-core/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 
 /*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     IMPORT THE MAIN ENTRY POINT WORKFLOWS
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
 //
@@ -33,18 +33,19 @@ include { SHORT_READS_ASSEMBLER       } from '../workflows/short_reads_assembler
 include { LONG_READS_ASSEMBLER        } from '../workflows/long_reads_assembler'
 
 /*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     IMPORT NF-CORE MODULES/SUBWORKFLOWS
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
 include { FETCHTOOL_READS             } from '../modules/local/fetchtool_reads'
 
 /*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     RUN MAIN WORKFLOW
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
+
 
 workflow MIASSEMBLER {
 
@@ -319,30 +320,23 @@ workflow MIASSEMBLER {
         }
         .collectFile(name: "assembled_runs.csv", storeDir: "${params.outdir}", newLine: true, cache: false)
 
-    // Short reads QC failed //
-    def short_reads_qc_failed_entries = SHORT_READS_ASSEMBLER.out.qc_failed.map {
-        meta, __, extended_meta -> {
-            if (extended_meta.low_reads_count) {
+    // Short reads and assembly QC failed //
+
+    def short_reads_qc_failed_entries = SHORT_READS_ASSEMBLER.out.qc_failed_all.map { 
+        meta, __ -> {
+            if (meta.low_reads_count) {
                 return "${meta.id},low_reads_count"
             }
-            if (extended_meta.filter_ratio_threshold_exceeded) {
+            if (meta.filter_ratio_threshold_exceeded) {
                 return "${meta.id},filter_ratio_threshold_exceeded"
             }
-            error("Unexpected. meta: ${meta}, extended_meta: ${extended_meta}")
+            if (meta.too_few_contigs) {
+                return "${meta.id},too_few_contigs"
+            }
+            error("Unexpected. meta: ${meta}")
         }
     }
 
     short_reads_qc_failed_entries.collectFile(name: "qc_failed_runs.csv", storeDir: "${params.outdir}", newLine: true, cache: false)
-
-    // Unassembled samples //
-    SHORT_READS_ASSEMBLER.out.unassembled_runs.map {
-        meta -> {
-            return "${meta.id},${meta.assembler},${meta.assembler_version}"
-        }
-    }.collectFile(
-        name: "unassembled_runs.csv",
-        storeDir: "${params.outdir}",
-        newLine: true,
-        cache: false
-    )
 }
+

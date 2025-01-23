@@ -153,6 +153,11 @@
                     "default": 200,
                     "description": "Minimum contig length filter for short reads metaT."
                 },
+                "short_reads_contig_threshold": {
+                    "type": "integer",
+                    "default": 2,
+                    "description": "Minimum number of contigs in human+phiX+host cleaned assembly."
+                },
                 "assembly_memory": {
                     "type": "number",
                     "default": 100,

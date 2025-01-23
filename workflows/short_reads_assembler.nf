@@ -1,7 +1,7 @@
 /*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     IMPORT LOCAL MODULES/SUBWORKFLOWS
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
 //
@@ -15,9 +15,9 @@ include { SHORT_READS_ASSEMBLY_QC       } from '../subworkflows/local/short_read
 include { SHORT_READS_ASSEMBLY_COVERAGE } from '../subworkflows/local/short_reads_assembly_coverage'
 
 /*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     IMPORT NF-CORE MODULES/SUBWORKFLOWS
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
 //
@@ -30,9 +30,9 @@ include { MEGAHIT                       } from '../modules/nf-core/megahit/main'
 include { QUAST                         } from '../modules/nf-core/quast/main'
 
 /*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     RUN MAIN WORKFLOW
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
 workflow SHORT_READS_ASSEMBLER {
@@ -127,6 +127,7 @@ workflow SHORT_READS_ASSEMBLER {
         }
         .set { qc_filtered_reads }
 
+
     /*********************/
     /*     Assembly     */
     /********************/
@@ -140,15 +141,6 @@ workflow SHORT_READS_ASSEMBLER {
     MEGAHIT(
         qc_filtered_reads.megahit.map { meta, reads, __ -> [meta, reads] }
     )
-
-    /* MEGAHIT can report 0 contigs, and an empty file */
-    MEGAHIT.out.contigs.branch { _meta, contigs ->
-        empty: contigs.countFasta() == 0
-        assembled: contigs.countFasta() > 0
-    }.set {
-        megahit_contigs
-    }
-
     ch_versions = ch_versions.mix(MEGAHIT.out.versions)
 
     assembly = SPADES.out.contigs.mix(MEGAHIT.out.contigs)
@@ -162,7 +154,7 @@ workflow SHORT_READS_ASSEMBLER {
 
     // Coverage //
     SHORT_READS_ASSEMBLY_COVERAGE(
-        SHORT_READS_ASSEMBLY_QC.out.filtered_contigs.join(SHORT_READS_QC.out.qc_reads, remainder: false),
+        SHORT_READS_ASSEMBLY_QC.out.passed_cleaned_contigs.join(SHORT_READS_QC.out.qc_reads, remainder: false),
         SHORT_READS_QC.out.fastp_json
     )
 
@@ -171,19 +163,25 @@ workflow SHORT_READS_ASSEMBLER {
     // Stats //
     /* The QUAST module was modified to run metaQUAST instead */
     QUAST(
-        SHORT_READS_ASSEMBLY_QC.out.filtered_contigs,
+        SHORT_READS_ASSEMBLY_QC.out.passed_cleaned_contigs,
         [[], []],
         [[], []]
     )
+
+    // Quality results //
+
+    qc_failed_reads = qc_filtered_reads.qc_failed.map { meta, reads, qc_meta -> [ meta + qc_meta, reads]}
+
+    qc_failed_all = qc_failed_reads.concat(SHORT_READS_ASSEMBLY_QC.out.qc_failed_assemblies)
 
     ch_versions = ch_versions.mix(QUAST.out.versions)
 
     emit:
     fastqc_before_zip                    = FASTQC_BEFORE.out.zip                                // tuple(meta)
-    qc_failed                            = qc_filtered_reads.qc_failed                          // tuple(meta)
+    qc_failed_all                        = qc_failed_all                                        // tuple(meta)
     fastqc_after_zip                     = FASTQC_AFTER.out.zip                                 // tuple(meta)
     assembly_coverage_samtools_idxstats  = SHORT_READS_ASSEMBLY_COVERAGE.out.samtools_idxstats  // tuple(meta)
     quast_results                        = QUAST.out.results                                    // tuple(meta)
-    unassembled_runs                     = megahit_contigs.empty.map { map, _contigs -> map }   // meta with the samples that Megahit/Metaspades couldn't assemble.
     versions                             = ch_versions
 }
+

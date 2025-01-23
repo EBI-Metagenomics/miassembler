@@ -23,10 +23,10 @@ def get_assembled_base_pairs_and_length(jgi_summarize_coverage_file_gz: str) -> 
     with gzip.open(jgi_summarize_coverage_file_gz, "rt") as file_handle:
         csv_reader = csv.DictReader(file_handle, delimiter="\t")
         for row in csv_reader:
-            contig_length_str = row["contigLen"]
+            contig_length_str = float(row["contigLen"])
             total_avg_depth_str = row["totalAvgDepth"]
 
-            if not contig_length_str.isnumeric():
+            if not contig_length_str.is_integer():
                 raise ValueError(f"The column 'contigLen' has an invalid value: {contig_length_str}")
 
             if int(contig_length_str) == 0:
