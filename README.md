@@ -279,7 +279,7 @@ SRR6180434,short_reads_filter_ratio_threshold_exceeded
 | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `short_reads_filter_ratio_threshold_exceeded` | The maximum fraction of reads that are allowed to be filtered out. If exceeded, it flags excessive filtering. The default value is 0.1, meaning that if less than 10% of the reads are retained after filtering, the threshold is considered exceeded, and the run is not assembled. |
 | `short_reads_low_reads_count_threshold`       | The minimum number of reads required after filtering. If below, it flags a low read count, and the run is not assembled.                                                                                                                                                             |
-| `short_reads_contig_threshold`                | The minimum number of contigs allowed after human+phiX+host cleaning. If below it flags a low contig count and the cleaned assembly isn't generated.                                                                                                                                            |
+| `short_reads_contig_threshold`                | The minimum number of contigs allowed after human+phiX+host cleaning. If below it flags a low contig count and the cleaned assembly isn't generated.                                                                                                                                 |
 
 #### Assembled Runs
 
