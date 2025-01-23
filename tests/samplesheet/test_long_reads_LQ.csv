@@ -1,3 +1,0 @@
-study_accession,reads_accession,fastq_1,fastq_2,library_layout,library_strategy,platform,assembler,assembly_memory,assembler_config
-SRP040735,ERR3792762,https://github.com/EBI-Metagenomics/miassembler/raw/feature/long_read_assembly/tests/test_reads/ERR3792762.fastq.gz,,single,metagenomic,ont,,,nano-raw
-SRP040735,ERR3792762,https://github.com/EBI-Metagenomics/miassembler/raw/feature/long_read_assembly/tests/test_reads/ERR3792762.fastq.gz,,single,metagenomic,ont,,,pacbio-raw

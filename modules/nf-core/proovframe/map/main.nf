@@ -25,7 +25,7 @@ process PROOVFRAME_MAP {
     proovframe \\
         map \\
         ${args} \\
-        -a ${faa} \\
+        --db ${faa} \\
         -o ${prefix}.tsv  \\
         ${fasta}
 
