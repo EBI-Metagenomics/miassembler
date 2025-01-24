@@ -4,29 +4,63 @@ Changes in module 'nf-core/megahit'
 Changes in 'megahit/main.nf':
 --- modules/nf-core/megahit/main.nf
 +++ modules/nf-core/megahit/main.nf
-@@ -33,6 +33,11 @@
-             $args \\
-             --out-prefix $prefix
+@@ -7,10 +7,11 @@
+         'community.wave.seqera.io/library/megahit_pigz:87a590163e594224' }"
  
-+        if [ ! -s megahit_out/*.fa ]; then
-+            echo "No contigs assembled" | tee /dev/stderr
-+            exit 1
-+        fi
-+
-         pigz \\
-             --no-name \\
-             -p $task.cpus \\
-@@ -54,6 +59,11 @@
-             $args \\
-             --out-prefix $prefix
+     input:
+-    tuple val(meta), path(reads1), path(reads2)
++    tuple val(meta), path(reads)
  
-+        if [ ! -s megahit_out/*.fa ]; then
-+            echo "No contigs assembled" | tee /dev/stderr
-+            exit 1
-+        fi
+     output:
+     tuple val(meta), path("*.contigs.fa.gz")                            , emit: contigs
++    tuple val(meta), path("*.fastg.gz")                                 , emit: graph
+     tuple val(meta), path("intermediate_contigs/k*.contigs.fa.gz")      , emit: k_contigs
+     tuple val(meta), path("intermediate_contigs/k*.addi.fa.gz")         , emit: addi_contigs
+     tuple val(meta), path("intermediate_contigs/k*.local.fa.gz")        , emit: local_contigs
+@@ -25,7 +26,7 @@
+     def args = task.ext.args ?: ''
+     def args2 = task.ext.args2 ?: ''
+     def prefix = task.ext.prefix ?: "${meta.id}"
+-    def reads_command = meta.single_end || !reads2 ? "-r ${reads1}" : "-1 ${reads1.join(',')} -2 ${reads2.join(',')}"
++    def reads_command = meta.single_end ? "-r ${reads}" : "-1 ${reads[0]} -2 ${reads[1]}"
+     """
+     megahit \\
+         ${reads_command} \\
+@@ -33,11 +34,19 @@
+         -t ${task.cpus} \\
+         --out-prefix ${prefix}
+ 
++    if [ -s megahit_out/*.fa ]; then
++        export kmax=\$(grep "k-max reset to" megahit_out/*log | rev | cut -f 2 -d ' ' | rev)
++        megahit_toolkit contig2fastg \$kmax megahit_out/*.fa > megahit_out/${prefix}.contigs.fastg
++    else
++        touch megahit_out/${prefix}.contigs.fastg
++    fi
 +
-         pigz \\
-             --no-name \\
-             -p $task.cpus \\
+     pigz \\
+         --no-name \\
+         -p ${task.cpus} \\
+         ${args2} \\
+         megahit_out/*.fa \\
++        megahit_out/*.fastg \\
+         megahit_out/intermediate_contigs/*.fa
+ 
+     mv megahit_out/* .
+@@ -52,10 +61,11 @@
+     def args = task.ext.args ?: ''
+     def args2 = task.ext.args2 ?: ''
+     def prefix = task.ext.prefix ?: "${meta.id}"
+-    def reads_command = meta.single_end || !reads2 ? "-r ${reads1}" : "-1 ${reads1.join(',')} -2 ${reads2.join(',')}"
++    def reads_command = meta.single_end ? "-r ${reads}" : "-1 ${reads[0]} -2 ${reads[1]}"
+     """
+     mkdir -p intermediate_contigs
+     echo "" | gzip > ${prefix}.contigs.fa.gz
++    echo "" | gzip > ${prefix}.contigs.fastg.gz
+     echo "" | gzip > intermediate_contigs/k21.contigs.fa.gz
+     echo "" | gzip > intermediate_contigs/k21.addi.fa.gz
+     echo "" | gzip > intermediate_contigs/k21.local.fa.gz
 
+'modules/nf-core/megahit/tests/tags.yml' is unchanged
+'modules/nf-core/megahit/tests/main.nf.test' is unchanged
+'modules/nf-core/megahit/tests/main.nf.test.snap' is unchanged
 ************************************************************

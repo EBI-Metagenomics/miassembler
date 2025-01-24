@@ -8,9 +8,8 @@
                     "bwamem2/mem": {
                         "branch": "main",
                         "git_sha": "75707538d91ddd27fb6007b4ac3710cb05154780",
-                        "installed_by": [
-                            "modules"
-                        ]
+                        "installed_by": ["modules"],
+                        "patch": "modules/ebi-metagenomics/bwamem2/mem/bwamem2-mem.diff"
                     },
                     "bwamem2decontnobams": {
                         "branch": "main",
@@ -27,10 +26,8 @@
                 "nf-core": {
                     "blast/blastn": {
                         "branch": "master",
-                        "git_sha": "209e5a3e2753c5e628736a662c877c20f341ee15",
-                        "installed_by": [
-                            "modules"
-                        ],
+                        "git_sha": "666652151335353eef2fcd58880bcef5bc2928e1",
+                        "installed_by": ["modules"],
                         "patch": "modules/nf-core/blast/blastn/blast-blastn.diff"
                     },
                     "bwamem2/index": {
@@ -79,11 +76,8 @@
                     },
                     "fastqc": {
                         "branch": "master",
-                        "git_sha": "65ad3e0b9a4099592e1102e92e10455dc661cf53",
-                        "installed_by": [
-                            "modules"
-                        ],
-                        "patch": "modules/nf-core/fastqc/fastqc.diff"
+                        "git_sha": "21f230b8cca43755bf73470e6fd0290832a98aef",
+                        "installed_by": ["modules"]
                     },
                     "flye": {
                         "branch": "master",
@@ -101,10 +95,8 @@
                     },
                     "megahit": {
                         "branch": "master",
-                        "git_sha": "3f5420aa22e00bd030a2556dfdffc9e164ec0ec5",
-                        "installed_by": [
-                            "modules"
-                        ],
+                        "git_sha": "7755db15e36b30da564cd67fffdfe18a255092aa",
+                        "installed_by": ["modules"],
                         "patch": "modules/nf-core/megahit/megahit.diff"
                     },
                     "metabat2/jgisummarizebamcontigdepths": {
@@ -117,17 +109,13 @@
                     "minimap2/align": {
                         "branch": "master",
                         "git_sha": "a33ef9475558c6b8da08c5f522ddaca1ec810306",
-                        "installed_by": [
-                            "modules"
-                        ],
+                        "installed_by": ["modules"],
                         "patch": "modules/nf-core/minimap2/align/minimap2-align.diff"
                     },
                     "multiqc": {
                         "branch": "master",
-                        "git_sha": "314d742bdb357a1df5f9b88427b3b6ac78aa33f7",
-                        "installed_by": [
-                            "modules"
-                        ],
+                        "git_sha": "cf17ca47590cc578dfb47db1c2a44ef86f89976d",
+                        "installed_by": ["modules"],
                         "patch": "modules/nf-core/multiqc/multiqc.diff"
                     },
                     "porechop/abi": {

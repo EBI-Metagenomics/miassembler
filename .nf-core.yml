@@ -20,6 +20,7 @@ lint:
     - .github/workflows/ci.yml
     - .github/workflows/linting_comment.yml
     - .github/workflows/linting.yml
+    - .github/workflows/ci.yml
     - conf/test_full.config
     - lib/Utils.groovy
     - lib/WorkflowMain.groovy
@@ -32,7 +33,9 @@ lint:
     - docs/images/nf-core-miassembler_logo_light.png
     - docs/images/nf-core-miassembler_logo_dark.png
     - .github/ISSUE_TEMPLATE/bug_report.yml
+    - .github/PULL_REQUEST_TEMPLATE.md
     - .github/CONTRIBUTING.md
+    - .github/workflows/linting.yml
     - LICENSE
     - docs/README.md
     - .gitignore
@@ -45,5 +48,7 @@ lint:
     - params.custom_config_base
     - manifest.name
     - manifest.homePage
+    - custom_config
   readme:
     - nextflow_badge
+nf_core_version: 3.0.2

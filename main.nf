@@ -11,6 +11,14 @@ nextflow.enable.dsl = 2
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    VALIDATE & PRINT PARAMETER SUMMARY
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*/
+
+include { validateParameters } from 'plugin/nf-schema'
+
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     NAMED WORKFLOW FOR PIPELINE
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
@@ -35,6 +43,16 @@ workflow EBIMETAGENOMICS_MIASSEMBLER {
 // See: https://github.com/nf-core/rnaseq/issues/619
 //
 workflow {
+
+    validateParameters()
+
+    // Custom validation //
+    // The conditional validation doesn't work yet -> https://github.com/nf-core/tools/issues/2619
+    if ( !params.samplesheet && ( !params.study_accession || !params.reads_accession ) ) {
+        error "Either --samplesheet or both --study_accession and --reads_accession are required."
+        exit 1
+    }
+
     EBIMETAGENOMICS_MIASSEMBLER ()
 }
 

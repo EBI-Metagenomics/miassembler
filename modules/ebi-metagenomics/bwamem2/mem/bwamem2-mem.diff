@@ -1,0 +1,29 @@
+Changes in module 'ebi-metagenomics/bwamem2/mem'
+'modules/ebi-metagenomics/bwamem2/mem/environment.yml' is unchanged
+Changes in 'bwamem2/mem/main.nf':
+--- modules/ebi-metagenomics/bwamem2/mem/main.nf
++++ modules/ebi-metagenomics/bwamem2/mem/main.nf
+@@ -7,8 +7,7 @@
+         'biocontainers/mulled-v2-e5d375990341c5aef3c9aff74f96f66f65375ef6:2d15960ccea84e249a150b7f5d4db3a42fc2d6c3-0' }"
+ 
+     input:
+-    tuple val(meta), path(reads)
+-    tuple val(meta2), path(index)
++    tuple val(meta), path(reads), path(index)
+ 
+     output:
+     tuple val(meta), path("*_sorted.bam"), path("*_sorted.bam.bai"), emit: bam
+@@ -21,7 +20,6 @@
+     def args = task.ext.args ?: ''
+     def args2 = task.ext.args2 ?: ''
+     def prefix = task.ext.prefix ?: meta.id
+-    def database = task.ext.database ?: meta2.id
+     """
+     INDEX=`find -L ./ -name "*.amb" | sed 's/\\.amb\$//'`
+ 
+
+'modules/ebi-metagenomics/bwamem2/mem/meta.yml' is unchanged
+'modules/ebi-metagenomics/bwamem2/mem/tests/tags.yml' is unchanged
+'modules/ebi-metagenomics/bwamem2/mem/tests/main.nf.test.snap' is unchanged
+'modules/ebi-metagenomics/bwamem2/mem/tests/main.nf.test' is unchanged
+************************************************************

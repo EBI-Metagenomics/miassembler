@@ -30,4 +30,5 @@ Changes in 'seqkit/grep/main.nf':
      """
      seqkit \\
 
+'modules/nf-core/seqkit/grep/meta.yml' is unchanged
 ************************************************************

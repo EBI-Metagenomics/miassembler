@@ -1,21 +1,23 @@
 /*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     IMPORT LOCAL MODULES/SUBWORKFLOWS
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
 
+include { DOWNLOAD_FROM_FIRE            } from '../modules/local/download_from_fire.nf'
+
 include { SHORT_READS_QC                } from '../subworkflows/local/short_reads_qc'
 include { SHORT_READS_ASSEMBLY_QC       } from '../subworkflows/local/short_reads_assembly_qc'
 include { SHORT_READS_ASSEMBLY_COVERAGE } from '../subworkflows/local/short_reads_assembly_coverage'
 
 /*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     IMPORT NF-CORE MODULES/SUBWORKFLOWS
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
 //
@@ -28,9 +30,9 @@ include { MEGAHIT                       } from '../modules/nf-core/megahit/main'
 include { QUAST                         } from '../modules/nf-core/quast/main'
 
 /*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     RUN MAIN WORKFLOW
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
 workflow SHORT_READS_ASSEMBLER {
@@ -125,6 +127,7 @@ workflow SHORT_READS_ASSEMBLER {
         }
         .set { qc_filtered_reads }
 
+
     /*********************/
     /*     Assembly     */
     /********************/
@@ -151,7 +154,8 @@ workflow SHORT_READS_ASSEMBLER {
 
     // Coverage //
     SHORT_READS_ASSEMBLY_COVERAGE(
-        SHORT_READS_ASSEMBLY_QC.out.filtered_contigs.join(SHORT_READS_QC.out.qc_reads, remainder: false)
+        SHORT_READS_ASSEMBLY_QC.out.passed_cleaned_contigs.join(SHORT_READS_QC.out.qc_reads, remainder: false),
+        SHORT_READS_QC.out.fastp_json
     )
 
     ch_versions = ch_versions.mix(SHORT_READS_ASSEMBLY_COVERAGE.out.versions)
@@ -159,18 +163,25 @@ workflow SHORT_READS_ASSEMBLER {
     // Stats //
     /* The QUAST module was modified to run metaQUAST instead */
     QUAST(
-        SHORT_READS_ASSEMBLY_QC.out.filtered_contigs,
+        SHORT_READS_ASSEMBLY_QC.out.passed_cleaned_contigs,
         [[], []],
         [[], []]
     )
 
+    // Quality results //
+
+    qc_failed_reads = qc_filtered_reads.qc_failed.map { meta, reads, qc_meta -> [ meta + qc_meta, reads]}
+
+    qc_failed_all = qc_failed_reads.concat(SHORT_READS_ASSEMBLY_QC.out.qc_failed_assemblies)
+
     ch_versions = ch_versions.mix(QUAST.out.versions)
 
     emit:
-    fastqc_before_zip                   = FASTQC_BEFORE.out.zip // tuple(meta)
-    qc_failed                           = qc_filtered_reads.qc_failed // tuple(meta)
-    fastqc_after_zip                    = FASTQC_AFTER.out.zip // tuple(meta)
-    assembly_coverage_samtools_idxstats = SHORT_READS_ASSEMBLY_COVERAGE.out.samtools_idxstats // tuple(meta)
-    quast_results                       = QUAST.out.results // tuple(meta)
-    versions                            = ch_versions
+    fastqc_before_zip                    = FASTQC_BEFORE.out.zip                                // tuple(meta)
+    qc_failed_all                        = qc_failed_all                                        // tuple(meta)
+    fastqc_after_zip                     = FASTQC_AFTER.out.zip                                 // tuple(meta)
+    assembly_coverage_samtools_idxstats  = SHORT_READS_ASSEMBLY_COVERAGE.out.samtools_idxstats  // tuple(meta)
+    quast_results                        = QUAST.out.results                                    // tuple(meta)
+    versions                             = ch_versions
 }
+
