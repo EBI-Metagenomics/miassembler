@@ -4,7 +4,7 @@ Changes in module 'nf-core/proovframe/map'
 Changes in 'proovframe/map/main.nf':
 --- modules/nf-core/proovframe/map/main.nf
 +++ modules/nf-core/proovframe/map/main.nf
-@@ -8,18 +8,19 @@
+@@ -8,23 +8,24 @@
          'biocontainers/proovframe:0.9.7--hdfd78af_1' }"
  
      input:
@@ -28,6 +28,12 @@ Changes in 'proovframe/map/main.nf':
      """
      proovframe \\
          map \\
+         ${args} \\
+-        -a ${faa} \\
++        --db ${faa} \\
+         -o ${prefix}.tsv  \\
+         ${fasta}
+ 
 @@ -36,7 +37,7 @@
  
      stub:
@@ -39,5 +45,5 @@ Changes in 'proovframe/map/main.nf':
  
 
 'modules/nf-core/proovframe/map/tests/main.nf.test' is unchanged
-'modules/nf-core/proovframe/map/tests/main.nf.test.snap' was removed
+'modules/nf-core/proovframe/map/tests/main.nf.test.snap' is unchanged
 ************************************************************
