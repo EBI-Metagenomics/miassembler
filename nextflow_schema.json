@@ -168,10 +168,10 @@
                     "description": "Run SPAdes/metaSPAdes without the error correction step.",
                     "default": true
                 },
-                "diamond_db":{
+                "diamond_db": {
                     "type": "string",
                     "format": "file-path",
-                    "description":"Path to diamond db (e.g. NCBI-nr) to perform frameshift correction",
+                    "description": "Path to diamond db (e.g. NCBI-nr) to perform frameshift correction",
                     "default": ""
                 },
                 "outdir": {
