@@ -1,14 +1,8 @@
 ## Introduction
 
-**ebi-metagenomics/miassembler** is a bioinformatics pipeline for the assembly of short metagenomic reads using [SPAdes](https://doi.org/10.1089/cmb.2012.0021) or [MEGAHIT](https://doi.org/10.1093/bioinformatics/btv033).
+**ebi-metagenomics/miassembler** is a bioinformatics pipeline for the assembly of long and short metagenomic reads.
 
-1. Read QC using [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
-2. Present QC for raw reads and assembly [MultiQC](http://multiqc.info/)
-3. Performs assembly using [MEGAHIT](https://github.com/voutcn/megahit) and [SPAdes](http://cab.spbu.ru/software/spades/), and checks assembly quality using [Quast](http://quast.sourceforge.net/quast)
-4. Removes contaminated contigs using [BLASTN](https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&PAGE_TYPE=Blastdocs) and [SeqKit](https://bioinf.shenwei.me/seqkit/)
-5. Calculates assembly coverage using [MetaBAT2](https://bitbucket.org/berkeleylab/metabat/src/master/) metabat2_jgi_summarizebamcontigdepths for per contig depth and [Samtools idxstats](http://www.htslib.org/doc/samtools-idxstats.html) for alignment summary statistics.
-
-This pipeline is still in early development. It's mostly a direct port of the mi-automation assembly generation pipeline. Some of the bespoke scripts used to remove contaminated contigs or to calculate the coverage of the assembly were replaced with tools provided by the community ([SeqKit](https://doi.org/10.1371/journal.pone.0163962) and [quast](https://doi.org/10.1093/bioinformatics/btu153) respectively).
+This pipeline is mostly a direct port of the mi-automation assembly generation pipeline. Some of the bespoke scripts used to remove contaminated contigs or to calculate the coverage of the assembly were replaced with tools provided by the community ([SeqKit](https://doi.org/10.1371/journal.pone.0163962) and [quast](https://doi.org/10.1093/bioinformatics/btu153) respectively).
 
 > [!NOTE]
 > This pipeline uses the [nf-core](https://nf-co.re) template with some tweaks, but it's not part of nf-core.
@@ -17,55 +11,61 @@ This pipeline is still in early development. It's mostly a direct port of the mi
 
 Pipeline help:
 
-```bash
+```angular2html
 Typical pipeline command:
 
-  nextflow run ebi-metagenomics/miassembler --help
+  nextflow run main.nf -profile <docker/singularity/...> --samplesheet samplesheet.csv --outdir <OUTDIR>
+
+--help                                    [boolean, string] Show the help message for all top level parameters. When a parameter is given to `--help`, the full help message of that parameter will be printed.  
 
 Input/output options
-  --study_accession                       [string]  The ENA Study secondary accession
-  --reads_accession                       [string]  The ENA Run primary accession
-  --private_study                         [boolean] To use if the ENA study is private, *this feature only works on EBI infrastructure at the moment*
-  --samplesheet                           [string]  Path to comma-separated file containing information about the raw reads with the prefix to be used.
-  --assembler                             [string]  The short reads assembler (accepted: spades, metaspades, megahit)
-  --single_end                            [boolean] Force the single_end value for the study / reads
-  --library_strategy                      [string]  Force the library_strategy value for the study / reads (accepted: metagenomic, metatranscriptomic,
-                                                    genomic, transcriptomic, other)
-  --library_layout                        [string]  Force the library_layout value for the study / reads (accepted: single, paired)
-  --platform                              [string]  Force the sequencing_platform value for the study / reads
-  --spades_version                        [string]  null [default: 3.15.5]
-  --megahit_version                       [string]  null [default: 1.2.9]
-  --flye_version                          [string]  null [default: 2.9]
-  --reference_genome                 [string]  The genome to be used to clean the assembly, the genome will be taken from the Microbiome Informatics
-                                                    internal directory (accepted: chicken.fna, salmon.fna, cod.fna, pig.fna, cow.fna, mouse.fna,
-                                                    honeybee.fna, rainbow_trout.fna, ...)
-  --blast_reference_genomes_folder        [string]  The folder with the reference genome blast indexes, defaults to the Microbiome Informatics internal
-                                                    directory.
-  --bwamem2_reference_genomes_folder      [string]  The folder with the reference genome bwa-mem2 indexes, defaults to the Microbiome Informatics internal
+  --samplesheet                           [string]  Path to comma-separated file containing information about the raw reads with the prefix (read accession) to be used. 
+  --study_accession                       [string]  The ENA Study secondary accession 
+  --reads_accession                       [string]  The ENA Run primary accession 
+  --private_study                         [boolean] To use if the ENA study is private, *this feature ony works on EBI infrastructure at the moment* 
+  --reference_genome                      [string]  The genome to be used to clean the assembly, the genome will be taken from the Microbiome Informatics internal directory  (accepted: chicken.fna, salmon.fna, cod.fna, pig.fna, 
+cow.fna, mouse.fna, honeybee.fna, rainbow_trout.fna, rat.fna, sheep.fna, soybean.fna, zebrafish.fna)  
+  --reference_genomes_folder              [string]  The folder with the reference genomes, defaults to the Microbiome Informatics internal directory. 
+  --blast_reference_genomes_folder        [string]  The folder with the reference genome blast indexes, defaults to the Microbiome Informatics internal directory. 
+  --bwamem2_reference_genomes_folder      [string]  The folder with the reference genome bwa-mem2 indexes, defaults to the Microbiome Informatics internal directory. 
+  --diamond_db                            [string]  Path to diamond db (e.g. NCBI-nr) to perform frameshift correction [default: ] 
+  --outdir                                [string]  The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. [default: results] 
+  --email                                 [string]  Email address for completion summary. 
+  --multiqc_title                         [string]  MultiQC report title. Printed as page header, used for filename if not otherwise specified. 
 
-  --reference_genomes_folder              [string]  The folder with reference genomes, defaults to the Microbiome Informatics internal
-                                                    directory.
-  --remove_human_phix                     [boolean] In short-reads assembly mode, remove human and phiX reads pre-assembly, and contigs matching those genomes. [default: true]
-  --remove_human                          [boolean] In long-reads assembly mode, remove human reads pre-assembly, and contigs matching those genomes. [default: true]
-  --human_phix_blast_index_name           [string]  Combined Human and phiX BLAST db. [default: human_phix]
-  --human_phix_bwamem2_index_name         [string]  Combined Human and phiX bwa-mem2 index. [default: human_phix]
-  --short_reads_contig_threshold          [integer] Minimum number of contigs in human+phiX+host cleaned assembly. [default: 2]
-  --short_reads_min_contig_length         [integer] Minimum contig length filter for metaG short reads. [default: 500]
-  --short_reads_min_contig_length_metat   [integer] Minimum contig length filter for metaT short reads. [default: 200]
-  --long_reads_min_read_length            [integer] Minimum read length filter for long reads. [default: 200]
-  --short_reads_filter_ratio_threshold    [float] Maximum fraction of reads allowed to be filtered out [default: 0.9]
-  --short_reads_low_reads_count_threshold [integer] Minimum number of reads required after filtering [default: 1000]
-  --long_reads_pacbio_quality_threshold   [float] Q20 threshold for a pacbio sample to be labelled as HiFi [default: 0.8]
-  --assembly_memory                       [integer] Default memory allocated for the assembly process. [default: 100]
-  --spades_only_assembler                 [boolean] Run SPAdes/metaSPAdes without the error correction step. [default: true]
-  --outdir                                [string]  The output directory where the results will be saved. You have to use absolute paths to storage on Cloud
-                                                    infrastructure. [default: results]
-  --email                                 [string]  Email address for completion summary.
-  --multiqc_title                         [string]  MultiQC report title. Printed as page header, used for filename if not otherwise specified.
+Input metadata options
+  --assembler                             [string]  The short or long reads assembler  (accepted: spades, metaspades, megahit, flye) 
+  --long_reads_assembler_config           [string]  Configuration to use flye with.  (accepted: nano-raw, nano-corr, nano-hq, pacbio-raw, pacbio-corr, pacbio-hifi) 
+  --flye_version                          [string]  [default: 2.9] 
+  --spades_version                        [string]  [default: 3.15.5] 
+  --megahit_version                       [string]  [default: 1.2.9] 
+  --remove_human_phix                     [boolean] Set true to removing human and phiX reads pre-assembly, and contigs matching those genomes. [default: true] 
+  --remove_human                          [boolean] Set true to removing human reads pre-assembly, and contigs matching those genomes. [default: true] 
+  --human_phix_blast_index_name           [string]  Filename of the combined Human and phiX BLAST db. [default: human_phix] 
+  --human_phix_bwamem2_index_name         [string]  Filename of the combined Human and phiX bwa-mem2 index. [default: human_phix] 
+  --human_fasta_prefix                    [string]  Prefix in the filename of the human genome reference. [default: human] 
+  --assembly_memory                       [number]  Default memory allocated for the assembly process. [default: 100] 
+  --spades_only_assembler                 [boolean] Run SPAdes/metaSPAdes without the error correction step. [default: true] 
+
+Reads QC options
+  --short_reads_filter_ratio_threshold    [number]  The maximum fraction of reads that are allowed to be filtered out. If exceeded, it flags excessive filtering. The default value is 0.1, meaning that if less than 10% of the reads 
+are retained after filtering, the threshold is considered exceeded, and the run is not assembled. [default: 0.1]  
+  --short_reads_low_reads_count_threshold [number]  The minimum number of reads required after filtering. If below, it flags a low read count and the run is not assembled. [default: 1000] 
+  --long_reads_min_read_length            [integer] Minimum read length for pre-assembly quality filtering [default: 200] 
+  --long_reads_pacbio_quality_threshold   [number]  The Q20 threshold that a pacbio sample needs to exceed to be labelled as HiFi. [default: 0.8] 
+
+Assembly QC options
+  --short_reads_min_contig_length         [integer] Minimum contig length filter for short reads. [default: 500] 
+  --short_reads_min_contig_length_metat   [integer] Minimum contig length filter for short reads metaT. [default: 200] 
+  --short_reads_contig_threshold          [integer] Minimum number of contigs in human+phiX+host cleaned assembly. [default: 2] 
 
 Generic options
-  --multiqc_methods_description           [string]  Custom MultiQC yaml file containing HTML including a methods description.
+  --multiqc_methods_description           [string] Custom MultiQC yaml file containing HTML including a methods description.
 ```
+
+You can run this pipeline with two options:
+
+### Command-line parameters
 
 Example:
 
@@ -79,36 +79,15 @@ nextflow run ebi-metagenomics/miassembler \
   --reads_accession SRR1631361
 ```
 
-### Required DBs:
+### Samplesheets
 
-- `--reference_genome`: reference genome in FASTA format
-- `--blast_reference_genomes_folder`: mandatory **human_phiX** is provided on [FTP](https://ftp.ebi.ac.uk/pub/databases/metagenomics/pipelines/references/)
-- `--bwamem2_reference_genomes_folder`: mandatory **human_phiX** is provided on [FTP](https://ftp.ebi.ac.uk/pub/databases/metagenomics/pipelines/references/)
+This option allows to customise exeecutions for multiple samples in a csv file. [Full description here](README.md#samplesheet).
 
-Blast and bwa-mem2 reference databases can be generated for any reference genome to polish input sequences with.
-
-#### BWA-MEM2
-
-As explained in [bwa-mem2's README](https://github.com/bwa-mem2/bwa-mem2?tab=readme-ov-file#getting-started):
-
+```bash
+nextflow run ebi-metagenomics/miassembler \
+  -profile codon_slurm \
+  --samplesheet tests/samplesheet/test.csv
 ```
-# Use precompiled binaries (recommended)
-curl -L https://github.com/bwa-mem2/bwa-mem2/releases/download/v2.2.1/bwa-mem2-2.2.1_x64-linux.tar.bz2 \
-  | tar jxf -
-
-# Index your reference genome with
-bwa-mem2-2.2.1_x64-linux/bwa-mem2 index ref.fa
-```
-
-This will generate multiple index files in a folder. The folder containing them is the one to use as `bwamem2_reference_genomes_folder`.
-
-#### BLAST
-
-```
-makeblastdb -in <ref.fa> -dbtype nucl -out <my_db_file>
-```
-
-As with bwa-mem2, numerous files will be generated in the same folder, which should be used for `blast_reference_genomes_folder`.
 
 ### Samplesheet
 
@@ -120,14 +99,12 @@ The samplesheet is a comma-separated file (.csv) with the following columns:
 - fastq_2: Full path to the second FastQ file (for paired-end reads). Leave empty if single-end.
 - library_layout: Either single or paired.
 - library_strategy: One of metagenomic, metatranscriptomic, genomic, transcriptomic, or other.
+- platform: Important for long reads, requiring either ont or pb for nanopore or pacbio.
+- assembler: Important for short reads, where either megahit, metaspades, or spades can be picked. Flye is also supported
+- assembly_memory: Integer value specifying the memory allocated for the assembly process.
+- assembler_config: Configuration to use flye with. One of "nano-raw", "nano-corr", "nano-hq", "pacbio-raw", "pacbio-corr", "pacbio-hifi".
 
-The header row is mandatory. Below is an example of a minimum required samplesheet:
-
-```csv
-study_accession,reads_accession,fastq_1,fastq_2,library_layout,library_strategy
-PRJ1,ERR1,/path/to/reads/ERR1_1.fq.gz,/path/to/reads/ERR1_2.fq.gz,paired,metagenomic
-PRJ2,ERR2,/path/to/reads/ERR2.fq.gz,,single,genomic
-```
+The header row is mandatory.
 
 #### Full Samplesheet Example
 
@@ -140,17 +117,12 @@ PRJ2,ERR2,/path/to/reads/ERR2.fq.gz,,single,genomic,metaspades
 PRJ3,ERR3,/path/to/reads/ERR3_1.fq.gz,/path/to/reads/ERR3_2.fq.gz,paired,transcriptomic
 ```
 
-It also allow to specify which assembler and how much memory in GB to use for the assembly process. Assembler and assembler memory columns:
-
-- assembler: One of spades, metaspades, or megahit.
-- assembly_memory: Integer value specifying the memory allocated for the assembly process.
-
 Example with additional columns:
 
 ```csv
-study_accession,reads_accession,fastq_1,fastq_2,library_layout,library_strategy,assembler,assembly_memory
+study_accession,reads_accession,fastq_1,fastq_2,library_layout,library_strategy,assembler,assembly_memory,assembler_config,platform
 PRJ1,ERR1,/path/to/reads/ERR1_1.fq.gz,/path/to/reads/ERR1_2.fq.gz,paired,metagenomic,spades,16
-PRJ2,ERR2,/path/to/reads/ERR2.fq.gz,,single,genomic,megahit,32
+PRJ2,ERR2,/path/to/reads/ERR2.fq.gz,,single,genomic,flye,32,"nano-hq",ont
 ```
 
 ### ENA Private Data
