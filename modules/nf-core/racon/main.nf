@@ -11,7 +11,7 @@ process RACON {
     tuple val(meta), path(reads), path(assembly), path(paf)
 
     output:
-    tuple val(meta), path('*_assembly_consensus.fasta.gz') , emit: improved_assembly
+    tuple val(meta), path('*_assembly_consensus.fasta') , emit: improved_assembly
     path "versions.yml"          , emit: versions
 
     when:
@@ -27,8 +27,6 @@ process RACON {
         $args \\
         "${assembly}" > \\
         ${prefix}_assembly_consensus.fasta
-
-    gzip -n ${prefix}_assembly_consensus.fasta
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

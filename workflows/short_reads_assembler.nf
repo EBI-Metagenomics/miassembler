@@ -143,7 +143,7 @@ workflow SHORT_READS_ASSEMBLER {
     )
     ch_versions = ch_versions.mix(MEGAHIT.out.versions)
 
-    assembly = SPADES.out.contigs.mix(MEGAHIT.out.contigs)
+    def assembly = SPADES.out.contigs.mix(MEGAHIT.out.contigs)
 
     // Clean the assembly contigs //
     SHORT_READS_ASSEMBLY_QC(

@@ -1,0 +1,26 @@
+Changes in module 'nf-core/racon'
+'modules/nf-core/racon/meta.yml' is unchanged
+'modules/nf-core/racon/environment.yml' is unchanged
+Changes in 'racon/main.nf':
+--- modules/nf-core/racon/main.nf
++++ modules/nf-core/racon/main.nf
+@@ -11,7 +11,7 @@
+     tuple val(meta), path(reads), path(assembly), path(paf)
+ 
+     output:
+-    tuple val(meta), path('*_assembly_consensus.fasta.gz') , emit: improved_assembly
++    tuple val(meta), path('*_assembly_consensus.fasta') , emit: improved_assembly
+     path "versions.yml"          , emit: versions
+ 
+     when:
+@@ -28,8 +28,6 @@
+         "${assembly}" > \\
+         ${prefix}_assembly_consensus.fasta
+ 
+-    gzip -n ${prefix}_assembly_consensus.fasta
+-
+     cat <<-END_VERSIONS > versions.yml
+     "${task.process}":
+         racon: \$( racon --version 2>&1 | sed 's/^.*v//' )
+
+************************************************************

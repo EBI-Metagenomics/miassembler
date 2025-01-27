@@ -1,0 +1,20 @@
+Changes in module 'nf-core/flye'
+'modules/nf-core/flye/meta.yml' is unchanged
+'modules/nf-core/flye/environment.yml' is unchanged
+Changes in 'flye/main.nf':
+--- modules/nf-core/flye/main.nf
++++ modules/nf-core/flye/main.nf
+@@ -40,6 +40,7 @@
+     gzip -c assembly.fasta > ${prefix}.assembly.fasta.gz
+     gzip -c assembly_graph.gfa > ${prefix}.assembly_graph.gfa.gz
+     gzip -c assembly_graph.gv > ${prefix}.assembly_graph.gv.gz
++    gzip -c 30-contigger/graph_final.fasta > ${prefix}.graph_final.fasta
+     mv assembly_info.txt ${prefix}.assembly_info.txt
+     mv flye.log ${prefix}.flye.log
+     mv params.json ${prefix}.params.json
+
+'modules/nf-core/flye/tests/nextflow.config' is unchanged
+'modules/nf-core/flye/tests/tags.yml' is unchanged
+'modules/nf-core/flye/tests/main.nf.test' is unchanged
+'modules/nf-core/flye/tests/main.nf.test.snap' is unchanged
+************************************************************

@@ -26,7 +26,9 @@ workflow SHORT_READS_ASSEMBLY_QC {
 
     main:
 
-    ch_versions = Channel.empty()
+    def ch_versions = Channel.empty()
+    def ch_blast_human_phix_refs = Channel.empty()
+    def ch_blast_host_refs = Channel.empty()
 
     /* Len filter using the parameter "short_reads_min_contig_length" */
     SEQKIT_SEQ(
@@ -35,7 +37,7 @@ workflow SHORT_READS_ASSEMBLY_QC {
 
     ch_versions = ch_versions.mix(SEQKIT_SEQ.out.versions)
 
-    filtered_contigs = SEQKIT_SEQ.out.fastx
+    def filtered_contigs = SEQKIT_SEQ.out.fastx
 
     if ( params.remove_human_phix ) {
 
@@ -61,9 +63,9 @@ workflow SHORT_READS_ASSEMBLY_QC {
     }
 
     // The cleaned contigs are those that have been filtered, but they will be further cleaned if a reference genome is set.
-    cleaned_contigs = filtered_contigs
+    def cleaned_contigs = filtered_contigs
 
-    if ( reference_genome != null ) {
+    if ( reference_genome ) {
 
         ch_blast_host_refs = Channel.fromPath( "${params.blast_reference_genomes_folder}/${reference_genome}*", checkIfExists: true)
             .collect().map {

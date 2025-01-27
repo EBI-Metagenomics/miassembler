@@ -34,6 +34,14 @@ input:
       type: file
       description: |
         Reference database in FASTA format.
+  - prefix2:
+      type: string
+      description: |
+        Gives a different prefix to output files depending on the reference used
+  - fa_fq_format:
+      type: string
+      description: |
+        Matches either "fasta" or "fastq" depending on the input file
   - bam_format:
       type: boolean
       description: Specify that output should be in BAM format
@@ -54,6 +62,10 @@ output:
       description: |
         Groovy Map containing sample information
         e.g. [ id:'test', single_end:false ]
+  - filtered_output:
+      type: file
+      description: |
+        Sequence file (fasta or fastq) after filtering
   - paf:
       type: file
       description: Alignment in PAF format

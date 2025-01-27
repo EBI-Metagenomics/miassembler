@@ -3,7 +3,7 @@ process FETCHTOOL_READS {
 
     label 'process_single'
 
-    container "quay.io/microbiome-informatics/fetch-tool:v1.0.2"
+    container "quay.io/microbiome-informatics/fetch-tool:v1.0.4"
 
     input:
     tuple val(meta), val(study_accession), val(reads_accession)
@@ -32,11 +32,11 @@ process FETCHTOOL_READS {
     library_strategy=\$(echo "\$(grep ${reads_accession} download_folder/${study_accession}/${study_accession}.txt | cut -f 7)" | tr '[:upper:]' '[:lower:]')
     library_layout=\$(echo "\$(grep ${reads_accession} download_folder/${study_accession}/${study_accession}.txt | cut -f 5)" | tr '[:upper:]' '[:lower:]')
 
-    export metadata_platform=\$(echo "\$(grep ${reads_accession} download_folder/${study_accession}/${study_accession}.txt | cut -f 8)" | tr '[:upper:]' '[:lower:]')
-    if [[ \$metadata_platform == "minion" || \$metadata_platform == "promethion" || \$metadata_platform == "gridion" ]]; then
+    export metadata_platform=\$(echo "\$(grep ${reads_accession} download_folder/${study_accession}/${study_accession}.txt | cut -f 9)" | tr '[:upper:]' '[:lower:]')
+    if [[ \$metadata_platform == "oxford_nanopore" ]]; then
         platform="ont"
-    elif [[ \$metadata_platform == "pacbio rs" || \$metadata_platform == "pacbio rs ii" ]]; then
-        platform="pacbio"
+    elif [[ \$metadata_platform == "pacbio_smrt" ]]; then
+        platform="pb"
     else
         platform="\$metadata_platform"
     fi
