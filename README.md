@@ -79,17 +79,13 @@ nextflow run ebi-metagenomics/miassembler \
   --reads_accession SRR1631361
 ```
 
-### Samplesheets
-
-This option allows to customise exeecutions for multiple samples in a csv file. [Full description here](README.md#samplesheet).
+### Samplesheet
 
 ```bash
 nextflow run ebi-metagenomics/miassembler \
   -profile codon_slurm \
   --samplesheet tests/samplesheet/test.csv
 ```
-
-### Samplesheet
 
 The samplesheet is a comma-separated file (.csv) with the following columns:
 
