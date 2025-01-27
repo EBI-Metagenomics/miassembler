@@ -4,7 +4,7 @@ include { BWAMEM2_INDEX                        } from '../../modules/nf-core/bwa
 include { SAMTOOLS_IDXSTATS                    } from '../../modules/nf-core/samtools/idxstats/main'
 include { METABAT2_JGISUMMARIZEBAMCONTIGDEPTHS } from '../../modules/nf-core/metabat2/jgisummarizebamcontigdepths/main'
 
-workflow ASSEMBLY_COVERAGE {
+workflow SHORT_READS_ASSEMBLY_COVERAGE {
 
     take:
     assembly_reads   // [ val(meta), path(assembly_fasta), path(reads) ]

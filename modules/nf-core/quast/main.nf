@@ -26,9 +26,9 @@ process QUAST {
     script:
     def args      = task.ext.args   ?: ''
     prefix        = task.ext.prefix ?: "${meta.id}"
-    def min_contig_len = "--min-contig ${params.min_contig_length}"
+    def min_contig_len = "--min-contig ${params.short_reads_min_contig_length}"
     if ( meta.library_strategy == "metatranscriptomics" ) {
-        min_contig_len = "--min-contig ${params.min_contig_length_metatranscriptomics}"
+        min_contig_len = "--min-contig ${params.short_reads_min_contig_length_metat}"
     } 
     def features  = gff             ?  "--features $gff" : ''
     def reference = fasta           ?  "-r $fasta"       : ''
