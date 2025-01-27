@@ -14,8 +14,8 @@ workflow SHORT_READS_ASSEMBLY_COVERAGE {
 
     ch_versions = Channel.empty()
 
-    def reads = assembly_reads.map { meta, _, reads -> [meta, reads] }
-    def assembly = assembly_reads.map { meta, assembly, _ -> [meta, assembly] }
+    def reads = assembly_reads.map { meta, __, reads -> [meta, reads] }
+    def assembly = assembly_reads.map { meta, assembly, __ -> [meta, assembly] }
 
     BWAMEM2_INDEX(
         assembly

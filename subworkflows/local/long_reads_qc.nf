@@ -40,7 +40,7 @@ workflow LONG_READS_QC {
 
     // TODO: add filter if too many reads are removed
 
-    def decontaminated_reads = channel.empty()
+    def decontaminated_reads = Channel.empty()
 
     if ( params.remove_human ) {
         // TODO: make this consistent with short_reads

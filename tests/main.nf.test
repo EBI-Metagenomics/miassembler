@@ -10,10 +10,8 @@ nextflow_pipeline {
 
         when {
             params {
-                outdir = "tests/results"
-                assembler = "spades"
-
-                samplesheet                      = "${projectDir}/tests/samplesheet/test.csv"
+                assembler   = "spades"
+                samplesheet = "${projectDir}/tests/samplesheet/test.csv"
             }
         }
 
@@ -34,11 +32,8 @@ nextflow_pipeline {
 
         when {
             params {
-                outdir = "tests/results"
-                assembler = "spades"
-
+                assembler                             = "spades"
                 short_reads_low_reads_count_threshold = 1000000
-
                 samplesheet                           = "${projectDir}/tests/samplesheet/test.csv"
             }
         }
@@ -69,8 +64,6 @@ nextflow_pipeline {
         when {
 
             params {
-                outdir = "tests/results"
-
                 // Force the assembly
                 short_reads_filter_ratio_threshold   = 0.1
                 short_reads_contig_threshold         = 1
@@ -98,7 +91,6 @@ nextflow_pipeline {
 
         when {
             params {
-                outdir                              = "tests/results"
                 assembler                           = "megahit"
 
                 // Force the assembly
@@ -127,8 +119,6 @@ nextflow_pipeline {
         when {
 
             params {
-                outdir = "tests/results"
-
                 // Force the assembly
                 short_reads_filter_ratio_threshold   = 0.1
 
@@ -156,7 +146,6 @@ nextflow_pipeline {
 
         when {
             params {
-                outdir                           = "tests/results"
                 assembler                        = "metaspades"
 
                 study_accession                  = "ERP012810"
@@ -186,8 +175,6 @@ nextflow_pipeline {
 
         when {
             params {
-                outdir = "tests/results"
-
                 study_accession                  = "ERP012810"
                 reads_accession                  = "ERR1076564"
 
@@ -211,8 +198,6 @@ nextflow_pipeline {
 
         when {
             params {
-                outdir = "tests/results"
-
                 study_accession                  = "DRP007622"
                 reads_accession                  = "DRR280712"
 
@@ -239,7 +224,6 @@ nextflow_pipeline {
 
         when {
             params {
-                outdir = "tests/results"
                 assembler = "spades"
 
                 study_accession                  = "DRP007622"
@@ -267,16 +251,15 @@ nextflow_pipeline {
 
         when {
             params {
-                outdir = "tests/results"
-                assembler = "spades"
-                samplesheet                      = "${projectDir}/tests/samplesheet/test_mem.csv"
-                assembly_memory                  = 0.5
+                assembler         = "spades"
+                samplesheet       = "${projectDir}/tests/samplesheet/test_mem.csv"
+                assembly_memory   = 0.5
                 /* Memory jumping testing */
                 /* will try with [0.5GB, 0.75GB, 1.13GB, ...]
                 /* which rounds down to [0, 0, 1, ...]
                 /* so should definitely fail twice before succeeding. after a few trys.
                 /* ~~~ */
-                max_spades_retries               = 5
+                max_spades_retries = 5
             }
         }
 
@@ -300,10 +283,9 @@ nextflow_pipeline {
 
         when {
             params {
-                outdir = "tests/results"
-                assembler = "spades"
-                samplesheet                      = "${projectDir}/tests/samplesheet/test.csv"
-                private_study                    = true
+                assembler     = "spades"
+                samplesheet   = "${projectDir}/tests/samplesheet/test.csv"
+                private_study = true
             }
         }
 
@@ -322,7 +304,6 @@ nextflow_pipeline {
         tag "LR"
         when {
             params {
-                outdir = "tests/results"
                 samplesheet                      = "${projectDir}/tests/samplesheet/test_long_reads_HQ.csv"
             }
         }
@@ -342,11 +323,9 @@ nextflow_pipeline {
 
         when {
             params {
-                outdir = "tests/results"
-
-                study_accession                  = "SRP384046"
-                reads_accession                  = "SRR19888830"
-                long_reads_assembler_config      = "pacbio-hifi"
+                study_accession             = "SRP384046"
+                reads_accession             = "SRR19888830"
+                long_reads_assembler_config = "pacbio-hifi"
             }
         }
 

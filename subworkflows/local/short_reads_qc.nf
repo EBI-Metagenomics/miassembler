@@ -24,7 +24,7 @@ workflow SHORT_READS_QC {
 
     ch_versions = ch_versions.mix(FASTP.out.versions)
 
-    def decontaminated_reads = channel.empty()
+    def decontaminated_reads = Channel.empty()
 
     if ( params.remove_human_phix ) {
 
