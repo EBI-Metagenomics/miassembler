@@ -24,7 +24,7 @@ def get_assembled_base_pairs_and_length(jgi_summarize_coverage_file_gz: str) -> 
         csv_reader = csv.DictReader(file_handle, delimiter="\t")
         for row in csv_reader:
 
-            contig_length = int(row["contigLen"])
+            contig_length = float(row["contigLen"])
 
             if not contig_length.is_integer():
                 raise ValueError(f"The column 'contigLen' has an invalid value: {contig_length}")
