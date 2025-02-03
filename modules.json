@@ -83,11 +83,6 @@
                         "installed_by": ["modules"],
                         "patch": "modules/nf-core/megahit/megahit.diff"
                     },
-                    "metabat2/jgisummarizebamcontigdepths": {
-                        "branch": "master",
-                        "git_sha": "3f5420aa22e00bd030a2556dfdffc9e164ec0ec5",
-                        "installed_by": ["modules"]
-                    },
                     "minimap2/align": {
                         "branch": "master",
                         "git_sha": "a33ef9475558c6b8da08c5f522ddaca1ec810306",

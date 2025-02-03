@@ -16,48 +16,48 @@ Typical pipeline command:
 
   nextflow run main.nf -profile <docker/singularity/...> --samplesheet samplesheet.csv --outdir <OUTDIR>
 
---help                                    [boolean, string] Show the help message for all top level parameters. When a parameter is given to `--help`, the full help message of that parameter will be printed.  
+--help                                    [boolean, string] Show the help message for all top level parameters. When a parameter is given to `--help`, the full help message of that parameter will be printed.
 
 Input/output options
-  --samplesheet                           [string]  Path to comma-separated file containing information about the raw reads with the prefix (read accession) to be used. 
-  --study_accession                       [string]  The ENA Study secondary accession 
-  --reads_accession                       [string]  The ENA Run primary accession 
-  --private_study                         [boolean] To use if the ENA study is private, *this feature ony works on EBI infrastructure at the moment* 
-  --reference_genome                      [string]  The genome to be used to clean the assembly, the genome will be taken from the Microbiome Informatics internal directory  (accepted: chicken.fna, salmon.fna, cod.fna, pig.fna, 
-cow.fna, mouse.fna, honeybee.fna, rainbow_trout.fna, rat.fna, sheep.fna, soybean.fna, zebrafish.fna)  
-  --reference_genomes_folder              [string]  The folder with the reference genomes, defaults to the Microbiome Informatics internal directory. 
-  --blast_reference_genomes_folder        [string]  The folder with the reference genome blast indexes, defaults to the Microbiome Informatics internal directory. 
-  --bwamem2_reference_genomes_folder      [string]  The folder with the reference genome bwa-mem2 indexes, defaults to the Microbiome Informatics internal directory. 
-  --diamond_db                            [string]  Path to diamond db (e.g. NCBI-nr) to perform frameshift correction [default: ] 
-  --outdir                                [string]  The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. [default: results] 
-  --email                                 [string]  Email address for completion summary. 
-  --multiqc_title                         [string]  MultiQC report title. Printed as page header, used for filename if not otherwise specified. 
+  --samplesheet                           [string]  Path to comma-separated file containing information about the raw reads with the prefix (read accession) to be used.
+  --study_accession                       [string]  The ENA Study secondary accession
+  --reads_accession                       [string]  The ENA Run primary accession
+  --private_study                         [boolean] To use if the ENA study is private, *this feature ony works on EBI infrastructure at the moment*
+  --reference_genome                      [string]  The genome to be used to clean the assembly, the genome will be taken from the Microbiome Informatics internal directory  (accepted: chicken.fna, salmon.fna, cod.fna, pig.fna,
+cow.fna, mouse.fna, honeybee.fna, rainbow_trout.fna, rat.fna, sheep.fna, soybean.fna, zebrafish.fna)
+  --reference_genomes_folder              [string]  The folder with the reference genomes, defaults to the Microbiome Informatics internal directory.
+  --blast_reference_genomes_folder        [string]  The folder with the reference genome blast indexes, defaults to the Microbiome Informatics internal directory.
+  --bwamem2_reference_genomes_folder      [string]  The folder with the reference genome bwa-mem2 indexes, defaults to the Microbiome Informatics internal directory.
+  --diamond_db                            [string]  Path to diamond db (e.g. NCBI-nr) to perform frameshift correction [default: ]
+  --outdir                                [string]  The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. [default: results]
+  --email                                 [string]  Email address for completion summary.
+  --multiqc_title                         [string]  MultiQC report title. Printed as page header, used for filename if not otherwise specified.
 
 Input metadata options
-  --assembler                             [string]  The short or long reads assembler  (accepted: spades, metaspades, megahit, flye) 
-  --long_reads_assembler_config           [string]  Configuration to use flye with.  (accepted: nano-raw, nano-corr, nano-hq, pacbio-raw, pacbio-corr, pacbio-hifi) 
-  --flye_version                          [string]  [default: 2.9] 
-  --spades_version                        [string]  [default: 3.15.5] 
-  --megahit_version                       [string]  [default: 1.2.9] 
-  --remove_human_phix                     [boolean] Set true to removing human and phiX reads pre-assembly, and contigs matching those genomes. [default: true] 
-  --remove_human                          [boolean] Set true to removing human reads pre-assembly, and contigs matching those genomes. [default: true] 
-  --human_phix_blast_index_name           [string]  Filename of the combined Human and phiX BLAST db. [default: human_phix] 
-  --human_phix_bwamem2_index_name         [string]  Filename of the combined Human and phiX bwa-mem2 index. [default: human_phix] 
-  --human_fasta_prefix                    [string]  Prefix in the filename of the human genome reference. [default: human] 
-  --assembly_memory                       [number]  Default memory allocated for the assembly process. [default: 100] 
-  --spades_only_assembler                 [boolean] Run SPAdes/metaSPAdes without the error correction step. [default: true] 
+  --assembler                             [string]  The short or long reads assembler  (accepted: spades, metaspades, megahit, flye)
+  --long_reads_assembler_config           [string]  Configuration to use flye with.  (accepted: nano-raw, nano-corr, nano-hq, pacbio-raw, pacbio-corr, pacbio-hifi)
+  --flye_version                          [string]  [default: 2.9]
+  --spades_version                        [string]  [default: 3.15.5]
+  --megahit_version                       [string]  [default: 1.2.9]
+  --remove_human_phix                     [boolean] Set true to removing human and phiX reads pre-assembly, and contigs matching those genomes. [default: true]
+  --remove_human                          [boolean] Set true to removing human reads pre-assembly, and contigs matching those genomes. [default: true]
+  --human_phix_blast_index_name           [string]  Filename of the combined Human and phiX BLAST db. [default: human_phix]
+  --human_phix_bwamem2_index_name         [string]  Filename of the combined Human and phiX bwa-mem2 index. [default: human_phix]
+  --human_fasta_prefix                    [string]  Prefix in the filename of the human genome reference. [default: human]
+  --assembly_memory                       [number]  Default memory allocated for the assembly process. [default: 100]
+  --spades_only_assembler                 [boolean] Run SPAdes/metaSPAdes without the error correction step. [default: true]
 
 Reads QC options
-  --short_reads_filter_ratio_threshold    [number]  The maximum fraction of reads that are allowed to be filtered out. If exceeded, it flags excessive filtering. The default value is 0.1, meaning that if less than 10% of the reads 
-are retained after filtering, the threshold is considered exceeded, and the run is not assembled. [default: 0.1]  
-  --short_reads_low_reads_count_threshold [number]  The minimum number of reads required after filtering. If below, it flags a low read count and the run is not assembled. [default: 1000] 
-  --long_reads_min_read_length            [integer] Minimum read length for pre-assembly quality filtering [default: 200] 
-  --long_reads_pacbio_quality_threshold   [number]  The Q20 threshold that a pacbio sample needs to exceed to be labelled as HiFi. [default: 0.8] 
+  --short_reads_filter_ratio_threshold    [number]  The maximum fraction of reads that are allowed to be filtered out. If exceeded, it flags excessive filtering. The default value is 0.1, meaning that if less than 10% of the reads
+are retained after filtering, the threshold is considered exceeded, and the run is not assembled. [default: 0.1]
+  --short_reads_low_reads_count_threshold [number]  The minimum number of reads required after filtering. If below, it flags a low read count and the run is not assembled. [default: 1000]
+  --long_reads_min_read_length            [integer] Minimum read length for pre-assembly quality filtering [default: 200]
+  --long_reads_pacbio_quality_threshold   [number]  The Q20 threshold that a pacbio sample needs to exceed to be labelled as HiFi. [default: 0.8]
 
 Assembly QC options
-  --short_reads_min_contig_length         [integer] Minimum contig length filter for short reads. [default: 500] 
-  --short_reads_min_contig_length_metat   [integer] Minimum contig length filter for short reads metaT. [default: 200] 
-  --short_reads_contig_threshold          [integer] Minimum number of contigs in human+phiX+host cleaned assembly. [default: 2] 
+  --short_reads_min_contig_length         [integer] Minimum contig length filter for short reads. [default: 500]
+  --short_reads_min_contig_length_metat   [integer] Minimum contig length filter for short reads metaT. [default: 200]
+  --short_reads_contig_threshold          [integer] Minimum number of contigs in human+phiX+host cleaned assembly. [default: 2]
 
 Generic options
   --multiqc_methods_description           [string] Custom MultiQC yaml file containing HTML including a methods description.

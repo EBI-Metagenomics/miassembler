@@ -363,7 +363,16 @@
             "$ref": "#/$defs/input_output_options"
         },
         {
+            "$ref": "#/$defs/input_metadata_options"
+        },
+        {
+            "$ref": "#/$defs/assembly_tools_options"
+        },
+        {
             "$ref": "#/$defs/reads_qc"
+        },
+        {
+            "$ref": "#/$defs/assembly_qc"
         },
         {
             "$ref": "#/$defs/max_job_request_options"
