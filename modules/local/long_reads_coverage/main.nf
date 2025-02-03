@@ -50,7 +50,7 @@ process LONG_READS_COVERAGE {
         output/${meta.id}_sorted.bam
     bgzip --threads $task.cpus ${prefix}_coverage_depth_summary.tsv
 
-    #rm -rf fasta_outdir output
+    rm -rf fasta_outdir output
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

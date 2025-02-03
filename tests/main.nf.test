@@ -302,6 +302,9 @@ nextflow_pipeline {
 
         tag "samplesheet"
         tag "LR"
+
+        // we are forcing high-quality processing, but the data is in reality low-quality
+        // therefore, frameshift correction is also triggered as low-quality is detected
         when {
             params {
                 samplesheet                      = "${projectDir}/tests/samplesheet/test_long_reads_HQ.csv"

@@ -130,7 +130,7 @@ workflow LONG_READS_ASSEMBLER {
     )
     ch_versions = ch_versions.mix(PACBIO_HIFI.out.versions)
 
-    assembly = ONT_LQ.out.contigs.mix(ONT_HQ.out.contigs,
+    def assembly = ONT_LQ.out.contigs.mix(ONT_HQ.out.contigs,
                                       PACBIO_LQ.out.contigs,
                                       PACBIO_HIFI.out.contigs)
 
@@ -144,7 +144,7 @@ workflow LONG_READS_ASSEMBLER {
     )
     ch_versions = ch_versions.mix(LONG_READS_ASSEMBLY_QC.out.versions)
 
-    decontaminated_assembly = LONG_READS_ASSEMBLY_QC.out.contigs
+    def decontaminated_assembly = LONG_READS_ASSEMBLY_QC.out.contigs
 
     decontaminated_assembly.branch { meta, contigs ->
         lq: meta.quality == "low"
