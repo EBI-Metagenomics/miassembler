@@ -1,0 +1,63 @@
+process LONG_READS_COVERAGE {
+
+    /*
+    This module aligns reads to the reference and produces output in the form of FASTQ.GZ, BAM and BAM.BAI files.
+    It also runs depth generation using jgi_summarize_bam_contig_depths
+    */
+
+    label 'process_medium'
+
+    tag "${meta.id} align to ${assembly_fasta}"
+
+    container 'community.wave.seqera.io/library/metabat2_minimap2_samtools:befe455c29d07c61'
+
+    input:
+    tuple val(meta), path(assembly_fasta), path(reads)
+
+    output:
+    tuple val(meta), path("*.txt.gz")                     , emit: coverage_depth
+    tuple val(meta), path("*.idxstats")                   , emit: samtools_idxstats
+    path "versions.yml"                                   , emit: versions
+
+    script:
+
+    def prefix = task.ext.prefix ?: "${meta.id}"
+
+    def jgi_summarize_bam_contig_depths_args = task.ext.jgi_summarize_bam_contig_depths_args ?: '' //TODO
+
+    """
+    mkdir -p output
+    echo " ---> mapping files to assembly"
+
+    minimap2 \\
+        -t ${task.cpus} \\
+        -x map-${meta.platform} \\
+        ${assembly_fasta} \\
+        ${reads} \\
+        -a | samtools sort -@ ${task.cpus-1} \\
+        -O bam - -o output/${meta.id}_sorted.bam
+
+    echo " ---> samtools index sorted bam"
+    samtools index -@ ${task.cpus} output/${meta.id}_sorted.bam
+
+    echo " ---> samtools idxstats sorted bam"
+    samtools idxstats --threads ${task.cpus-1} output/${meta.id}_sorted.bam > ${meta.id}.assembly.idxstats
+
+    echo " ---> depth generation"
+    jgi_summarize_bam_contig_depths \
+        --outputDepth ${prefix}.txt \
+        $jgi_summarize_bam_contig_depths_args \
+        output/${meta.id}_sorted.bam
+    bgzip --threads $task.cpus ${prefix}.txt
+
+    rm -rf fasta_outdir output
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        minimap2: \$(minimap2 --version 2> /dev/null)
+        samtools: \$(echo \$(samtools --version 2>&1) | sed 's/^.*samtools //; s/Using.*\$//')
+        metabat2: \$( metabat2 --help 2>&1 | head -n 2 | tail -n 1 | sed -n 's/.*version \\([^;]*\\);.*/\\1/p' )
+        concoct: \$(echo \$(concoct --version 2>&1) | sed 's/concoct //g' )
+    END_VERSIONS
+    """
+}

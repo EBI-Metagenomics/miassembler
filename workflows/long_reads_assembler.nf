@@ -145,7 +145,7 @@ workflow LONG_READS_ASSEMBLER {
     ch_versions = ch_versions.mix(LONG_READS_ASSEMBLY_QC.out.versions)
 
     decontaminated_assembly = LONG_READS_ASSEMBLY_QC.out.contigs
-    
+
     decontaminated_assembly.branch { meta, contigs ->
         lq: meta.quality == "low"
         hq: meta.quality == "high"
@@ -159,10 +159,14 @@ workflow LONG_READS_ASSEMBLER {
     final_contigs = FRAMESHIFT_CORRECTION.out.corrected_contigs.mix(
                         low_high_quality_contigs.hq)
 
-    LONG_READS_ASSEMBLY_COVERAGE(
-        final_contigs.join( reads_assembler_config )
+    LONG_READS_COVERAGE(
+        [final_contigs, reads_assembler_config]
     )
-    ch_versions = ch_versions.mix(LONG_READS_ASSEMBLY_COVERAGE.out.versions)
+
+    // LONG_READS_ASSEMBLY_COVERAGE(
+    //     final_contigs.join( reads_assembler_config )
+    // )
+    // ch_versions = ch_versions.mix(LONG_READS_ASSEMBLY_COVERAGE.out.versions)
 
     // Stats //
     /* The QUAST module was modified to run metaQUAST instead */
