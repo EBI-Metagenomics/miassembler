@@ -7,7 +7,7 @@ process LONG_READS_COVERAGE {
 
     label 'process_medium'
 
-    tag "${meta.id} align to ${assembly_fasta}"
+    tag "${meta.id}"
 
     container 'community.wave.seqera.io/library/metabat2_minimap2_samtools:befe455c29d07c61'
 
@@ -15,8 +15,8 @@ process LONG_READS_COVERAGE {
     tuple val(meta), path(assembly_fasta), path(reads)
 
     output:
-    tuple val(meta), path("*.txt.gz")                     , emit: coverage_depth
-    tuple val(meta), path("*.idxstats")                   , emit: samtools_idxstats
+    tuple val(meta), path("*.tsv.gz")                     , emit: depth
+    tuple val(meta), path("*.idxstats")                   , emit: idxstats
     path "versions.yml"                                   , emit: versions
 
     script:
@@ -45,19 +45,18 @@ process LONG_READS_COVERAGE {
 
     echo " ---> depth generation"
     jgi_summarize_bam_contig_depths \
-        --outputDepth ${prefix}.txt \
+        --outputDepth ${prefix}_coverage_depth_summary.tsv \
         $jgi_summarize_bam_contig_depths_args \
         output/${meta.id}_sorted.bam
-    bgzip --threads $task.cpus ${prefix}.txt
+    bgzip --threads $task.cpus ${prefix}_coverage_depth_summary.tsv
 
-    rm -rf fasta_outdir output
+    #rm -rf fasta_outdir output
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         minimap2: \$(minimap2 --version 2> /dev/null)
         samtools: \$(echo \$(samtools --version 2>&1) | sed 's/^.*samtools //; s/Using.*\$//')
         metabat2: \$( metabat2 --help 2>&1 | head -n 2 | tail -n 1 | sed -n 's/.*version \\([^;]*\\);.*/\\1/p' )
-        concoct: \$(echo \$(concoct --version 2>&1) | sed 's/concoct //g' )
     END_VERSIONS
     """
 }

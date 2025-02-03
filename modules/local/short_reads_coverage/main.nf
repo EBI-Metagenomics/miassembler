@@ -1,7 +1,7 @@
 process SHORT_READS_INDEX_FASTA {
 
     label 'process_medium'
-    tag "${meta.id} index ${fasta}"
+    tag "${meta.id}"
 
     container 'quay.io/microbiome-informatics/bwamem2:2.2.1'
 
@@ -33,19 +33,15 @@ process SHORT_READS_COVERAGE {
 
     label 'process_medium'
 
-    tag "${meta.id} align to ${ref_fasta}"
+    tag "${meta.id}"
 
-    container 'quay.io/microbiome-informatics/bwa_metabat:2.2.1_2.15'
+    container 'quay.io/microbiome-informatics/bwa_metabat_concoct:2.2.1_2.16_1.1.0'
 
     input:
     tuple val(meta), path(reads), path(ref_fasta), path(ref_fasta_index)
-    val(get_depth)
-    val(get_concoct_table)
-    val(bed)
 
     output:
-    tuple val(meta), path("*.txt.gz")                     , emit: depth
-    tuple val(meta), path("*.tsv"), path("concoct*.fasta"), emit: concoct_data
+    tuple val(meta), path("*.tsv.gz")                     , emit: depth
     tuple val(meta), path("*.idxstats")                   , emit: idxstats
     path "versions.yml"                                   , emit: versions
 
@@ -56,11 +52,6 @@ process SHORT_READS_COVERAGE {
     def samtools_args = task.ext.alignment_args
 
     def jgi_summarize_bam_contig_depths_args = task.ext.jgi_summarize_bam_contig_depths_args ?: ''
-
-    def concoct_cut_up_fasta_args = task.ext.concoct_cut_up_fasta_args ?: ''
-    def concoct_bedfile    = bed ? "-b ${prefix}.bed" : ""
-    def concoct_prefix = task.ext.concoct_prefix ?: "concoct_${meta.id}"
-    def concoct_coverage_table_args       = task.ext.concoct_coverage_table_args ?: ''
 
     """
     mkdir -p output
@@ -78,16 +69,12 @@ process SHORT_READS_COVERAGE {
     echo " ---> samtools idxstats sorted bam"
     samtools idxstats --threads ${task.cpus-1} output/${meta.id}_sorted.bam > ${prefix}.assembly.idxstats
 
-    if [[ "$get_depth" == "true" ]]; then
-        echo " ---> depth generation"
-        jgi_summarize_bam_contig_depths \
-            --outputDepth ${prefix}.txt \
-            $jgi_summarize_bam_contig_depths_args \
-            output/${meta.id}_sorted.bam
-        bgzip --threads $task.cpus ${prefix}.txt
-    else
-        touch ${prefix}.txt.gz
-    fi
+    echo " ---> depth generation"
+    jgi_summarize_bam_contig_depths \
+        --outputDepth ${prefix}_coverage_depth_summary.tsv \
+        $jgi_summarize_bam_contig_depths_args \
+        output/${meta.id}_sorted.bam
+    bgzip --threads $task.cpus ${prefix}_coverage_depth_summary.tsv
 
     rm -rf fasta_outdir output
 

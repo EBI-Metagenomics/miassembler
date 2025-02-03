@@ -1,46 +1,49 @@
-include { MINIMAP2_ALIGN as MINIMAP_COVERAGE   } from '../../modules/nf-core/minimap2/align/main'
-include { SAMTOOLS_IDXSTATS                    } from '../../modules/nf-core/samtools/idxstats/main'
-include { METABAT2_JGISUMMARIZEBAMCONTIGDEPTHS } from '../../modules/nf-core/metabat2/jgisummarizebamcontigdepths/main'
+include { LONG_READS_COVERAGE         } from '../../modules/local/long_reads_coverage/main'
+include { CALCULATE_ASSEMBLY_COVERAGE } from '../../modules/local/calculate_assembly_coverage'
 
 workflow LONG_READS_ASSEMBLY_COVERAGE {
 
     take:
     assembly_reads   // [ val(meta), path(assembly_fasta), path(reads) ]
+    fastp_json       // [ val(meta), path(fasp_json) ]
 
     main:
 
     ch_versions = Channel.empty()
 
-    reads = assembly_reads.map { meta, __, reads -> [meta, reads] }
-    assembly = assembly_reads.map { meta, assembly, __ -> [meta, assembly] }
-
-    MINIMAP_COVERAGE(
-        reads,
-        assembly,
-        "coverage",
-        "bam",      // out sequence extension
-        true,       // no bam format
-        "bai",      // extension needed
-        false,      // no CIGAR in bam format
-        false       // no CIGAR in paf format
+    LONG_READS_COVERAGE(
+        assembly_reads
     )
+    ch_versions = ch_versions.mix(LONG_READS_COVERAGE.out.versions)
 
-    ch_versions = ch_versions.mix(MINIMAP_COVERAGE.out.versions)
+    // This snippet allows to only use relevant meta values from the two, 
+    // since meta of the depth file contains way more fields than the
+    // previous one, preventing a direct join from working
+    def fastp = fastp_json.map { meta, json_file ->
+        key = meta.subMap('id', 'platform')
+        return [key, json_file]
+    }
 
-    METABAT2_JGISUMMARIZEBAMCONTIGDEPTHS(
-        MINIMAP_COVERAGE.out.bam.join(MINIMAP_COVERAGE.out.index)
+    def depth = LONG_READS_COVERAGE.out.depth.map { meta, depth_file ->
+        key = meta.subMap('id', 'platform')
+        key2 = meta.subMap('assembler', 'assembler_version')
+        return [key, key2, depth_file]
+    }
+
+    def depth_fastp_json = depth.join(fastp).map{ meta, meta2, json_file, depth_file ->
+        return [meta + meta2, json_file, depth_file]
+    }
+
+    // This process calculates a single coverage and coverage depth value for the whole assembly //
+    CALCULATE_ASSEMBLY_COVERAGE(
+        depth_fastp_json
     )
-
-    ch_versions = ch_versions.mix(METABAT2_JGISUMMARIZEBAMCONTIGDEPTHS.out.versions)
-
-    SAMTOOLS_IDXSTATS(
-        MINIMAP_COVERAGE.out.bam.join(MINIMAP_COVERAGE.out.index)
-    )
-
-    ch_versions = ch_versions.mix(SAMTOOLS_IDXSTATS.out.versions)
+    
+    ch_versions = ch_versions.mix(CALCULATE_ASSEMBLY_COVERAGE.out.versions)
 
     emit:
-    coverage_depth     = METABAT2_JGISUMMARIZEBAMCONTIGDEPTHS.out.depth
-    samtools_idxstats  = SAMTOOLS_IDXSTATS.out.idxstats
-    versions           = ch_versions
+    coverage_depth         = LONG_READS_COVERAGE.out.depth
+    samtools_idxstats      = LONG_READS_COVERAGE.out.idxstats
+    assembly_coverage_json = CALCULATE_ASSEMBLY_COVERAGE.out.assembly_coverage_json
+    versions               = ch_versions
 }
