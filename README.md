@@ -2,6 +2,13 @@
 
 **ebi-metagenomics/miassembler** is a bioinformatics pipeline for the assembly of long and short metagenomic reads.
 
+This pipeline supports both short and long reads; however, it does not yet support hybrid assemblies.
+
+The steps of the pipeline for short- and long-reads processing are outlined in the following documents:
+
+    [Short Reads](README_SHORT_READS.md)
+    [Long Reads](README_LONG_READS.md)
+
 This pipeline is mostly a direct port of the mi-automation assembly generation pipeline. Some of the bespoke scripts used to remove contaminated contigs or to calculate the coverage of the assembly were replaced with tools provided by the community ([SeqKit](https://doi.org/10.1371/journal.pone.0163962) and [quast](https://doi.org/10.1093/bioinformatics/btu153) respectively).
 
 > [!NOTE]
@@ -95,8 +102,8 @@ The samplesheet is a comma-separated file (.csv) with the following columns:
 - fastq_2: Full path to the second FastQ file (for paired-end reads). Leave empty if single-end.
 - library_layout: Either single or paired.
 - library_strategy: One of metagenomic, metatranscriptomic, genomic, transcriptomic, or other.
-- platform: Important for long reads, requiring either ont or pb for nanopore or pacbio.
-- assembler: Important for short reads, where either megahit, metaspades, or spades can be picked. Flye is also supported
+- platform: Relevant for long reads, requiring either ont or pb for nanopore or pacbio, respectively.
+- assembler: Relevant for short reads, where either megahit, metaspades, or spades can be picked. Flye is also supported
 - assembly_memory: Integer value specifying the memory allocated for the assembly process.
 - assembler_config: Configuration to use flye with. One of "nano-raw", "nano-corr", "nano-hq", "pacbio-raw", "pacbio-corr", "pacbio-hifi".
 
@@ -118,7 +125,7 @@ Example with additional columns:
 ```csv
 study_accession,reads_accession,fastq_1,fastq_2,library_layout,library_strategy,assembler,assembly_memory,assembler_config,platform
 PRJ1,ERR1,/path/to/reads/ERR1_1.fq.gz,/path/to/reads/ERR1_2.fq.gz,paired,metagenomic,spades,16
-PRJ2,ERR2,/path/to/reads/ERR2.fq.gz,,single,genomic,flye,32,"nano-hq",ont
+PRJ2,ERR2,/path/to/reads/ERR2.fq.gz,,single,genomic,flye,32,nano-hq,ont
 ```
 
 ### ENA Private Data
