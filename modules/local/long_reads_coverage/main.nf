@@ -5,11 +5,13 @@ process LONG_READS_COVERAGE {
     It also runs depth generation using jgi_summarize_bam_contig_depths
     */
 
-    label 'process_medium'
+    label 'process_high'
 
     tag "${meta.id}"
 
-    container 'community.wave.seqera.io/library/metabat2_minimap2_samtools:befe455c29d07c61'
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/21/21ad589eae1b0fc318f4c086886799c96370adfb6dc8561cb62265fe527d9fb2/data':
+        'community.wave.seqera.io/library/metabat2_minimap2_samtools:befe455c29d07c61' }"
 
     input:
     tuple val(meta), path(assembly_fasta), path(reads)
@@ -23,7 +25,7 @@ process LONG_READS_COVERAGE {
 
     def prefix = task.ext.prefix ?: "${meta.id}"
 
-    def jgi_summarize_bam_contig_depths_args = task.ext.jgi_summarize_bam_contig_depths_args ?: '' //TODO
+    def jgi_summarize_bam_contig_depths_args = task.ext.jgi_summarize_bam_contig_depths_args ?: ''
 
     """
     mkdir -p output

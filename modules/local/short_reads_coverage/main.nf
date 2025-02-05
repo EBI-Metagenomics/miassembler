@@ -3,7 +3,9 @@ process SHORT_READS_INDEX_FASTA {
     label 'process_medium'
     tag "${meta.id}"
 
-    container 'quay.io/microbiome-informatics/bwamem2:2.2.1'
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/8b/8b4b8bec7b2111885ca511c09bbf753e5229ce78f93f9c281819a527c37854af/data':
+        'community.wave.seqera.io/library/bwa-mem2:2.2.1--1842774b9b0b4729' }"
 
     input:
     tuple val(meta), path(fasta)
