@@ -1,4 +1,5 @@
 Changes in module 'nf-core/canu'
+'modules/nf-core/canu/meta.yml' is unchanged
 'modules/nf-core/canu/environment.yml' is unchanged
 Changes in 'canu/main.nf':
 --- modules/nf-core/canu/main.nf
@@ -33,5 +34,4 @@ Changes in 'canu/main.nf':
      cat <<-END_VERSIONS > versions.yml
      "${task.process}":
 
-'modules/nf-core/canu/meta.yml' is unchanged
 ************************************************************

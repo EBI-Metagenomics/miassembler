@@ -1,8 +1,6 @@
-include { CALCULATE_ASSEMBLY_COVERAGE          } from '../../modules/local/calculate_assembly_coverage'
-include { BWAMEM2_MEM as BWAMEM2_MEM_COVERAGE  } from '../../modules/ebi-metagenomics/bwamem2/mem/main'
-include { BWAMEM2_INDEX                        } from '../../modules/nf-core/bwamem2/index/main'
-include { SAMTOOLS_IDXSTATS                    } from '../../modules/nf-core/samtools/idxstats/main'
-include { METABAT2_JGISUMMARIZEBAMCONTIGDEPTHS } from '../../modules/nf-core/metabat2/jgisummarizebamcontigdepths/main'
+include { SHORT_READS_INDEX_FASTA     } from '../../modules/local/short_reads_coverage/main'
+include { SHORT_READS_COVERAGE        } from '../../modules/local/short_reads_coverage/main'
+include { CALCULATE_ASSEMBLY_COVERAGE } from '../../modules/local/calculate_assembly_coverage'
 
 workflow SHORT_READS_ASSEMBLY_COVERAGE {
 
@@ -14,45 +12,32 @@ workflow SHORT_READS_ASSEMBLY_COVERAGE {
 
     ch_versions = Channel.empty()
 
-    reads = assembly_reads.map { meta, _, reads -> [meta, reads] }
-    assembly = assembly_reads.map { meta, assembly, _ -> [meta, assembly] }
+    def reads = assembly_reads.map { meta, __, reads -> [meta, reads] }
+    def assembly = assembly_reads.map { meta, assembly, __ -> [meta, assembly] }
 
-    BWAMEM2_INDEX(
+    SHORT_READS_INDEX_FASTA(
         assembly
     )
 
-    ch_versions = ch_versions.mix(BWAMEM2_INDEX.out.versions)
+    reads_assembly_index = reads.join(SHORT_READS_INDEX_FASTA.out.fasta_with_index)
 
-    bwa_reads_index = reads.join( BWAMEM2_INDEX.out.index )
-
-    BWAMEM2_MEM_COVERAGE(
-        bwa_reads_index
+    SHORT_READS_COVERAGE(
+        reads_assembly_index
     )
 
-    ch_versions = ch_versions.mix(BWAMEM2_MEM_COVERAGE.out.versions)
-
-    METABAT2_JGISUMMARIZEBAMCONTIGDEPTHS(
-        BWAMEM2_MEM_COVERAGE.out.bam
-    )
-
-    ch_versions = ch_versions.mix(METABAT2_JGISUMMARIZEBAMCONTIGDEPTHS.out.versions)
-
-    SAMTOOLS_IDXSTATS(
-        BWAMEM2_MEM_COVERAGE.out.bam
-    )
-
-    ch_versions = ch_versions.mix(SAMTOOLS_IDXSTATS.out.versions)
+    ch_versions = ch_versions.mix( SHORT_READS_INDEX_FASTA.out.versions.first() )
+    ch_versions = ch_versions.mix( SHORT_READS_COVERAGE.out.versions.first() )
 
     // This process calculates a single coverage and coverage depth value for the whole assembly //
     CALCULATE_ASSEMBLY_COVERAGE(
-        METABAT2_JGISUMMARIZEBAMCONTIGDEPTHS.out.depth.join ( fastp_json )
+        SHORT_READS_COVERAGE.out.depth.join ( fastp_json )
     )
 
     ch_versions = ch_versions.mix(CALCULATE_ASSEMBLY_COVERAGE.out.versions)
 
     emit:
-    coverage_depth_summary        = METABAT2_JGISUMMARIZEBAMCONTIGDEPTHS.out.depth
-    samtools_idxstats             = SAMTOOLS_IDXSTATS.out.idxstats
+    coverage_depth_summary        = SHORT_READS_COVERAGE.out.depth
+    samtools_idxstats             = SHORT_READS_COVERAGE.out.idxstats
     assembly_coverage_json        = CALCULATE_ASSEMBLY_COVERAGE.out.assembly_coverage_json
     versions                      = ch_versions
 }

@@ -143,7 +143,7 @@ workflow SHORT_READS_ASSEMBLER {
     )
     ch_versions = ch_versions.mix(MEGAHIT.out.versions)
 
-    assembly = SPADES.out.contigs.mix(MEGAHIT.out.contigs)
+    def assembly = SPADES.out.contigs.mix(MEGAHIT.out.contigs)
 
     // Clean the assembly contigs //
     SHORT_READS_ASSEMBLY_QC(
@@ -154,7 +154,7 @@ workflow SHORT_READS_ASSEMBLER {
 
     // Coverage //
     SHORT_READS_ASSEMBLY_COVERAGE(
-        SHORT_READS_ASSEMBLY_QC.out.passed_cleaned_contigs.join(SHORT_READS_QC.out.qc_reads, remainder: false),
+        SHORT_READS_ASSEMBLY_QC.out.passed_cleaned_contigs.join(SHORT_READS_QC.out.qc_reads),
         SHORT_READS_QC.out.fastp_json
     )
 

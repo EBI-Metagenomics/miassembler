@@ -1,22 +1,30 @@
 Changes in module 'nf-core/multiqc'
+'modules/nf-core/multiqc/meta.yml' is unchanged
 'modules/nf-core/multiqc/environment.yml' is unchanged
 Changes in 'multiqc/main.nf':
 --- modules/nf-core/multiqc/main.nf
 +++ modules/nf-core/multiqc/main.nf
 @@ -7,7 +7,8 @@
-         'biocontainers/multiqc:1.25.1--pyhdfd78af_0' }"
+         'biocontainers/multiqc:1.22.3--pyhdfd78af_0' }"
  
      input:
 -    path  multiqc_files, stageAs: "?/*"
-+    path(multiqc_files, stageAs: "?/*")
-+    tuple val(meta), path(pipeline_files, stageAs: "?/*") 
++    path(multiqc_base_files, stageAs: "?/*")
++    tuple val(meta), path(files, stageAs: "?/*")
      path(multiqc_config)
      path(extra_multiqc_config)
      path(multiqc_logo)
+@@ -25,7 +26,7 @@
+     def args = task.ext.args ?: ''
+     def config = multiqc_config ? "--config $multiqc_config" : ''
+     def extra_config = extra_multiqc_config ? "--config $extra_multiqc_config" : ''
+-    def logo = multiqc_logo ? /--cl-config 'custom_logo: "${multiqc_logo}"'/ : ''
++    def logo = multiqc_logo ? "--cl-config 'custom_logo: \"${multiqc_logo}\"'" : ''
+     """
+     multiqc \\
+         --force \\
 
-'modules/nf-core/multiqc/meta.yml' is unchanged
 'modules/nf-core/multiqc/tests/tags.yml' is unchanged
-'modules/nf-core/multiqc/tests/nextflow.config' is unchanged
-'modules/nf-core/multiqc/tests/main.nf.test.snap' is unchanged
 'modules/nf-core/multiqc/tests/main.nf.test' is unchanged
+'modules/nf-core/multiqc/tests/main.nf.test.snap' is unchanged
 ************************************************************
