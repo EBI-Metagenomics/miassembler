@@ -46,7 +46,6 @@ include { FETCHTOOL_READS             } from '../modules/local/fetchtool_reads'
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-
 workflow MIASSEMBLER {
 
     /*
@@ -89,36 +88,30 @@ workflow MIASSEMBLER {
     if (params.samplesheet) {
         def groupReads = { study_accession, reads_accession, fq1, fq2, library_layout, library_strategy, platform, assembler, assembly_memory, assembler_config ->
             if (fq2 == []) {
-                return tuple(
-                    [
-                        "id": reads_accession,
-                        "study_accession": study_accession,
-                        "library_layout": library_layout,
-                        "library_strategy": library_strategy,
-                        "platform": params.platform ?: platform,
-                        "single_end": true,
-                        "assembler": assembler ?: params.assembler,
-                        "assembly_memory": assembly_memory ?: params.assembly_memory,
-                        "assembler_config": assembler_config ?: params.long_reads_assembler_config
-                    ],
-                    [fq1]
-                )
-            }
-            else {
-                return tuple(
-                    [
-                        "id": reads_accession,
-                        "study_accession": study_accession,
-                        "library_strategy": library_strategy,
-                        "library_layout": library_layout,
-                        "single_end": false,
-                        "assembler": assembler ?: params.assembler,
-                        "assembly_memory": assembly_memory ?: params.assembly_memory,
-                        "assembler_config": assembler_config ?: params.long_reads_assembler_config,
-                        "platform": params.platform ?: platform
-                    ],
-                    [fq1, fq2]
-                )
+                return tuple(["id": reads_accession,
+                              "study_accession": study_accession,
+                              "single_end": true,
+                              "library_layout": library_layout,
+                              "library_strategy": library_strategy,
+                              "platform": params.platform ?: platform,
+                              "assembler": assembler ?: params.assembler,
+                              "assembly_memory": assembly_memory ?: params.assembly_memory,
+                              "assembler_config": assembler_config ?: params.long_reads_assembler_config
+                            ],
+                            [fq1]
+                        )
+            } else {
+                return tuple(["id": reads_accession,
+                              "study_accession": study_accession,
+                              "single_end": false,
+                              "library_layout": library_layout,
+                              "library_strategy": library_strategy,
+                              "platform": params.platform ?: platform,
+                              "assembler": assembler ?: params.assembler,
+                              "assembly_memory": assembly_memory ?: params.assembly_memory,
+                              "assembler_config": assembler_config ?: params.long_reads_assembler_config
+                            ],
+                            [fq1, fq2])
             }
         }
 
@@ -177,11 +170,11 @@ workflow MIASSEMBLER {
 
     def classified_reads = fetch_reads_transformed.map { meta, reads ->
         // Long reads //
-        if (["ont", "pacbio"].contains(meta.platform)) {
-            return [meta + [long_reads: true], reads]
-        }
-        else {
-            return [meta + [short_reads: true], reads]
+        if ( ["ont", "pb"].contains( meta.platform ) ) {
+            return [ meta + [long_reads: true], reads]
+        // Short reads //
+        } else {
+            return [ meta + [short_reads: true], reads]
         }
     }
 
@@ -190,7 +183,7 @@ workflow MIASSEMBLER {
             short_reads: meta.short_reads
             long_reads: meta.long_reads
         }
-        .set { reads_to_assemble }
+    .set { reads_to_assemble }
 
     /***************************************/
     /* Assemble short reads and long reads */
@@ -256,10 +249,19 @@ workflow MIASSEMBLER {
 
     def ch_multiqc_study_tools_files = Channel.empty()
 
-    def study_multiqc_files = SHORT_READS_ASSEMBLER.out.fastqc_before_zip.map(meta_by_study) \
-        .join(SHORT_READS_ASSEMBLER.out.fastqc_after_zip.map(meta_by_study)) \
-        .join(SHORT_READS_ASSEMBLER.out.assembly_coverage_samtools_idxstats.map(meta_by_study), remainder: true) \
-        .join(SHORT_READS_ASSEMBLER.out.quast_results.map(meta_by_study), remainder: true)
+    def fastqc_before_zip = SHORT_READS_ASSEMBLER.out.fastqc_before_zip
+        .mix(LONG_READS_ASSEMBLER.out.fastqc_before_zip)
+    def fastqc_after_zip = SHORT_READS_ASSEMBLER.out.fastqc_after_zip
+        .mix(LONG_READS_ASSEMBLER.out.fastqc_after_zip)
+    def assembly_coverage_samtools_idxstats = SHORT_READS_ASSEMBLER.out.assembly_coverage_samtools_idxstats
+        .mix(LONG_READS_ASSEMBLER.out.assembly_coverage_samtools_idxstats)
+    def quast_results = SHORT_READS_ASSEMBLER.out.quast_results
+        .mix(LONG_READS_ASSEMBLER.out.quast_results)
+
+    def study_multiqc_files = fastqc_before_zip.map(meta_by_study)
+        .join(fastqc_after_zip.map(meta_by_study))
+        .join(assembly_coverage_samtools_idxstats.map(meta_by_study), remainder: true) // the assembly step could fail
+        .join(quast_results.map(meta_by_study), remainder: true)                       // the assembly step could fail
 
     ch_multiqc_study_tools_files = study_multiqc_files.flatMap(combineFiles).groupTuple()
 

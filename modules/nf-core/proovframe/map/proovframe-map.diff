@@ -1,0 +1,49 @@
+Changes in module 'nf-core/proovframe/map'
+'modules/nf-core/proovframe/map/meta.yml' is unchanged
+'modules/nf-core/proovframe/map/environment.yml' is unchanged
+Changes in 'proovframe/map/main.nf':
+--- modules/nf-core/proovframe/map/main.nf
++++ modules/nf-core/proovframe/map/main.nf
+@@ -8,23 +8,24 @@
+         'biocontainers/proovframe:0.9.7--hdfd78af_1' }"
+ 
+     input:
+-    tuple val(meta), path(faa), path(fasta)
++    tuple val(meta), path(faa)
++    tuple val(meta2), path(fasta)
+ 
+     output:
+-    tuple val(meta), path("*.tsv"), emit: tsv
+-    path "versions.yml"           , emit: versions
++    tuple val(meta2), path("*.tsv"), emit: tsv
++    path "versions.yml"            , emit: versions
+ 
+     when:
+     task.ext.when == null || task.ext.when
+ 
+     script:
+     def args = task.ext.args ?: ''
+-    def prefix = task.ext.prefix ?: "${meta.id}"
++    def prefix = task.ext.prefix ?: "${meta2.id}"
+     """
+     proovframe \\
+         map \\
+         ${args} \\
+-        -a ${faa} \\
++        --db ${faa} \\
+         -o ${prefix}.tsv  \\
+         ${fasta}
+ 
+@@ -36,7 +37,7 @@
+ 
+     stub:
+     def args = task.ext.args ?: ''
+-    def prefix = task.ext.prefix ?: "${meta.id}"
++    def prefix = task.ext.prefix ?: "${meta2.id}"
+     """
+     touch ${prefix}.tsv
+ 
+
+'modules/nf-core/proovframe/map/tests/main.nf.test' is unchanged
+'modules/nf-core/proovframe/map/tests/main.nf.test.snap' is unchanged
+************************************************************

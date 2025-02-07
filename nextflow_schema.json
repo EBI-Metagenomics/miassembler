@@ -34,56 +34,9 @@
                     "fa_icon": "far fa-address-card",
                     "minLength": 3
                 },
-                "long_reads_min_read_length": {
-                    "type": "integer",
-                    "description": "Minimum read length for pre-assembly quality filtering",
-                    "default": 200
-                },
                 "private_study": {
                     "type": "boolean",
                     "description": "To use if the ENA study is private, *this feature ony works on EBI infrastructure at the moment*"
-                },
-                "assembler": {
-                    "type": "string",
-                    "enum": ["spades", "metaspades", "megahit", "flye"],
-                    "description": "The short or long reads assembler"
-                },
-                "long_reads_assembler_config": {
-                    "type": "string",
-                    "enum": ["nano-raw", "nano-corr", "nano-hq", "pacbio-raw", "pacbio-corr", "pacbio-hifi"],
-                    "description": "Configuration to use flye with.",
-                    "default": null
-                },
-                "single_end": {
-                    "type": "boolean",
-                    "description": "Force the single_end value for the study / reads"
-                },
-                "library_strategy": {
-                    "type": "string",
-                    "description": "Force the library_strategy value for the study / reads",
-                    "enum": ["metagenomic", "metatranscriptomic", "genomic", "transcriptomic", "other"]
-                },
-                "library_layout": {
-                    "type": "string",
-                    "description": "Force the library_layout value for the study / reads",
-                    "enum": ["single", "paired"]
-                },
-                "platform": {
-                    "type": "string",
-                    "description": "Force the instrument_platform value for the study / reads",
-                    "default": null
-                },
-                "flye_version": {
-                    "type": "string",
-                    "default": "2.9"
-                },
-                "spades_version": {
-                    "type": "string",
-                    "default": "3.15.5"
-                },
-                "megahit_version": {
-                    "type": "string",
-                    "default": "1.2.9"
                 },
                 "reference_genome": {
                     "type": "string",
@@ -118,55 +71,11 @@
                     "description": "The folder with the reference genome bwa-mem2 indexes, defaults to the Microbiome Informatics internal directory.",
                     "format": "directory-path"
                 },
-                "remove_human_phix": {
-                    "type": "boolean",
-                    "description": "Remove human and phiX reads pre assembly, and contigs matching those genomes.",
-                    "default": true
-                },
-                "remove_human": {
-                    "type": "boolean",
-                    "description": "Remove human reads pre assembly, and contigs matching those genomes.",
-                    "default": true
-                },
-                "human_phix_blast_index_name": {
+                "diamond_db": {
                     "type": "string",
-                    "description": "Combined Human and phiX BLAST db.",
-                    "default": "human_phix"
-                },
-                "human_phix_bwamem2_index_name": {
-                    "type": "string",
-                    "description": "Combined Human and phiX bwa-mem2 index.",
-                    "default": "human_phix"
-                },
-                "human_fasta_prefix": {
-                    "type": "string",
-                    "description": "Human prefix name.",
-                    "default": "human"
-                },
-                "short_reads_min_contig_length": {
-                    "type": "integer",
-                    "default": 500,
-                    "description": "Minimum contig length filter for short reads."
-                },
-                "short_reads_min_contig_length_metat": {
-                    "type": "integer",
-                    "default": 200,
-                    "description": "Minimum contig length filter for short reads metaT."
-                },
-                "short_reads_contig_threshold": {
-                    "type": "integer",
-                    "default": 2,
-                    "description": "Minimum number of contigs in human+phiX+host cleaned assembly."
-                },
-                "assembly_memory": {
-                    "type": "number",
-                    "default": 100,
-                    "description": "Default memory allocated for the assembly process."
-                },
-                "spades_only_assembler": {
-                    "type": "boolean",
-                    "description": "Run SPAdes/metaSPAdes without the error correction step.",
-                    "default": true
+                    "format": "file-path",
+                    "description": "Path to diamond db (e.g. NCBI-nr) to perform frameshift correction",
+                    "default": ""
                 },
                 "outdir": {
                     "type": "string",
@@ -189,11 +98,105 @@
                 }
             }
         },
+        "input_metadata_options": {
+            "title": "Input metadata options",
+            "type": "object",
+            "fa_icon": "fas fa-terminal",
+            "description": "Custom-define metadata to select which branch of the the pipeline will be executed. This might be needed if ENA samples have been registered under the wrong metadata, or if a specific execution is required for samples.",
+            "properties": {
+                "single_end": {
+                    "type": "boolean",
+                    "description": "Force the single_end value for the study / reads"
+                },
+                "library_strategy": {
+                    "type": "string",
+                    "description": "Force the library_strategy value for the study / reads",
+                    "enum": ["metagenomic", "metatranscriptomic", "genomic", "transcriptomic", "other"]
+                },
+                "library_layout": {
+                    "type": "string",
+                    "description": "Force the library_layout value for the study / reads",
+                    "enum": ["single", "paired"]
+                },
+                "platform": {
+                    "type": "string",
+                    "description": "Force the instrument_platform value for the study / reads",
+                    "default": null
+                }
+            }
+        },
+        "assembly_tools_options": {
+            "title": "Input metadata options",
+            "type": "object",
+            "fa_icon": "fas fa-terminal",
+            "description": "Specify parameters and tool versions to fine-tune the execution.",
+            "required": ["outdir"],
+            "properties": {
+                "assembler": {
+                    "type": "string",
+                    "enum": ["spades", "metaspades", "megahit", "flye"],
+                    "description": "The short or long reads assembler"
+                },
+                "long_reads_assembler_config": {
+                    "type": "string",
+                    "enum": ["nano-raw", "nano-corr", "nano-hq", "pacbio-raw", "pacbio-corr", "pacbio-hifi"],
+                    "description": "Configuration to use flye with.",
+                    "default": null
+                },
+                "flye_version": {
+                    "type": "string",
+                    "default": "2.9"
+                },
+                "spades_version": {
+                    "type": "string",
+                    "default": "3.15.5"
+                },
+                "megahit_version": {
+                    "type": "string",
+                    "default": "1.2.9"
+                },
+                "remove_human_phix": {
+                    "type": "boolean",
+                    "description": "Set true to removing human and phiX reads pre-assembly, and contigs matching those genomes.",
+                    "default": true
+                },
+                "remove_human": {
+                    "type": "boolean",
+                    "description": "Set true to removing human reads pre-assembly, and contigs matching those genomes.",
+                    "default": true
+                },
+                "human_phix_blast_index_name": {
+                    "type": "string",
+                    "description": "Filename of the combined Human and phiX BLAST db.",
+                    "default": "human_phix"
+                },
+                "human_phix_bwamem2_index_name": {
+                    "type": "string",
+                    "description": "Filename of the combined Human and phiX bwa-mem2 index.",
+                    "default": "human_phix"
+                },
+                "human_fasta_prefix": {
+                    "type": "string",
+                    "description": "Prefix in the filename of the human genome reference.",
+                    "default": "human"
+                },
+                "assembly_memory": {
+                    "type": "number",
+                    "default": 100,
+                    "description": "Default memory allocated for the assembly process."
+                },
+                "spades_only_assembler": {
+                    "type": "boolean",
+                    "description": "Run SPAdes/metaSPAdes without the error correction step.",
+                    "default": true
+                }
+            }
+        },
         "reads_qc": {
             "title": "Reads QC options",
             "type": "object",
             "fa_icon": "fab fa-acquisitions-incorporated",
-            "description": "Set the thresholds for the reads QC/filtering steps. Reads that fail QC won't be assembled.",
+            "description": "Set the thresholds for the reads QC/filtering steps. Short reads that fail relative QC steps won't be assembled.",
             "help_text": "Use these options to define the quality control thresholds for your reads. You can specify the maximum allowed filtering ratio and the minimum acceptable read count. If the filtering ratio exceeds the set limit or the read count falls below the threshold, the reads will be flagged and excluded from further assembly. The information about those runs that failed are aggregated in the qc_failed_runs.csv file.",
             "properties": {
                 "short_reads_filter_ratio_threshold": {
@@ -207,6 +210,42 @@
                     "type": "number",
                     "description": "The minimum number of reads required after filtering. If below, it flags a low read count and the run is not assembled.",
                     "default": 1000
+                },
+                "long_reads_min_read_length": {
+                    "type": "integer",
+                    "description": "Minimum read length for pre-assembly quality filtering",
+                    "default": 200
+                },
+                "long_reads_pacbio_quality_threshold": {
+                    "type": "number",
+                    "description": "The Q20 threshold that a pacbio sample needs to exceed to be labelled as HiFi.",
+                    "default": 0.8,
+                    "minimum": 0.0,
+                    "maximum": 1.0
+                }
+            }
+        },
+        "assembly_qc": {
+            "title": "Assembly QC options",
+            "type": "object",
+            "fa_icon": "fab fa-acquisitions-incorporated",
+            "description": "Set the thresholds for the assembly QC/filtering steps. Assemblies failing these steps won't be published.",
+            "help_text": "Use these options to define the quality control thresholds for your assebmlies.",
+            "properties": {
+                "short_reads_min_contig_length": {
+                    "type": "integer",
+                    "default": 500,
+                    "description": "Minimum contig length filter for short reads."
+                },
+                "short_reads_min_contig_length_metat": {
+                    "type": "integer",
+                    "default": 200,
+                    "description": "Minimum contig length filter for short reads metaT."
+                },
+                "short_reads_contig_threshold": {
+                    "type": "integer",
+                    "default": 2,
+                    "description": "Minimum number of contigs in human+phiX+host cleaned assembly."
                 }
             }
         },
@@ -324,7 +363,16 @@
             "$ref": "#/$defs/input_output_options"
         },
         {
+            "$ref": "#/$defs/input_metadata_options"
+        },
+        {
+            "$ref": "#/$defs/assembly_tools_options"
+        },
+        {
             "$ref": "#/$defs/reads_qc"
+        },
+        {
+            "$ref": "#/$defs/assembly_qc"
         },
         {
             "$ref": "#/$defs/max_job_request_options"

@@ -1,0 +1,77 @@
+{
+    "hifiadapterfilt - fastq.gz": {
+        "content": [
+            [
+                
+            ]
+        ],
+        "meta": {
+            "nf-test": "0.9.0",
+            "nextflow": "24.04.4"
+        },
+        "timestamp": "2024-10-21T13:39:55.96399245"
+    },
+    "hifiadapterfilt - fastq.gz - stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "test.filt.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+                    ]
+                ],
+                "1": [
+                    "test.contaminant.blastout:md5,d41d8cd98f00b204e9800998ecf8427e"
+                ],
+                "2": [
+                    "test.stats:md5,d41d8cd98f00b204e9800998ecf8427e"
+                ],
+                "3": [
+                    "test.blocklist:md5,d41d8cd98f00b204e9800998ecf8427e"
+                ],
+                "4": [
+                    "versions.yml:md5,2fbf3754b3f590ea1ef7d80105bb1333"
+                ],
+                "blast_search": [
+                    "test.contaminant.blastout:md5,d41d8cd98f00b204e9800998ecf8427e"
+                ],
+                "filt": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "test.filt.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+                    ]
+                ],
+                "headers": [
+                    "test.blocklist:md5,d41d8cd98f00b204e9800998ecf8427e"
+                ],
+                "stats": [
+                    "test.stats:md5,d41d8cd98f00b204e9800998ecf8427e"
+                ],
+                "versions": [
+                    "versions.yml:md5,2fbf3754b3f590ea1ef7d80105bb1333"
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.0",
+            "nextflow": "24.04.4"
+        },
+        "timestamp": "2024-10-21T13:40:01.567667766"
+    },
+    "versions": {
+        "content": [
+            [
+                "versions.yml:md5,2fbf3754b3f590ea1ef7d80105bb1333"
+            ]
+        ],
+        "meta": {
+            "nf-test": "0.9.0",
+            "nextflow": "24.04.4"
+        },
+        "timestamp": "2024-10-21T13:39:55.978172276"
+    }
+}

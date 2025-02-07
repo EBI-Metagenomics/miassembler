@@ -1,4 +1,5 @@
 Changes in module 'nf-core/seqkit/grep'
+'modules/nf-core/seqkit/grep/meta.yml' is unchanged
 'modules/nf-core/seqkit/grep/environment.yml' is unchanged
 Changes in 'seqkit/grep/main.nf':
 --- modules/nf-core/seqkit/grep/main.nf

@@ -6,13 +6,12 @@ nextflow_pipeline {
     test("Samplesheet spades") {
 
         tag "samplesheet"
+        tag "SR"
 
         when {
             params {
-                outdir = "tests/results"
-                assembler = "spades"
-
-                samplesheet                      = "${projectDir}/tests/samplesheet/test.csv"
+                assembler   = "spades"
+                samplesheet = "${projectDir}/tests/samplesheet/test.csv"
             }
         }
 
@@ -29,14 +28,12 @@ nextflow_pipeline {
     test("Samplesheet - no assembled - reads filtered ") {
 
         tag "samplesheet"
+        tag "SR"
 
         when {
             params {
-                outdir = "tests/results"
-                assembler = "spades"
-
+                assembler                             = "spades"
                 short_reads_low_reads_count_threshold = 1000000
-
                 samplesheet                           = "${projectDir}/tests/samplesheet/test.csv"
             }
         }
@@ -62,12 +59,11 @@ nextflow_pipeline {
     test("metaSPAdes - paired end") {
 
         tag "ena-portal-api"
+        tag "SR"
 
         when {
 
             params {
-                outdir = "tests/results"
-
                 // Force the assembly
                 short_reads_filter_ratio_threshold   = 0.1
                 short_reads_contig_threshold         = 1
@@ -91,10 +87,10 @@ nextflow_pipeline {
     test("MEGAHIT - paired end") {
 
         tag "ena-portal-api"
+        tag "SR"
 
         when {
             params {
-                outdir                              = "tests/results"
                 assembler                           = "megahit"
 
                 // Force the assembly
@@ -123,8 +119,6 @@ nextflow_pipeline {
         when {
 
             params {
-                outdir = "tests/results"
-
                 // Force the assembly
                 short_reads_filter_ratio_threshold   = 0.1
 
@@ -148,10 +142,10 @@ nextflow_pipeline {
     test("metaSPAdes - single end - should fail") {
 
         tag "ena-portal-api"
+        tag "SR"
 
         when {
             params {
-                outdir                           = "tests/results"
                 assembler                        = "metaspades"
 
                 study_accession                  = "ERP012810"
@@ -177,11 +171,10 @@ nextflow_pipeline {
         // TODO: fix along with - https://github.com/EBI-Metagenomics/miassembler/pull/21
 
         tag "ena-portal-api"
+        tag "SR"
 
         when {
             params {
-                outdir = "tests/results"
-
                 study_accession                  = "ERP012810"
                 reads_accession                  = "ERR1076564"
 
@@ -201,11 +194,10 @@ nextflow_pipeline {
     test("MEGAHIT - metaT - single end") {
 
         tag "ena-portal-api"
+        tag "SR"
 
         when {
             params {
-                outdir = "tests/results"
-
                 study_accession                  = "DRP007622"
                 reads_accession                  = "DRR280712"
 
@@ -228,10 +220,10 @@ nextflow_pipeline {
     test("Spades - metaT - single end should fail") {
 
         tag "ena-portal-api"
+        tag "SR"
 
         when {
             params {
-                outdir = "tests/results"
                 assembler = "spades"
 
                 study_accession                  = "DRP007622"
@@ -255,19 +247,19 @@ nextflow_pipeline {
 
         tag "samplesheet"
         tag "retries"
+        tag "SR"
 
         when {
             params {
-                outdir = "tests/results"
-                assembler = "spades"
-                samplesheet                      = "${projectDir}/tests/samplesheet/test_mem.csv"
-                assembly_memory                  = 0.5
+                assembler         = "spades"
+                samplesheet       = "${projectDir}/tests/samplesheet/test_mem.csv"
+                assembly_memory   = 0.5
                 /* Memory jumping testing */
                 /* will try with [0.5GB, 0.75GB, 1.13GB, ...]
                 /* which rounds down to [0, 0, 1, ...]
                 /* so should definitely fail twice before succeeding. after a few trys.
                 /* ~~~ */
-                max_spades_retries               = 5
+                max_spades_retries = 5
             }
         }
 
@@ -291,10 +283,9 @@ nextflow_pipeline {
 
         when {
             params {
-                outdir = "tests/results"
-                assembler = "spades"
-                samplesheet                      = "${projectDir}/tests/samplesheet/test.csv"
-                private_study                    = true
+                assembler     = "spades"
+                samplesheet   = "${projectDir}/tests/samplesheet/test.csv"
+                private_study = true
             }
         }
 
@@ -305,7 +296,47 @@ nextflow_pipeline {
                 assert stdout.count{ line -> line.contains("Required secrets are missing") } == 1
             }
         }
-
     }
 
+    test("Samplesheet long reads HQ - hifi should fail") {
+
+        tag "samplesheet"
+        tag "LR"
+
+        // we are forcing high-quality processing, but the data is in reality low-quality
+        // therefore, frameshift correction is also triggered as low-quality is detected
+        when {
+            params {
+                samplesheet                      = "${projectDir}/tests/samplesheet/test_long_reads_HQ.csv"
+            }
+        }
+
+        then {
+            with(workflow) {
+                assert trace.succeeded().count{ task -> task.name.contains("ONT_HQ:FLYE") } == 1
+                assert trace.failed().count{ task -> task.name.contains("PACBIO_HIFI:FLYE") } == 1
+            }
+        }
+    }
+
+    test("hifi - success") {
+
+        tag "ena-portal-api"
+        tag "LR"
+
+        when {
+            params {
+                study_accession             = "SRP384046"
+                reads_accession             = "SRR19888830"
+                long_reads_assembler_config = "pacbio-hifi"
+            }
+        }
+
+        then {
+            with(workflow) {
+                assert success
+                assert trace.succeeded().count{ task -> task.name.contains("PACBIO_HIFI:FLYE") } == 1
+            }
+        }
+    }
 }
