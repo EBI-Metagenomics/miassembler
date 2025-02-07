@@ -4,10 +4,7 @@
 
 This pipeline supports both short and long reads; however, it does not yet support hybrid assemblies.
 
-The steps of the pipeline for short- and long-reads processing are outlined in the following documents:
-
-    [Short Reads](README_SHORT_READS.md)
-    [Long Reads](README_LONG_READS.md)
+The steps of the pipeline for short- and long-reads processing are outlined in the [documentation](docs/README.md).
 
 This pipeline is mostly a direct port of the mi-automation assembly generation pipeline. Some of the bespoke scripts used to remove contaminated contigs or to calculate the coverage of the assembly were replaced with tools provided by the community ([SeqKit](https://doi.org/10.1371/journal.pone.0163962) and [quast](https://doi.org/10.1093/bioinformatics/btu153) respectively).
 
