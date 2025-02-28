@@ -52,7 +52,7 @@
             },
             "assembler": {
                 "type": "string",
-                "enum": ["spades", "metaspades", "megahit"],
+                "enum": ["spades", "metaspades", "megahit", "flye"],
                 "default": null,
                 "description": "The short reads assembler"
             },
