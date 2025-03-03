@@ -31,8 +31,11 @@ Changes in module 'nf-core/spades'
  
      when:
      task.ext.when == null || task.ext.when
-@@ -33,9 +34,15 @@
+@@ -31,14 +32,22 @@
+     def illumina_reads = illumina ? ( meta.single_end ? "-s $illumina" : "-1 ${illumina[0]} -2 ${illumina[1]}" ) : ""
+     def pacbio_reads = pacbio ? "--pacbio $pacbio" : ""
      def nanopore_reads = nanopore ? "--nanopore $nanopore" : ""
++    def iontorrent_flag = meta.platform == "iontorrent": "--iontorrent" : ""
      def custom_hmms = hmm ? "--custom-hmms $hmm" : ""
      def reads = yml ? "--dataset $yml" : "$illumina_reads $pacbio_reads $nanopore_reads"
 +    def metaspades_arg = meta.assembler == "metaspades" ? "--meta" : ""
@@ -47,7 +50,11 @@ Changes in module 'nf-core/spades'
          --threads $task.cpus \\
          --memory $maxmem \\
          $custom_hmms \\
-@@ -56,10 +63,13 @@
++        $iontorrent_flag \\
+         $reads \\
+         -o ./
+     mv spades.log ${prefix}.spades.log
+@@ -56,10 +65,13 @@
          gzip -n ${prefix}.transcripts.fa
      fi
      if [ -f assembly_graph_with_scaffolds.gfa ]; then
