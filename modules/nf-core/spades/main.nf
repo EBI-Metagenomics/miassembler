@@ -32,6 +32,7 @@ process SPADES {
     def illumina_reads = illumina ? ( meta.single_end ? "-s $illumina" : "-1 ${illumina[0]} -2 ${illumina[1]}" ) : ""
     def pacbio_reads = pacbio ? "--pacbio $pacbio" : ""
     def nanopore_reads = nanopore ? "--nanopore $nanopore" : ""
+    def iontorrent_flag = meta.platform == "iontorrent" ? "--iontorrent" : ""
     def custom_hmms = hmm ? "--custom-hmms $hmm" : ""
     def reads = yml ? "--dataset $yml" : "$illumina_reads $pacbio_reads $nanopore_reads"
     def metaspades_arg = meta.assembler == "metaspades" ? "--meta" : ""
@@ -46,6 +47,7 @@ process SPADES {
         --threads $task.cpus \\
         --memory $maxmem \\
         $custom_hmms \\
+        $iontorrent_flag \\
         $reads \\
         -o ./
     mv spades.log ${prefix}.spades.log
