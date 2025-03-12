@@ -56,7 +56,8 @@ Reads QC options
 are retained after filtering, the threshold is considered exceeded, and the run is not assembled. [default: 0.1]
   --short_reads_low_reads_count_threshold [number]  The minimum number of reads required after filtering. If below, it flags a low read count and the run is not assembled. [default: 1000]
   --long_reads_min_read_length            [integer] Minimum read length for pre-assembly quality filtering [default: 200]
-  --long_reads_pacbio_quality_threshold   [number]  The Q20 threshold that a pacbio sample needs to exceed to be labelled as HiFi. [default: 0.8]
+  --long_reads_pacbio_quality_threshold   [number]  The Q20 threshold that a pacbio sample needs to exceed to be labelled as HiFi. [default: 0.9]
+  --long_reads_ont_quality_threshold      [number]  The Q20 threshold that an ONT sample needs to exceed to be labelled as high-quality. [default: 0.8]
 
 Assembly QC options
   --short_reads_min_contig_length         [integer] Minimum contig length filter for short reads. [default: 500]
