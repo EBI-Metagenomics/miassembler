@@ -1,8 +1,6 @@
-include { BLAST_BLASTN as BLAST_BLASTN_HUMAN_PHIX } from '../../modules/nf-core/blast/blastn/main'
-include { BLAST_BLASTN as BLAST_BLASTN_HOST       } from '../../modules/nf-core/blast/blastn/main'
-include { SEQKIT_GREP as SEQKIT_GREP_HUMAN_PHIX   } from '../../modules/nf-core/seqkit/grep/main'
-include { SEQKIT_GREP as SEQKIT_GREP_HOST         } from '../../modules/nf-core/seqkit/grep/main'
-include { SEQKIT_SEQ                              } from '../../modules/nf-core/seqkit/seq/main'
+include { DECONTAMINATE_CONTIGS as HUMAN_PHIX_DECONTAMINATE_CONTIGS } from '../../subworkflows/ebi-metagenomics/decontaminate_contigs/main'
+include { DECONTAMINATE_CONTIGS as HOST_DECONTAMINATE_CONTIGS       } from '../../subworkflows/ebi-metagenomics/decontaminate_contigs/main'
+include { SEQKIT_SEQ                                                } from '../../modules/nf-core/seqkit/seq/main'
 
 process PUBLISH_CLEANED_CONTIGS {
 
@@ -22,70 +20,65 @@ workflow SHORT_READS_ASSEMBLY_QC {
 
     take:
     assembly               // [ val(meta), path(assembly_fasta) ]
-    reference_genome       // [ val(meta2), path(reference_genome) ] | meta2 contains the name of the reference genome
+    reference_genome       // [ val(reference_file) ]
 
     main:
 
-    def ch_versions = Channel.empty()
-    def ch_blast_human_phix_refs = Channel.empty()
-    def ch_blast_host_refs = Channel.empty()
+    ch_versions = Channel.empty()
 
     /* Len filter using the parameter "short_reads_min_contig_length" */
     SEQKIT_SEQ(
         assembly
     )
-
     ch_versions = ch_versions.mix(SEQKIT_SEQ.out.versions)
-
-    def filtered_contigs = SEQKIT_SEQ.out.fastx
 
     if ( params.remove_human_phix ) {
 
-        ch_blast_human_phix_refs = Channel.fromPath( "${params.blast_reference_genomes_folder}/${params.human_phix_blast_index_name}*", checkIfExists: true)
-            .collect().map {
-                files -> [ ["id": params.human_phix_blast_index_name], files ]
+        ch_human_phix_refs = Channel
+            .fromPath(
+                "${params.reference_genomes_folder}/${params.human_phix_ref}",
+                checkIfExists: true
+            )
+            .map {
+                file -> [ ["id": params.human_phix_ref], file ]
             }
 
-        BLAST_BLASTN_HUMAN_PHIX(
+        HUMAN_PHIX_DECONTAMINATE_CONTIGS(
             SEQKIT_SEQ.out.fastx,
-            ch_blast_human_phix_refs
+            ch_human_phix_refs
         )
 
-        ch_versions = ch_versions.mix(BLAST_BLASTN_HUMAN_PHIX.out.versions.first())
+        filtered_contigs = HUMAN_PHIX_DECONTAMINATE_CONTIGS.out.cleaned_contigs
 
-        SEQKIT_GREP_HUMAN_PHIX(
-            filtered_contigs.join( BLAST_BLASTN_HUMAN_PHIX.out.txt )
-        )
+        ch_versions = ch_versions.mix(HUMAN_PHIX_DECONTAMINATE_CONTIGS.out.versions)
 
-        filtered_contigs = SEQKIT_GREP_HUMAN_PHIX.out.filter
-
-        ch_versions = ch_versions.mix(SEQKIT_GREP_HUMAN_PHIX.out.versions)
+    } else {
+        filtered_contigs = SEQKIT_SEQ.out.fastx
     }
-
-    // The cleaned contigs are those that have been filtered, but they will be further cleaned if a reference genome is set.
-    def cleaned_contigs = filtered_contigs
 
     if ( reference_genome ) {
 
-        ch_blast_host_refs = Channel.fromPath( "${params.blast_reference_genomes_folder}/${reference_genome}*", checkIfExists: true)
-            .collect().map {
-                files -> [ ["id": reference_genome], files ]
+        ch_contaminat_refs = Channel
+            .fromPath(
+                "${params.reference_genomes_folder}/${reference_genome}",
+                checkIfExists: true
+            )
+            .map {
+                file -> [ ["id": reference_genome], file ]
             }
 
-        BLAST_BLASTN_HOST(
-            cleaned_contigs,
-            ch_blast_host_refs
+        HOST_DECONTAMINATE_CONTIGS(
+            filtered_contigs,
+            ch_contaminat_refs
         )
 
-        ch_versions = ch_versions.mix(BLAST_BLASTN_HOST.out.versions.first())
+        cleaned_contigs = HOST_DECONTAMINATE_CONTIGS.out.cleaned_contigs
 
-        SEQKIT_GREP_HOST(
-            cleaned_contigs.join( BLAST_BLASTN_HOST.out.txt )
-        )
+        ch_versions = ch_versions.mix(HOST_DECONTAMINATE_CONTIGS.out.versions)
 
-        cleaned_contigs = SEQKIT_GREP_HOST.out.filter
-
-        ch_versions = ch_versions.mix(SEQKIT_GREP_HOST.out.versions)
+    } else {
+        // If no reference genome is provided, we use the filtered contigs downstream
+        cleaned_contigs = filtered_contigs
     }
 
     /***************************************************************************/
@@ -116,7 +109,7 @@ workflow SHORT_READS_ASSEMBLY_QC {
     )
 
     emit:
-    passed_cleaned_contigs = passed_cleaned_contigs // tuple(meta)
-    qc_failed_assemblies   = qc_failed_assemblies // tuple(meta)
+    passed_cleaned_contigs = passed_cleaned_contigs   // [ val(meta), path(assembly_fasta) ]
+    qc_failed_assemblies   = qc_failed_assemblies     // [ val(meta), path(assembly_fasta) ]
     versions               = ch_versions
 }
