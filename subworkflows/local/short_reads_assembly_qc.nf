@@ -58,7 +58,7 @@ workflow SHORT_READS_ASSEMBLY_QC {
 
     if ( reference_genome ) {
 
-        ch_contaminat_refs = Channel
+        ch_contaminat_ref = Channel
             .fromPath(
                 "${params.reference_genomes_folder}/${reference_genome}",
                 checkIfExists: true
@@ -69,7 +69,7 @@ workflow SHORT_READS_ASSEMBLY_QC {
 
         HOST_DECONTAMINATE_CONTIGS(
             filtered_contigs,
-            ch_contaminat_refs
+            ch_contaminat_ref
         )
 
         cleaned_contigs = HOST_DECONTAMINATE_CONTIGS.out.cleaned_contigs
@@ -87,7 +87,7 @@ workflow SHORT_READS_ASSEMBLY_QC {
     /***************************************************************************/
 
     cleaned_contigs.map { meta, assembly_fasta -> {
-           [meta , ["contigs_count": assembly_fasta.countFasta()], assembly_fasta]
+            [meta , ["contigs_count": assembly_fasta.countFasta()], assembly_fasta]
             }
         }
         .branch { _meta, meta2, _assembly_fasta ->

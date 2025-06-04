@@ -5,11 +5,12 @@ process SEQKIT_GREP {
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/seqkit:2.4.0--h9ee0642_0':
-        'biocontainers/seqkit:2.4.0--h9ee0642_0' }"
+        'https://depot.galaxyproject.org/singularity/seqkit:2.9.0--h9ee0642_0':
+        'biocontainers/seqkit:2.9.0--h9ee0642_0' }"
 
     input:
-    tuple val(meta), path(sequence), path(pattern)
+    tuple val(meta), path(sequence)
+    path pattern
 
     output:
     tuple val(meta), path("*.{fa,fq}.gz")  , emit: filter
@@ -20,13 +21,10 @@ process SEQKIT_GREP {
 
     script:
     def args = task.ext.args ?: ''
+    def prefix = task.ext.prefix ?: "${meta.id}"
     // fasta or fastq. Exact pattern match .fasta or .fa suffix with optional .gz (gzip) suffix
     def suffix = task.ext.suffix ?: "${sequence}" ==~ /(.*f[astn]*a(.gz)?$)/ ? "fa" : "fq"
     def pattern_file = pattern ? "-f ${pattern}" : ""
-
-    def pattern_filename = pattern.getName()
-    def pattern_name = pattern_filename.split('\\.')[0]
-    def prefix = task.ext.prefix ?: "${meta.id}_${pattern_name}"
 
     """
     seqkit \\
@@ -50,7 +48,7 @@ process SEQKIT_GREP {
     def suffix = task.ext.suffix ?: "${sequence}" ==~ /(.*f[astn]*a(.gz)?$)/ ? "fa" : "fq"
 
     """
-    touch ${prefix}.${suffix}.gz
+    echo "" | gzip > ${prefix}.${suffix}.gz
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

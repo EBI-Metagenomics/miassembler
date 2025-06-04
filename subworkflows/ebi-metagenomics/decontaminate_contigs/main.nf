@@ -1,6 +1,6 @@
-include { MINIMAP2_ALIGN } from '../../../modules/local/minimap2/align/main'
+include { MINIMAP2_ALIGN } from '../../../modules/nf-core/minimap2/align/main'
 include { FILTERPAF      } from '../../../modules/ebi-metagenomics/filterpaf/main'
-include { SEQKIT_GREP    } from '../../../modules/local/seqkit/grep/main'
+include { SEQKIT_GREP    } from '../../../modules/nf-core/seqkit/grep/main'
 
 // TODO resolve differences between old modules and new, fix module folders later
 
