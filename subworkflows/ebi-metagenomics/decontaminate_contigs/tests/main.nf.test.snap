@@ -1,0 +1,150 @@
+{
+    "Run DECONTAMINATE_CONTIGS swf - contaminated contigs input gz": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "test_cleaned.fa.gz:md5,2e05937059d9329d7b8d56189c9d8c10"
+                    ]
+                ],
+                "1": [
+                    "versions.yml:md5,168ddf5d2325c3dfe5959865ead422c3",
+                    "versions.yml:md5,a29b0abb3251c925c794dd3d01a9e47b",
+                    "versions.yml:md5,fbcc2bf4987f9f05018d9ffa49cb2d98"
+                ],
+                "cleaned_contigs": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "test_cleaned.fa.gz:md5,2e05937059d9329d7b8d56189c9d8c10"
+                    ]
+                ],
+                "versions": [
+                    "versions.yml:md5,168ddf5d2325c3dfe5959865ead422c3",
+                    "versions.yml:md5,a29b0abb3251c925c794dd3d01a9e47b",
+                    "versions.yml:md5,fbcc2bf4987f9f05018d9ffa49cb2d98"
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.2",
+            "nextflow": "25.04.2"
+        },
+        "timestamp": "2025-05-28T09:54:13.174391"
+    },
+    "Run DECONTAMINATE_CONTIGS swf - uncontaminated contigs input": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "test_cleaned.fa.gz:md5,2e05937059d9329d7b8d56189c9d8c10"
+                    ]
+                ],
+                "1": [
+                    "versions.yml:md5,168ddf5d2325c3dfe5959865ead422c3",
+                    "versions.yml:md5,a29b0abb3251c925c794dd3d01a9e47b",
+                    "versions.yml:md5,fbcc2bf4987f9f05018d9ffa49cb2d98"
+                ],
+                "cleaned_contigs": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "test_cleaned.fa.gz:md5,2e05937059d9329d7b8d56189c9d8c10"
+                    ]
+                ],
+                "versions": [
+                    "versions.yml:md5,168ddf5d2325c3dfe5959865ead422c3",
+                    "versions.yml:md5,a29b0abb3251c925c794dd3d01a9e47b",
+                    "versions.yml:md5,fbcc2bf4987f9f05018d9ffa49cb2d98"
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.2",
+            "nextflow": "25.04.2"
+        },
+        "timestamp": "2025-05-28T10:17:05.214974"
+    },
+    "Run DECONTAMINATE_CONTIGS swf - uncontaminated contigs input gz": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "test_cleaned.fa.gz:md5,2e05937059d9329d7b8d56189c9d8c10"
+                    ]
+                ],
+                "1": [
+                    "versions.yml:md5,168ddf5d2325c3dfe5959865ead422c3",
+                    "versions.yml:md5,a29b0abb3251c925c794dd3d01a9e47b",
+                    "versions.yml:md5,fbcc2bf4987f9f05018d9ffa49cb2d98"
+                ],
+                "cleaned_contigs": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "test_cleaned.fa.gz:md5,2e05937059d9329d7b8d56189c9d8c10"
+                    ]
+                ],
+                "versions": [
+                    "versions.yml:md5,168ddf5d2325c3dfe5959865ead422c3",
+                    "versions.yml:md5,a29b0abb3251c925c794dd3d01a9e47b",
+                    "versions.yml:md5,fbcc2bf4987f9f05018d9ffa49cb2d98"
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.2",
+            "nextflow": "25.04.2"
+        },
+        "timestamp": "2025-05-28T10:20:59.35183"
+    },
+    "Run DECONTAMINATE_CONTIGS swf - contaminated contigs input": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "test_cleaned.fa.gz:md5,2e05937059d9329d7b8d56189c9d8c10"
+                    ]
+                ],
+                "1": [
+                    "versions.yml:md5,168ddf5d2325c3dfe5959865ead422c3",
+                    "versions.yml:md5,a29b0abb3251c925c794dd3d01a9e47b",
+                    "versions.yml:md5,fbcc2bf4987f9f05018d9ffa49cb2d98"
+                ],
+                "cleaned_contigs": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "test_cleaned.fa.gz:md5,2e05937059d9329d7b8d56189c9d8c10"
+                    ]
+                ],
+                "versions": [
+                    "versions.yml:md5,168ddf5d2325c3dfe5959865ead422c3",
+                    "versions.yml:md5,a29b0abb3251c925c794dd3d01a9e47b",
+                    "versions.yml:md5,fbcc2bf4987f9f05018d9ffa49cb2d98"
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.2",
+            "nextflow": "25.04.2"
+        },
+        "timestamp": "2025-05-28T09:54:09.174981"
+    }
+}

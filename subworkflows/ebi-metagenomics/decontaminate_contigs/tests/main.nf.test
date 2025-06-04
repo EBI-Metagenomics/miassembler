@@ -1,0 +1,150 @@
+nextflow_workflow {
+
+    name "Test subworkflow DECONTAMINATE_CONTIGS"
+    script "../main.nf"
+    config "../nextflow.config"
+    workflow "DECONTAMINATE_CONTIGS"
+
+    tag "subworkflows"
+    tag "subworkflows_ebimetagenomics"
+    tag "subworkflows/decontaminate_contigs"
+    tag "minimap2/align"
+    tag "seqkit/grep"
+    tag "filterpaf"
+
+    test("Run DECONTAMINATE_CONTIGS swf - contaminated contigs input") {
+        when {
+            params {
+                output_path = "${outputDir}"
+            }
+            workflow {
+                """
+                input[0] = Channel.of( [ [id:'test'], file("${moduleDir}/tests/data/test_contaminated.fa", checkIfExists: true) ] )
+                input[1] = Channel.of( [ [id:'test'], file("${moduleDir}/tests/data/ref.fa", checkIfExists: true) ] )
+                """
+            }
+        }
+        then {
+            assertAll(
+                { assert workflow.success },
+                { assert snapshot(workflow.out).match() },
+                {
+                    def contaminated_contigs = path("${moduleDir}/tests/data/test_contaminated.fa").fasta
+                    assert contaminated_contigs.size() == 4
+                    assert "ERZ18545498.1194 atg000172l" in contaminated_contigs
+                    assert "ERZ18545498.8 ptg000008l" in contaminated_contigs
+                    assert "ERZ18545498.980 ptg000980l" in contaminated_contigs
+                    assert "Fake contamination" in contaminated_contigs
+                },
+                {
+                    def cleaned_contigs = path(workflow.out.cleaned_contigs.get(0).get(1)).fasta
+                    assert "ERZ18545498.1194 atg000172l" in cleaned_contigs
+                    assert "ERZ18545498.8 ptg000008l" in cleaned_contigs
+                    // Contaminated contigs
+                    assert !("ERZ18545498.980 ptg000980l" in cleaned_contigs)
+                    assert !("Fake contamination" in cleaned_contigs)
+                },
+            )
+        }
+    }
+
+    test("Run DECONTAMINATE_CONTIGS swf - contaminated contigs input gz") {
+        when {
+            params {
+                output_path = "${outputDir}"
+            }
+            workflow {
+                """
+                input[0] = Channel.of( [ [id:'test'], file("${moduleDir}/tests/data/test_contaminated.fa.gz", checkIfExists: true) ] )
+                input[1] = Channel.of( [ [id:'test'], file("${moduleDir}/tests/data/ref.fa", checkIfExists: true) ] )
+                """
+            }
+        }
+        then {
+            assertAll(
+                { assert workflow.success },
+                { assert snapshot(workflow.out).match() },
+                {
+                    def contaminated_contigs = path("${moduleDir}/tests/data/test_contaminated.fa.gz").fasta
+                    assert contaminated_contigs.size() == 4
+                    assert "ERZ18545498.1194 atg000172l" in contaminated_contigs
+                    assert "ERZ18545498.8 ptg000008l" in contaminated_contigs
+                    assert "ERZ18545498.980 ptg000980l" in contaminated_contigs
+                    assert "Fake contamination" in contaminated_contigs
+                },
+                {
+                    def cleaned_contigs = path(workflow.out.cleaned_contigs.get(0).get(1)).fasta
+                    assert "ERZ18545498.1194 atg000172l" in cleaned_contigs
+                    assert "ERZ18545498.8 ptg000008l" in cleaned_contigs
+                    // Contaminated contigs
+                    assert !("ERZ18545498.980 ptg000980l" in cleaned_contigs)
+                    assert !("Fake contamination" in cleaned_contigs)
+                },
+            )
+        }
+    }
+
+    test("Run DECONTAMINATE_CONTIGS swf - uncontaminated contigs input") {
+        when {
+            params {
+                output_path = "${outputDir}"
+            }
+            workflow {
+                """
+                input[0] = Channel.of( [ [id:'test'], file("${moduleDir}/tests/data/test_not_contaminated.fa", checkIfExists: true) ] )
+                input[1] = Channel.of( [ [id:'test'], file("${moduleDir}/tests/data/ref.fa", checkIfExists: true) ] )
+                """
+            }
+        }
+        then {
+            assertAll(
+                { assert workflow.success },
+                { assert snapshot(workflow.out).match() },
+                {
+                    def not_contaminated_contigs = path("${moduleDir}/tests/data/test_not_contaminated.fa").fasta
+                    assert not_contaminated_contigs.size() == 2
+                    assert "ERZ18545498.1194 atg000172l" in not_contaminated_contigs
+                    assert "ERZ18545498.8 ptg000008l" in not_contaminated_contigs
+                },
+                {
+                    def cleaned_contigs = path(workflow.out.cleaned_contigs.get(0).get(1)).fasta
+                    assert "ERZ18545498.1194 atg000172l" in cleaned_contigs
+                    assert "ERZ18545498.8 ptg000008l" in cleaned_contigs
+                    assert cleaned_contigs.size() == 2
+                },
+            )
+        }
+    }
+
+    test("Run DECONTAMINATE_CONTIGS swf - uncontaminated contigs input gz") {
+        when {
+            params {
+                output_path = "${outputDir}"
+            }
+            workflow {
+                """
+                input[0] = Channel.of( [ [id:'test'], file("${moduleDir}/tests/data/test_not_contaminated.fa.gz", checkIfExists: true) ] )
+                input[1] = Channel.of( [ [id:'test'], file("${moduleDir}/tests/data/ref.fa", checkIfExists: true) ] )
+                """
+            }
+        }
+        then {
+            assertAll(
+                { assert workflow.success },
+                { assert snapshot(workflow.out).match() },
+                {
+                    def not_contaminated_contigs = path("${moduleDir}/tests/data/test_not_contaminated.fa.gz").fasta
+                    assert not_contaminated_contigs.size() == 2
+                    assert "ERZ18545498.1194 atg000172l" in not_contaminated_contigs
+                    assert "ERZ18545498.8 ptg000008l" in not_contaminated_contigs
+                },
+                {
+                    def cleaned_contigs = path(workflow.out.cleaned_contigs.get(0).get(1)).fasta
+                    assert "ERZ18545498.1194 atg000172l" in cleaned_contigs
+                    assert "ERZ18545498.8 ptg000008l" in cleaned_contigs
+                    assert cleaned_contigs.size() == 2
+                },
+            )
+        }
+    }
+}
