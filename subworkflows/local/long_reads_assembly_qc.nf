@@ -1,5 +1,5 @@
-include { MINIMAP2_ALIGN as MINIMAP2_ALIGN_HUMAN } from '../../modules/nf-core/minimap2/align/main'
-include { MINIMAP2_ALIGN as MINIMAP_ALIGN_HOST   } from '../../modules/nf-core/minimap2/align/main'
+include { DECONTAMINATE_CONTIGS as HUMAN_DECONTAMINATE_CONTIGS } from '../../subworkflows/ebi-metagenomics/decontaminate_contigs/main'
+include { DECONTAMINATE_CONTIGS as HOST_DECONTAMINATE_CONTIGS  } from '../../subworkflows/ebi-metagenomics/decontaminate_contigs/main'
 
 workflow LONG_READS_ASSEMBLY_QC {
 
@@ -9,55 +9,52 @@ workflow LONG_READS_ASSEMBLY_QC {
 
     main:
 
-    def ch_versions = Channel.empty()
-    def human_reference = Channel.empty()
-    def host_reference = Channel.empty()
-    def decontaminated_assembly = assembly
+    ch_versions = Channel.empty()
 
     if ( params.remove_human ) {
-        human_reference = Channel.fromPath(
-            "${params.reference_genomes_folder}/${params.human_fasta_prefix}.f*a", checkIfExists: true)
-            .collect().map {
-                files -> [ ["id": params.human_fasta_prefix], files ]
+
+        ch_human_ref = Channel
+            .fromPath(
+                "${params.reference_genomes_folder}/${params.human_fasta_prefix}.f*a",
+                checkIfExists: true
+            )
+            .collect() // TODO I don't think collect() is needed here, but it was used in the original code
+            .map {
+                file -> [ ["id": params.human_fasta_prefix], file ]
             }
 
-        MINIMAP2_ALIGN_HUMAN(
+        HUMAN_DECONTAMINATE_CONTIGS(
             assembly,
-            human_reference,
-            "human_post",
-            "fasta",    // out sequence extension
-            true,       // output bam format
-            "bai",      // bam index extension
-            false,      // no CIGAR in paf format
-            true        // allow for long CIGAR
+            ch_human_ref
         )
 
-        ch_versions = ch_versions.mix(MINIMAP2_ALIGN_HUMAN.out.versions)
+        ch_versions = ch_versions.mix(HUMAN_DECONTAMINATE_CONTIGS.out.versions)
 
-        decontaminated_assembly = MINIMAP2_ALIGN_HUMAN.out.filtered_output
+        decontaminated_assembly = HUMAN_DECONTAMINATE_CONTIGS.out.cleaned_contigs
+
+    } else {
+        decontaminated_assembly = assembly
     }
 
-    if ( reference_genome != null ) {
+    if ( reference_genome ) {
 
-        host_reference = Channel.fromPath( "${params.reference_genomes_folder}/${reference_genome}*", checkIfExists: true)
-            .collect().map {
-                files -> [ ["id": reference_genome], files ]
+        ch_contaminat_ref = Channel
+            .fromPath(
+                "${params.reference_genomes_folder}/${reference_genome}",
+                checkIfExists: true
+            )
+            .map {
+                file -> [ ["id": reference_genome], file ]
             }
 
-        MINIMAP_ALIGN_HOST(
+        HOST_DECONTAMINATE_CONTIGS(
             decontaminated_assembly,
-            host_reference,
-            "host_post",
-            "fasta",    // out sequence extension
-            true,       // output bam format
-            "bai",      // bam index extension
-            false,      // no CIGAR in paf format
-            true        // allow for long CIGAR
+            ch_contaminat_ref
         )
 
-        ch_versions = ch_versions.mix(MINIMAP_ALIGN_HOST.out.versions)
+        ch_versions = ch_versions.mix(HOST_DECONTAMINATE_CONTIGS.out.versions)
 
-        decontaminated_assembly = MINIMAP_ALIGN_HOST.out.filtered_output
+        decontaminated_assembly = HOST_DECONTAMINATE_CONTIGS.out.cleaned_contigs
     }
 
     emit:
