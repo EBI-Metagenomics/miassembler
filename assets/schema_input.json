@@ -63,6 +63,19 @@
             },
             "assembler_config": {
                 "type": "string"
+            },
+            "contaminant_reference": {
+                "errorMessage": "Fasta file for decontamination cannot contain spaces and must have extension '.fa.gz' or '.fasta.gz'",
+                "anyOf": [
+                    {
+                        "type": "string",
+                        "pattern": "^\\S+\\.f(ast)?a\\.gz$"
+                    },
+                    {
+                        "type": "string",
+                        "maxLength": 0
+                    }
+                ]
             }
         },
         "required": ["study_accession", "reads_accession", "fastq_1", "library_layout", "library_strategy"]

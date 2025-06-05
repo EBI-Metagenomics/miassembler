@@ -86,7 +86,7 @@ workflow MIASSEMBLER {
     log.info(logo + paramsSummaryLog(workflow) + citation)
 
     if (params.samplesheet) {
-        def groupReads = { study_accession, reads_accession, fq1, fq2, library_layout, library_strategy, platform, assembler, assembly_memory, assembler_config ->
+        def groupReads = { study_accession, reads_accession, fq1, fq2, library_layout, library_strategy, platform, assembler, assembly_memory, assembler_config, contaminant_reference ->
             if (fq2 == []) {
                 return tuple(["id": reads_accession,
                               "study_accession": study_accession,
@@ -96,7 +96,8 @@ workflow MIASSEMBLER {
                               "platform": params.platform ?: platform,
                               "assembler": assembler ?: params.assembler,
                               "assembly_memory": assembly_memory ?: params.assembly_memory,
-                              "assembler_config": assembler_config ?: params.long_reads_assembler_config
+                              "assembler_config": assembler_config ?: params.long_reads_assembler_config,
+                              "contaminant_reference": contaminant_reference ?: params.contaminant_genome
                             ],
                             [fq1]
                         )
@@ -109,7 +110,8 @@ workflow MIASSEMBLER {
                               "platform": params.platform ?: platform,
                               "assembler": assembler ?: params.assembler,
                               "assembly_memory": assembly_memory ?: params.assembly_memory,
-                              "assembler_config": assembler_config ?: params.long_reads_assembler_config
+                              "assembler_config": assembler_config ?: params.long_reads_assembler_config,
+                              "contaminant_reference": contaminant_reference ?: params.contaminant_genome
                             ],
                             [fq1, fq2])
             }

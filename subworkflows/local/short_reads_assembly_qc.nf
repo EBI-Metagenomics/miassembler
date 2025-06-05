@@ -20,7 +20,6 @@ workflow SHORT_READS_ASSEMBLY_QC {
 
     take:
     assembly               // [ val(meta), path(assembly_fasta) ]
-    reference_genome       // [ val(reference_file) ]
 
     main:
 
@@ -39,6 +38,7 @@ workflow SHORT_READS_ASSEMBLY_QC {
                 "${params.reference_genomes_folder}/${params.human_phix_ref}",
                 checkIfExists: true
             )
+            .collect() // TODO Check if collect() is needed here to ensure ref is a val channel
             .map {
                 file -> [ ["id": params.human_phix_ref], file ]
             }
@@ -48,38 +48,35 @@ workflow SHORT_READS_ASSEMBLY_QC {
             ch_human_phix_refs
         )
 
-        filtered_contigs = HUMAN_PHIX_DECONTAMINATE_CONTIGS.out.cleaned_contigs
+        prefiltered_assemblies = HUMAN_PHIX_DECONTAMINATE_CONTIGS.out.cleaned_contigs
 
         ch_versions = ch_versions.mix(HUMAN_PHIX_DECONTAMINATE_CONTIGS.out.versions)
 
     } else {
-        filtered_contigs = SEQKIT_SEQ.out.fastx
+        prefiltered_assemblies = SEQKIT_SEQ.out.fastx
     }
 
-    if ( reference_genome ) {
+    prefiltered_assemblies.branch { meta, assembly_fasta ->
+        run_decontamination: meta.contaminant_reference != null
+        skip_decontamination: meta.contaminant_reference == null
+        }
+        .set { subdivided_assemblies }
 
-        ch_contaminat_ref = Channel
-            .fromPath(
-                "${params.reference_genomes_folder}/${reference_genome}",
-                checkIfExists: true
-            )
-            .map {
-                file -> [ ["id": reference_genome], file ]
-            }
+    subdivided_assemblies.run_decontamination
+        .multiMap { meta, assembly_fasta ->
+        metagenome: [meta, assembly_fasta]
+        contaminant_reference: [meta, meta.contaminant_reference]
+        }
+        .set { ch_decontamination_input }
 
-        HOST_DECONTAMINATE_CONTIGS(
-            filtered_contigs,
-            ch_contaminat_ref
-        )
+    HOST_DECONTAMINATE_CONTIGS(
+        ch_decontamination_input.metagenome,
+        ch_decontamination_input.contaminant_reference
+    )
 
-        cleaned_contigs = HOST_DECONTAMINATE_CONTIGS.out.cleaned_contigs
+    cleaned_contigs = subdivided_assemblies.skip_decontamination.mix(HOST_DECONTAMINATE_CONTIGS.out.cleaned_contigs)
 
-        ch_versions = ch_versions.mix(HOST_DECONTAMINATE_CONTIGS.out.versions)
-
-    } else {
-        // If no reference genome is provided, we use the filtered contigs downstream
-        cleaned_contigs = filtered_contigs
-    }
+    ch_versions = ch_versions.mix(HOST_DECONTAMINATE_CONTIGS.out.versions)
 
     /***************************************************************************/
     /*  Cleaned assemblies that fail the following rule:                       */
