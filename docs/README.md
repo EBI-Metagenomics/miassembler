@@ -13,11 +13,11 @@ For the assembly of short metagenomic reads the pipeline uses [SPAdes](https://d
 1. Read QC using [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
 2. Present QC for raw reads and assembly [MultiQC](http://multiqc.info/)
 3. Performs assembly using [MEGAHIT](https://github.com/voutcn/megahit) and [SPAdes](http://cab.spbu.ru/software/spades/), and checks assembly quality using [Quast](http://quast.sourceforge.net/quast)
-4. Removes contaminated contigs using [BLASTN](https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&PAGE_TYPE=Blastdocs) and [SeqKit](https://bioinf.shenwei.me/seqkit/)
+4. Removes contaminated contigs using [Minimap2](https://github.com/lh3/minimap2) and [SeqKit](https://bioinf.shenwei.me/seqkit/)
 5. Calculates assembly coverage using [MetaBAT2](https://bitbucket.org/berkeleylab/metabat/src/master/) metabat2_jgi_summarizebamcontigdepths for per contig depth and [Samtools idxstats](http://www.htslib.org/doc/samtools-idxstats.html) for alignment summary statistics.
 
 ### Required DBs:
-
+<!-- TODO replace databases with new ones -->
 - `--blast_reference_genomes_folder`: mandatory **human_phiX** is provided on [FTP](https://ftp.ebi.ac.uk/pub/databases/metagenomics/pipelines/references/)
 - `--bwamem2_reference_genomes_folder`: mandatory **human_phiX** is provided on [FTP](https://ftp.ebi.ac.uk/pub/databases/metagenomics/pipelines/references/)
 
