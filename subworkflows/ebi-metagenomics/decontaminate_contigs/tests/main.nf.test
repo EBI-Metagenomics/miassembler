@@ -19,8 +19,12 @@ nextflow_workflow {
             }
             workflow {
                 """
-                input[0] = Channel.of( [ [id:'test'], file("${moduleDir}/tests/data/test_contaminated.fa", checkIfExists: true) ] )
-                input[1] = Channel.of( [ [id:'test'], file("${moduleDir}/tests/data/ref.fa", checkIfExists: true) ] )
+                input[0] = Channel.of(
+                    [
+                        [ [id:'test'], file("${moduleDir}/tests/data/test_contaminated.fa", checkIfExists: true) ],
+                        file("${moduleDir}/tests/data/ref.fa", checkIfExists: true)
+                    ]
+                )
                 """
             }
         }
@@ -55,8 +59,12 @@ nextflow_workflow {
             }
             workflow {
                 """
-                input[0] = Channel.of( [ [id:'test'], file("${moduleDir}/tests/data/test_contaminated.fa.gz", checkIfExists: true) ] )
-                input[1] = Channel.of( [ [id:'test'], file("${moduleDir}/tests/data/ref.fa", checkIfExists: true) ] )
+                input[0] = Channel.of(
+                    [
+                        [ [id:'test'], file("${moduleDir}/tests/data/test_contaminated.fa.gz", checkIfExists: true) ],
+                        file("${moduleDir}/tests/data/ref.fa", checkIfExists: true)
+                    ]
+                )
                 """
             }
         }
@@ -91,8 +99,12 @@ nextflow_workflow {
             }
             workflow {
                 """
-                input[0] = Channel.of( [ [id:'test'], file("${moduleDir}/tests/data/test_not_contaminated.fa", checkIfExists: true) ] )
-                input[1] = Channel.of( [ [id:'test'], file("${moduleDir}/tests/data/ref.fa", checkIfExists: true) ] )
+                input[0] = Channel.of(
+                    [
+                        [ [id:'test'], file("${moduleDir}/tests/data/test_not_contaminated.fa", checkIfExists: true) ],
+                        file("${moduleDir}/tests/data/ref.fa", checkIfExists: true)
+                    ]
+                )
                 """
             }
         }
@@ -123,8 +135,12 @@ nextflow_workflow {
             }
             workflow {
                 """
-                input[0] = Channel.of( [ [id:'test'], file("${moduleDir}/tests/data/test_not_contaminated.fa.gz", checkIfExists: true) ] )
-                input[1] = Channel.of( [ [id:'test'], file("${moduleDir}/tests/data/ref.fa", checkIfExists: true) ] )
+                input[0] = Channel.of(
+                    [
+                        [ [id:'test'], file("${moduleDir}/tests/data/test_not_contaminated.fa.gz", checkIfExists: true) ],
+                        file("${moduleDir}/tests/data/ref.fa", checkIfExists: true)
+                    ]
+                )
                 """
             }
         }

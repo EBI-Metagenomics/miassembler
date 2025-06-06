@@ -2,22 +2,10 @@ name: "decontaminate_contigs"
 description: |
   MGnify decontamination workflow for contigs.
 
-  Important: meta compatibility requirement
-
-  When using this subworkflow, ensure that 'contigs' and 'contaminant_genomes'
-  channels are joinable by the first element of their meta attributes.
-
-  This is required to properly join the channels and prevent cleaning contigs
-  with incorrect reference genomes.
-
   Decontamination algorithm:
-  Remove contigs with alignment > min_align_len bp
-  OR
-  (query coverage ≥ min_qcov AND mapping quality ≥ min_mapq)
-
-  Rationale: Long PacBio HiFi contigs (8+ Mbp) may have large partial
-  alignments (3+ Mbp) to contaminants, making absolute length more
-  informative than coverage percentage.
+    Remove contigs with query coverage ≥ min_qcov
+      AND
+    percentage identity ≥ min_pid
 
 keywords:
   - host decontamination
@@ -31,18 +19,14 @@ components:
   - seqkit
 
 input:
-  - contigs:
-      type: map
+  - contigs_and_reference:
+      type: tuple
       description: |
-        An input channel containing one or more files with assembly contigs.
-        Structure: [ meta, assembly_fasta ]
+        An input channel containing one or more tuples with pairs contigs - contaminant reference.
+        Fasta files can be compressed or uncompressed.
+        Structure: [ [meta, assembly_fasta], reference_fasta ]
       pattern: "*.{fa,fna,fasta}[.gz]"
-  - contaminant_genomes:
-      type: map
-      description: |
-        An input channel containing one or more reference contigs to be removed from the assembly.
-        Structure: [ meta, reference_fasta ]
-      pattern: "*.{fa,fna,fasta}[.gz]"
+
 output:
   - cleaned_contigs:
       type: map
