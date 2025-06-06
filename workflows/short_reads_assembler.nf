@@ -146,10 +146,7 @@ workflow SHORT_READS_ASSEMBLER {
     def assembly = SPADES.out.contigs.mix(MEGAHIT.out.contigs)
 
     // Clean the assembly contigs //
-    SHORT_READS_ASSEMBLY_QC(
-        assembly,
-        params.reference_genome
-    )
+    SHORT_READS_ASSEMBLY_QC(assembly)
     ch_versions = ch_versions.mix(SHORT_READS_ASSEMBLY_QC.out.versions)
 
     // Coverage //

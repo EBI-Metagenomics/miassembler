@@ -5,59 +5,47 @@ workflow LONG_READS_ASSEMBLY_QC {
 
     take:
     assembly            // [ val(meta), path(assembly_fasta) ]
-    reference_genome    // [ val(reference_file) ]
 
     main:
-
     ch_versions = Channel.empty()
 
     if ( params.remove_human ) {
 
-        ch_human_ref = Channel
-            .fromPath(
-                "${params.reference_genomes_folder}/${params.human_fasta_prefix}.f*a",
-                checkIfExists: true
-            )
-            .collect() // TODO I don't think collect() is needed here, but it was used in the original code
-            .map {
-                file -> [ ["id": params.human_fasta_prefix], file ]
-            }
+        ch_human_decontamination_input = assembly.map {
+            // TODO decide if params.human_phix_ref is filename or path
+            meta, assembly_file -> [ [meta, assembly_file ], params.human_ref ]
+        }
 
-        HUMAN_DECONTAMINATE_CONTIGS(
-            assembly,
-            ch_human_ref
-        )
-
+        HUMAN_DECONTAMINATE_CONTIGS(ch_human_decontamination_input)
+        prefiltered_assemblies = HUMAN_DECONTAMINATE_CONTIGS.out.cleaned_contigs
         ch_versions = ch_versions.mix(HUMAN_DECONTAMINATE_CONTIGS.out.versions)
 
-        decontaminated_assembly = HUMAN_DECONTAMINATE_CONTIGS.out.cleaned_contigs
-
     } else {
-        decontaminated_assembly = assembly
+        prefiltered_assemblies = assembly
     }
 
-    if ( reference_genome ) {
+    prefiltered_assemblies
+        .branch { meta, _contigs ->
+            run_decontamination: meta.contaminant_reference != null
+            skip_decontamination: meta.contaminant_reference == null
+        }
+        .set { subdivided_assemblies }
 
-        ch_contaminat_ref = Channel
-            .fromPath(
-                "${params.reference_genomes_folder}/${reference_genome}",
-                checkIfExists: true
-            )
-            .map {
-                file -> [ ["id": reference_genome], file ]
-            }
+    subdivided_assemblies.run_decontamination
+        .map { meta, contigs ->
+            [ [meta, contigs], meta.contaminant_reference ]
+        }
+        .set { ch_decontamination_input }
 
-        HOST_DECONTAMINATE_CONTIGS(
-            decontaminated_assembly,
-            ch_contaminat_ref
-        )
+    HOST_DECONTAMINATE_CONTIGS(ch_decontamination_input)
 
-        ch_versions = ch_versions.mix(HOST_DECONTAMINATE_CONTIGS.out.versions)
+    cleaned_contigs = subdivided_assemblies.skip_decontamination.mix(
+        HOST_DECONTAMINATE_CONTIGS.out.cleaned_contigs
+    )
 
-        decontaminated_assembly = HOST_DECONTAMINATE_CONTIGS.out.cleaned_contigs
-    }
+    ch_versions = ch_versions.mix(HOST_DECONTAMINATE_CONTIGS.out.versions)
 
     emit:
-    contigs  = decontaminated_assembly
+    contigs  = cleaned_contigs
     versions = ch_versions
 }

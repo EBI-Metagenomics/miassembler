@@ -138,10 +138,7 @@ workflow LONG_READS_ASSEMBLER {
     // /* Post-assembly: host decontamination, frame-shift correction, coverage and stats */
     // /**********************************************************************************/
 
-    LONG_READS_ASSEMBLY_QC(
-        assembly,
-        params.reference_genome
-    )
+    LONG_READS_ASSEMBLY_QC(assembly)
     ch_versions = ch_versions.mix(LONG_READS_ASSEMBLY_QC.out.versions)
 
     def decontaminated_assembly = LONG_READS_ASSEMBLY_QC.out.contigs
