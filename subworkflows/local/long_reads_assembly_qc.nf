@@ -9,22 +9,34 @@ workflow LONG_READS_ASSEMBLY_QC {
     main:
     ch_versions = Channel.empty()
 
-    if ( params.remove_human ) {
-
-        ch_human_decontamination_input = assembly.map {
-            // TODO decide if params.human_phix_ref is filename or path
-            meta, assembly_file -> [ [meta, assembly_file ], params.human_ref ]
+    /***************************************************************************/
+    /* Perform decontamination from human sequences if requested               */
+    /***************************************************************************/
+    assembly
+        .branch { meta, _contigs ->
+            run_decontamination: meta.human_reference != null
+            skip_decontamination: meta.human_reference == null
         }
+        .set { human_subdivided_assemblies }
 
-        HUMAN_DECONTAMINATE_CONTIGS(ch_human_decontamination_input)
-        prefiltered_assemblies = HUMAN_DECONTAMINATE_CONTIGS.out.cleaned_contigs
-        ch_versions = ch_versions.mix(HUMAN_DECONTAMINATE_CONTIGS.out.versions)
+    human_subdivided_assemblies.run_decontamination
+        .map { meta, contigs ->
+            [ [meta, contigs], meta.human_reference ]
+        }
+        .set { ch_human_decontamination_input }
 
-    } else {
-        prefiltered_assemblies = assembly
-    }
+    HUMAN_DECONTAMINATE_CONTIGS(ch_human_decontamination_input)
+    ch_versions = ch_versions.mix(HUMAN_DECONTAMINATE_CONTIGS.out.versions)
 
-    prefiltered_assemblies
+    human_cleaned_contigs = human_subdivided_assemblies.skip_decontamination.mix(
+        HUMAN_DECONTAMINATE_CONTIGS.out.cleaned_contigs
+    )
+
+    /***************************************************************************/
+    /* Perform decontamination from arbitrary contaminant sequences            */
+    /***************************************************************************/
+
+    human_cleaned_contigs
         .branch { meta, _contigs ->
             run_decontamination: meta.contaminant_reference != null
             skip_decontamination: meta.contaminant_reference == null

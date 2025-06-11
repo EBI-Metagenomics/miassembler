@@ -1,4 +1,5 @@
-include { DECONTAMINATE_CONTIGS as HUMAN_PHIX_DECONTAMINATE_CONTIGS } from '../../subworkflows/ebi-metagenomics/decontaminate_contigs/main'
+include { DECONTAMINATE_CONTIGS as HUMAN_DECONTAMINATE_CONTIGS } from '../../subworkflows/ebi-metagenomics/decontaminate_contigs/main'
+include { DECONTAMINATE_CONTIGS as PHIX_DECONTAMINATE_CONTIGS } from '../../subworkflows/ebi-metagenomics/decontaminate_contigs/main'
 include { DECONTAMINATE_CONTIGS as HOST_DECONTAMINATE_CONTIGS       } from '../../subworkflows/ebi-metagenomics/decontaminate_contigs/main'
 include { SEQKIT_SEQ                                                } from '../../modules/nf-core/seqkit/seq/main'
 
@@ -22,28 +23,63 @@ workflow SHORT_READS_ASSEMBLY_QC {
     assembly               // [ val(meta), path(assembly_fasta) ]
 
     main:
-
     ch_versions = Channel.empty()
 
     /* Len filter using the parameter "short_reads_min_contig_length" */
     SEQKIT_SEQ(assembly)
     ch_versions = ch_versions.mix(SEQKIT_SEQ.out.versions)
 
-    if ( params.remove_human_phix ) {
 
-        ch_human_phix_decontamination_input = SEQKIT_SEQ.out.fastx.map {
-            meta, assembly_file -> [ [meta, assembly_file ], params.human_phix_ref ]
+    /***************************************************************************/
+    /* Perform decontamination from PhiX sequences if requested                */
+    /***************************************************************************/
+    SEQKIT_SEQ.out.fastx
+        .branch { meta, _contigs ->
+            run_decontamination: meta.phix_reference != null
+            skip_decontamination: meta.phix_reference == null
         }
+        .set { phix_subdivided_assemblies }
 
-        HUMAN_PHIX_DECONTAMINATE_CONTIGS(ch_human_phix_decontamination_input)
-        prefiltered_assemblies = HUMAN_PHIX_DECONTAMINATE_CONTIGS.out.cleaned_contigs
-        ch_versions = ch_versions.mix(HUMAN_PHIX_DECONTAMINATE_CONTIGS.out.versions)
+    phix_subdivided_assemblies.run_decontamination
+        .map { meta, contigs ->
+            [ [meta, contigs], meta.phix_reference ]
+        }
+        .set { ch_phix_decontamination_input }
 
-    } else {
-        prefiltered_assemblies = SEQKIT_SEQ.out.fastx
-    }
+    PHIX_DECONTAMINATE_CONTIGS(ch_phix_decontamination_input)
+    ch_versions = ch_versions.mix(PHIX_DECONTAMINATE_CONTIGS.out.versions)
 
-    prefiltered_assemblies
+    phix_cleaned_contigs = phix_subdivided_assemblies.skip_decontamination.mix(
+        PHIX_DECONTAMINATE_CONTIGS.out.cleaned_contigs
+    )
+
+    /***************************************************************************/
+    /* Perform decontamination from human sequences if requested               */
+    /***************************************************************************/
+    phix_cleaned_contigs
+        .branch { meta, _contigs ->
+            run_decontamination: meta.human_reference != null
+            skip_decontamination: meta.human_reference == null
+        }
+        .set { human_subdivided_assemblies }
+
+    human_subdivided_assemblies.run_decontamination
+        .map { meta, contigs ->
+            [ [meta, contigs], meta.human_reference ]
+        }
+        .set { ch_human_decontamination_input }
+
+    HUMAN_DECONTAMINATE_CONTIGS(ch_human_decontamination_input)
+    ch_versions = ch_versions.mix(HUMAN_DECONTAMINATE_CONTIGS.out.versions)
+
+    human_cleaned_contigs = human_subdivided_assemblies.skip_decontamination.mix(
+        HUMAN_DECONTAMINATE_CONTIGS.out.cleaned_contigs
+    )
+
+    /***************************************************************************/
+    /* Perform decontamination from arbitrary contaminant sequences            */
+    /***************************************************************************/
+    human_cleaned_contigs
         .branch { meta, _contigs ->
             run_decontamination: meta.contaminant_reference != null
             skip_decontamination: meta.contaminant_reference == null
@@ -57,12 +93,12 @@ workflow SHORT_READS_ASSEMBLY_QC {
         .set { ch_decontamination_input }
 
     HOST_DECONTAMINATE_CONTIGS(ch_decontamination_input)
+    ch_versions = ch_versions.mix(HOST_DECONTAMINATE_CONTIGS.out.versions)
 
     cleaned_contigs = subdivided_assemblies.skip_decontamination.mix(
         HOST_DECONTAMINATE_CONTIGS.out.cleaned_contigs
     )
 
-    ch_versions = ch_versions.mix(HOST_DECONTAMINATE_CONTIGS.out.versions)
 
     /***************************************************************************/
     /*  Cleaned assemblies that fail the following rule:                       */
