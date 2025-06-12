@@ -298,7 +298,7 @@ nextflow_pipeline {
         }
     }
 
-    test("Samplesheet long reads HQ - hifi should fail") {
+    test("Samplesheet long reads ONT and hifi HQ - hifi should fail") {
 
         tag "samplesheet"
         tag "LR"
@@ -313,8 +313,27 @@ nextflow_pipeline {
 
         then {
             with(workflow) {
-                assert trace.succeeded().count{ task -> task.name.contains("ONT_HQ:FLYE") } == 1
+                assert trace.succeeded().count{ task -> task.name.contains("FASTQC_BEFORE") } == 2
+                assert trace.succeeded().count{ task -> task.name.contains("LONG_READS_QC:FASTP_LR") } == 2
+                assert trace.succeeded().count{ task -> task.name.contains("LONG_READS_QC:MINIMAP2_ALIGN_HUMAN") } == 2
+                assert trace.succeeded().count{ task -> task.name.contains("FASTQC_AFTER") } == 2
+                
+                assert trace.succeeded().count{ task -> task.name.contains("PACBIO_HIFI:HIFIADAPTERFILT") } == 1
                 assert trace.failed().count{ task -> task.name.contains("PACBIO_HIFI:FLYE") } == 1
+                
+                assert trace.succeeded().count{ task -> task.name.contains("ONT_HQ:PORECHOP_ABI") } == 1
+                assert trace.succeeded().count{ task -> task.name.contains("ONT_HQ:FLYE") } == 1
+                assert trace.succeeded().count{ task -> task.name.contains("LONG_READS_ASSEMBLY_QC:MINIMAP2_ALIGN_HUMAN") } == 1
+                assert trace.succeeded().count{ task -> task.name.contains("FRAMESHIFT_CORRECTION:PROOVFRAME_MAP") } == 1
+                assert trace.succeeded().count{ task -> task.name.contains("FRAMESHIFT_CORRECTION:PROOVFRAME_FIX") } == 1
+                assert trace.succeeded().count{ task -> task.name.contains("LONG_READS_ASSEMBLY_COVERAGE:LONG_READS_COVERAGE") } == 1
+                assert trace.succeeded().count{ task -> task.name.contains("QUAST") } == 1
+                assert trace.succeeded().count{ task -> task.name.contains("LONG_READS_ASSEMBLY_COVERAGE:CALCULATE_ASSEMBLY_COVERAGE") } == 1
+                
+                assert trace.tasks().size() == 20
+
+                // This process should not have been called
+                assert trace.succeeded().count{ task -> task.name.contains("SHORT_READS") } == 0
             }
         }
     }
@@ -335,7 +354,20 @@ nextflow_pipeline {
         then {
             with(workflow) {
                 assert success
+
+                assert trace.succeeded().count{ task -> task.name.contains("FETCHTOOL_READS") } == 1
+                assert trace.succeeded().count{ task -> task.name.contains("FASTQC_BEFORE") } == 1
+                assert trace.succeeded().count{ task -> task.name.contains("LONG_READS_QC:FASTP_LR") } == 1
+                assert trace.succeeded().count{ task -> task.name.contains("LONG_READS_QC:MINIMAP2_ALIGN_HUMAN") } == 1
+                assert trace.succeeded().count{ task -> task.name.contains("FASTQC_AFTER") } == 1
+                assert trace.succeeded().count{ task -> task.name.contains("PACBIO_HIFI:HIFIADAPTERFILT") } == 1
                 assert trace.succeeded().count{ task -> task.name.contains("PACBIO_HIFI:FLYE") } == 1
+                assert trace.succeeded().count{ task -> task.name.contains("LONG_READS_ASSEMBLY_QC:MINIMAP2_ALIGN_HUMAN") } == 1
+                assert trace.succeeded().count{ task -> task.name.contains("LONG_READS_COVERAGE") } == 1
+                assert trace.succeeded().count{ task -> task.name.contains("CALCULATE_ASSEMBLY_COVERAGE") } == 1
+                assert trace.succeeded().count{ task -> task.name.contains("QUAST") } == 1
+
+                assert trace.tasks().size() == 13
             }
         }
     }
