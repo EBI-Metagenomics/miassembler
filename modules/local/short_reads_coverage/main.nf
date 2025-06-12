@@ -1,6 +1,6 @@
 process SHORT_READS_INDEX_FASTA {
 
-    label ['process_medium', 'error_retry']
+    label 'process_medium error_retry'
     tag "${meta.id}"
 
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
