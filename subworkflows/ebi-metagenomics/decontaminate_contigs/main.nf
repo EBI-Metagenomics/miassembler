@@ -26,7 +26,7 @@ workflow DECONTAMINATE_CONTIGS {
     contigs_and_reference
         .multiMap { assembly, contaminant_reference ->
             contigs: assembly
-            reference: [[id: contaminant_reference.baseName], contaminant_reference ]
+            reference: [[id: file(contaminant_reference).baseName], contaminant_reference ]
         }
         .set { minimap2_input_ch }
 

@@ -8,7 +8,7 @@ workflow LONG_READS_QC {
     input_reads        // [ val(meta), path(reads) ]
 
     main:
-    def ch_versions = Channel.empty()
+    ch_versions = Channel.empty()
 
     FASTP_LR(
         input_reads,
@@ -21,9 +21,9 @@ workflow LONG_READS_QC {
 
     ch_versions = ch_versions.mix(FASTP_LR.out.versions)
 
-    def reads_json = FASTP_LR.out.reads.join( FASTP_LR.out.json )
+    reads_json = FASTP_LR.out.reads.join( FASTP_LR.out.json )
 
-    def reads_quality_levels = reads_json.map { meta, reads, json ->
+    reads_quality_levels = reads_json.map { meta, reads, json ->
         def json_txt = new groovy.json.JsonSlurper().parseText(json.text)
 
         def q20_percentage = json_txt?.summary?.before_filtering?.q20_rate ?: 0;
@@ -50,7 +50,7 @@ workflow LONG_READS_QC {
     human_subdivided_reads.run_decontamination
         .multiMap { meta, reads ->
             reads: [meta, reads]
-            reference: [ [id:"human"], meta.human_reference ]
+            reference: [ [id:"human"], "${params.reference_genomes_folder}/${meta.human_reference}" ]
         }
         .set { ch_human_decontamination_input }
 
@@ -74,7 +74,6 @@ workflow LONG_READS_QC {
     /***************************************************************************/
     /* Perform decontamination from arbitrary contaminant sequences            */
     /***************************************************************************/
-
     human_cleaned_reads
         .branch { meta, _reads ->
             run_decontamination: meta.contaminant_reference != null
@@ -85,7 +84,7 @@ workflow LONG_READS_QC {
     subdivided_reads.run_decontamination
         .multiMap { meta, reads ->
             reads: [meta, reads]
-            reference: [ [id:meta.contaminant_reference.baseName], meta.contaminant_reference ]
+            reference: [ [id:file(meta.contaminant_reference).baseName], "${params.reference_genomes_folder}/${meta.contaminant_reference}" ]
         }
         .set { ch_decontamination_input }
 

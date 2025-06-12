@@ -42,7 +42,7 @@ workflow SHORT_READS_ASSEMBLY_QC {
 
     phix_subdivided_assemblies.run_decontamination
         .map { meta, contigs ->
-            [ [meta, contigs], meta.phix_reference ]
+            [ [meta, contigs], "${params.reference_genomes_folder}/${meta.phix_reference}" ]
         }
         .set { ch_phix_decontamination_input }
 
@@ -65,7 +65,7 @@ workflow SHORT_READS_ASSEMBLY_QC {
 
     human_subdivided_assemblies.run_decontamination
         .map { meta, contigs ->
-            [ [meta, contigs], meta.human_reference ]
+            [ [meta, contigs], "${params.reference_genomes_folder}/${meta.human_reference}" ]
         }
         .set { ch_human_decontamination_input }
 
@@ -88,7 +88,7 @@ workflow SHORT_READS_ASSEMBLY_QC {
 
     subdivided_assemblies.run_decontamination
         .map { meta, contigs ->
-            [ [meta, contigs], meta.contaminant_reference ]
+            [ [meta, contigs], "${params.reference_genomes_folder}/${meta.contaminant_reference}" ]
         }
         .set { ch_decontamination_input }
 
