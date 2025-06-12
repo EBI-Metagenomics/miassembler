@@ -91,7 +91,6 @@ workflow SHORT_READS_ASSEMBLER {
 
     SHORT_READS_QC(
         reads_by_assembler,
-        params.reference_genome
     )
     ch_versions = ch_versions.mix(SHORT_READS_QC.out.versions)
 
