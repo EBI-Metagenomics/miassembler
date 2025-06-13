@@ -121,6 +121,7 @@ nextflow_pipeline {
     test("metaSPAdes - too few contigs") {
 
         tag "ena-portal-api"
+        tag "SR"
 
         when {
 
@@ -325,10 +326,10 @@ nextflow_pipeline {
                 assert trace.succeeded().count{ task -> task.name.contains("LONG_READS_QC:FASTP_LR") } == 2
                 assert trace.succeeded().count{ task -> task.name.contains("LONG_READS_QC:MINIMAP2_ALIGN_HUMAN") } == 2
                 assert trace.succeeded().count{ task -> task.name.contains("FASTQC_AFTER") } == 2
-
                 assert trace.succeeded().count{ task -> task.name.contains("PACBIO_HIFI:HIFIADAPTERFILT") } == 1
+                
                 assert trace.failed().count{ task -> task.name.contains("PACBIO_HIFI:FLYE") } == 1
-
+                
                 assert trace.succeeded().count{ task -> task.name.contains("ONT_HQ:PORECHOP_ABI") } == 1
                 assert trace.succeeded().count{ task -> task.name.contains("ONT_HQ:FLYE") } == 1
                 assert trace.succeeded().count{ task -> task.name.contains("LONG_READS_ASSEMBLY_QC:HUMAN_DECONTAMINATE_CONTIGS") } == 3
@@ -376,6 +377,7 @@ nextflow_pipeline {
                 assert trace.succeeded().count{ task -> task.name.contains("LONG_READS_COVERAGE") } == 1
                 assert trace.succeeded().count{ task -> task.name.contains("CALCULATE_ASSEMBLY_COVERAGE") } == 1
                 assert trace.succeeded().count{ task -> task.name.contains("QUAST") } == 1
+
 
                 assert trace.tasks().size() == 15
             }
