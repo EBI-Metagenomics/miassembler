@@ -17,13 +17,12 @@ For the assembly of short metagenomic reads the pipeline uses [SPAdes](https://d
 5. Calculates assembly coverage using [MetaBAT2](https://bitbucket.org/berkeleylab/metabat/src/master/) metabat2_jgi_summarizebamcontigdepths for per contig depth and [Samtools idxstats](http://www.htslib.org/doc/samtools-idxstats.html) for alignment summary statistics.
 
 ### Required DBs:
-<!-- TODO replace databases with new ones -->
-- `--blast_reference_genomes_folder`: mandatory **human_phiX** is provided on [FTP](https://ftp.ebi.ac.uk/pub/databases/metagenomics/pipelines/references/)
-- `--bwamem2_reference_genomes_folder`: mandatory **human_phiX** is provided on [FTP](https://ftp.ebi.ac.uk/pub/databases/metagenomics/pipelines/references/)
 
-Blast and bwa-mem2 reference databases can be generated for any reference genome to polish input sequences with.
+- `--reference_genomes_folder`: Path to the folder that contains all required reference genomes in FASTA format as well as their indexes generated with bwa-mem2. **phiX** is provided on [FTP](https://ftp.ebi.ac.uk/pub/databases/metagenomics/pipelines/references/)
 
-#### BWA-MEM2
+bwa-mem2 index files must be generated for all genomes provided as refrences for read and contig decontamination.
+
+#### How to index reference genome with BWA-MEM2
 
 As explained in [bwa-mem2's README](https://github.com/bwa-mem2/bwa-mem2?tab=readme-ov-file#getting-started):
 
@@ -36,15 +35,7 @@ curl -L https://github.com/bwa-mem2/bwa-mem2/releases/download/v2.2.1/bwa-mem2-2
 bwa-mem2-2.2.1_x64-linux/bwa-mem2 index ref.fa
 ```
 
-This will generate multiple index files in a folder. The folder containing them is the one to use as `bwamem2_reference_genomes_folder`.
-
-#### BLAST
-
-```
-makeblastdb -in <ref.fa> -dbtype nucl -out <my_db_file>
-```
-
-As with bwa-mem2, numerous files will be generated in the same folder, which should be used for `blast_reference_genomes_folder`.
+This will generate multiple index files in a folder. Place them together with source FASTA file to `reference_genomes_folder`.
 
 ## Long reads
 
@@ -85,5 +76,5 @@ Finally, assembly coverage is calculated using [MetaBAT2](https://bitbucket.org/
 
 ### Required DBs:
 
-- `--reference_genome`: reference genome in FASTA format
+- `--reference_genomes_folder`: Path to the folder that contains all required reference genomes in FASTA format.
 - `--diamond_db`: pre-formatted diamond db to use in the frameshift correction step. Internally, we use NCBI_nr.
