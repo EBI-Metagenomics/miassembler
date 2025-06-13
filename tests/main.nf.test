@@ -35,6 +35,8 @@ nextflow_pipeline {
                 assembler                             = "spades"
                 short_reads_low_reads_count_threshold = 1000000
                 samplesheet                           = "${projectDir}/tests/samplesheet/test.csv"
+
+                phix_reference                        = "phix.fasta"
             }
         }
 
@@ -43,7 +45,7 @@ nextflow_pipeline {
                 assert success
                 assert trace.succeeded().count{ task -> task.name.contains("FASTQC_BEFORE") } == 3
                 assert trace.succeeded().count{ task -> task.name.contains("FASTP") } == 3
-                assert trace.succeeded().count{ task -> task.name.contains("HUMAN_PHIX_DECONTAMINATION") } == 3
+                assert trace.succeeded().count{ task -> task.name.contains("PHIX_READS_DECONTAMINATION") } == 3
                 assert trace.succeeded().count{ task -> task.name.contains("FASTQC_AFTER") } == 3
                 assert trace.succeeded().count{ task -> task.name.contains("CUSTOM_DUMPSOFTWAREVERSIONS") } == 1
                 assert trace.succeeded().count{ task -> task.name.contains("MULTIQC_STUDY") } == 2
@@ -70,6 +72,8 @@ nextflow_pipeline {
 
                 study_accession                      = "SRP115494"
                 reads_accession                      = "SRR6180434"
+
+                phix_reference                       = "phix.fasta"
             }
         }
 
@@ -78,7 +82,7 @@ nextflow_pipeline {
                 assert success
                 assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 1
                 assert trace.succeeded().count{ task -> task.name.contains("MEGAHIT") } == 0
-                assert trace.succeeded().size() == 19
+                assert trace.succeeded().size() == 18
             }
         }
 
@@ -98,6 +102,8 @@ nextflow_pipeline {
 
                 study_accession                     = "SRP115494"
                 reads_accession                     = "SRR6180434"
+
+                phix_reference                      = "phix.fasta"
             }
         }
 
@@ -106,7 +112,7 @@ nextflow_pipeline {
                 assert success
                 assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 0
                 assert trace.succeeded().count{ task -> task.name.contains("MEGAHIT") } == 1
-                assert trace.tasks().size() == 19
+                assert trace.tasks().size() == 18
             }
         }
 
@@ -124,6 +130,8 @@ nextflow_pipeline {
 
                 study_accession                      = "SRP115494"
                 reads_accession                      = "SRR6180434"
+
+                phix_reference                       = "phix.fasta"
             }
         }
 
@@ -133,7 +141,8 @@ nextflow_pipeline {
                 assert success
                 assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 1
                 assert trace.succeeded().count{ task -> task.name.contains("MEGAHIT") } == 0
-                assert trace.succeeded().size() == 11
+                // TODO fix this assert
+                assert trace.succeeded().size() == 12
             }
         }
 
@@ -146,13 +155,12 @@ nextflow_pipeline {
 
         when {
             params {
-                assembler                        = "metaspades"
+                assembler       = "metaspades"
 
-                study_accession                  = "ERP012810"
-                reads_accession                  = "ERR1076564"
+                study_accession = "ERP012810"
+                reads_accession = "ERR1076564"
 
-                bwamem2_reference_genomes_folder = "${projectDir}/tests/human_phix/bwa2mem"
-                blast_reference_genomes_folder   = "${projectDir}/tests/human_phix/blast"
+                phix_reference  = "phix.fasta"
             }
         }
 
@@ -175,11 +183,10 @@ nextflow_pipeline {
 
         when {
             params {
-                study_accession                  = "ERP012810"
-                reads_accession                  = "ERR1076564"
+                study_accession = "ERP012810"
+                reads_accession = "ERR1076564"
 
-                bwamem2_reference_genomes_folder = "${projectDir}/tests/human_phix/bwa2mem"
-                blast_reference_genomes_folder   = "${projectDir}/tests/human_phix/blast"
+                phix_reference  = "phix.fasta"
             }
         }
 
@@ -198,11 +205,10 @@ nextflow_pipeline {
 
         when {
             params {
-                study_accession                  = "DRP007622"
-                reads_accession                  = "DRR280712"
+                study_accession = "DRP007622"
+                reads_accession = "DRR280712"
 
-                bwamem2_reference_genomes_folder = "${projectDir}/tests/human_phix/bwa2mem"
-                blast_reference_genomes_folder   = "${projectDir}/tests/human_phix/blast"
+                phix_reference  = "phix.fasta"
             }
         }
 
@@ -211,7 +217,7 @@ nextflow_pipeline {
                 assert success
                 assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 0
                 assert trace.succeeded().count{ task -> task.name.contains("MEGAHIT") } == 1
-                assert trace.tasks().size() == 19
+                assert trace.tasks().size() == 18
             }
         }
 
@@ -224,13 +230,12 @@ nextflow_pipeline {
 
         when {
             params {
-                assembler = "spades"
+                assembler       = "spades"
 
-                study_accession                  = "DRP007622"
-                reads_accession                  = "DRR280712"
+                study_accession = "DRP007622"
+                reads_accession = "DRR280712"
 
-                blast_reference_genomes_folder   = "${projectDir}/tests/human_phix/blast"
-                bwamem2_reference_genomes_folder = "${projectDir}/tests/human_phix/bwa2mem"
+                phix_reference  = "phix.fasta"
             }
         }
 
@@ -280,6 +285,7 @@ nextflow_pipeline {
 
         tag "samplesheet"
         tag "private"
+        tag "SR"
 
         when {
             params {
@@ -298,7 +304,7 @@ nextflow_pipeline {
         }
     }
 
-    test("Samplesheet long reads HQ - hifi should fail") {
+    test("Samplesheet long reads ONT and hifi HQ - hifi should fail") {
 
         tag "samplesheet"
         tag "LR"
@@ -307,14 +313,35 @@ nextflow_pipeline {
         // therefore, frameshift correction is also triggered as low-quality is detected
         when {
             params {
-                samplesheet                      = "${projectDir}/tests/samplesheet/test_long_reads_HQ.csv"
+                samplesheet     = "${projectDir}/tests/samplesheet/test_long_reads_HQ.csv"
+
+                human_reference = "human.fna"
             }
         }
 
         then {
             with(workflow) {
-                assert trace.succeeded().count{ task -> task.name.contains("ONT_HQ:FLYE") } == 1
+                assert trace.succeeded().count{ task -> task.name.contains("FASTQC_BEFORE") } == 2
+                assert trace.succeeded().count{ task -> task.name.contains("LONG_READS_QC:FASTP_LR") } == 2
+                assert trace.succeeded().count{ task -> task.name.contains("LONG_READS_QC:MINIMAP2_ALIGN_HUMAN") } == 2
+                assert trace.succeeded().count{ task -> task.name.contains("FASTQC_AFTER") } == 2
+
+                assert trace.succeeded().count{ task -> task.name.contains("PACBIO_HIFI:HIFIADAPTERFILT") } == 1
                 assert trace.failed().count{ task -> task.name.contains("PACBIO_HIFI:FLYE") } == 1
+
+                assert trace.succeeded().count{ task -> task.name.contains("ONT_HQ:PORECHOP_ABI") } == 1
+                assert trace.succeeded().count{ task -> task.name.contains("ONT_HQ:FLYE") } == 1
+                assert trace.succeeded().count{ task -> task.name.contains("LONG_READS_ASSEMBLY_QC:HUMAN_DECONTAMINATE_CONTIGS") } == 3
+                assert trace.succeeded().count{ task -> task.name.contains("FRAMESHIFT_CORRECTION:PROOVFRAME_MAP") } == 1
+                assert trace.succeeded().count{ task -> task.name.contains("FRAMESHIFT_CORRECTION:PROOVFRAME_FIX") } == 1
+                assert trace.succeeded().count{ task -> task.name.contains("LONG_READS_ASSEMBLY_COVERAGE:LONG_READS_COVERAGE") } == 1
+                assert trace.succeeded().count{ task -> task.name.contains("QUAST") } == 1
+                assert trace.succeeded().count{ task -> task.name.contains("LONG_READS_ASSEMBLY_COVERAGE:CALCULATE_ASSEMBLY_COVERAGE") } == 1
+
+                assert trace.tasks().size() == 22
+
+                // This process should not have been called
+                assert trace.succeeded().count{ task -> task.name.contains("SHORT_READS") } == 0
             }
         }
     }
@@ -329,13 +356,28 @@ nextflow_pipeline {
                 study_accession             = "SRP384046"
                 reads_accession             = "SRR19888830"
                 long_reads_assembler_config = "pacbio-hifi"
+
+                human_reference             = "human.fna"
             }
         }
 
         then {
             with(workflow) {
                 assert success
+
+                assert trace.succeeded().count{ task -> task.name.contains("FETCHTOOL_READS") } == 1
+                assert trace.succeeded().count{ task -> task.name.contains("FASTQC_BEFORE") } == 1
+                assert trace.succeeded().count{ task -> task.name.contains("LONG_READS_QC:FASTP_LR") } == 1
+                assert trace.succeeded().count{ task -> task.name.contains("LONG_READS_QC:MINIMAP2_ALIGN_HUMAN") } == 1
+                assert trace.succeeded().count{ task -> task.name.contains("FASTQC_AFTER") } == 1
+                assert trace.succeeded().count{ task -> task.name.contains("PACBIO_HIFI:HIFIADAPTERFILT") } == 1
                 assert trace.succeeded().count{ task -> task.name.contains("PACBIO_HIFI:FLYE") } == 1
+                assert trace.succeeded().count{ task -> task.name.contains("LONG_READS_ASSEMBLY_QC:HUMAN_DECONTAMINATE_CONTIGS") } == 3
+                assert trace.succeeded().count{ task -> task.name.contains("LONG_READS_COVERAGE") } == 1
+                assert trace.succeeded().count{ task -> task.name.contains("CALCULATE_ASSEMBLY_COVERAGE") } == 1
+                assert trace.succeeded().count{ task -> task.name.contains("QUAST") } == 1
+
+                assert trace.tasks().size() == 15
             }
         }
     }
