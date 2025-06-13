@@ -1,0 +1,46 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+name: "filterpaf"
+description: Module that uses awk to filter alignments in a PAF file based on query coverage and percentage identity (PID).
+keywords:
+  - awk
+  - paf
+  - minimap2
+  - alignment
+  - filtering
+tools:
+  - awk:
+      description: GNU Awk is a powerful text-processing language used to manipulate structured text files.
+      homepage: "https://www.gnu.org/software/gawk/"
+      documentation: "https://www.gnu.org/software/gawk/manual/"
+      tool_dev_url: "https://github.com/onetrueawk/awk"
+      licence: ["GPL-3.0-or-later"]
+input:
+  - - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - paf_file:
+        type: file
+        description: PAF file produced by minimap2 containing sequence alignment records.
+        pattern: "*.paf"
+output:
+  - mapped_contigs_txt:
+      - meta:
+          type: map
+          description: |
+            Groovy Map containing sample information
+            e.g. `[ id:'sample1', single_end:false ]`
+      - "*.txt":
+          type: file
+          description: Plain text file containing the IDs of query sequences that mapped the reference with high confidence.
+          pattern: "*.txt"
+  - versions:
+      - "versions.yml":
+          type: file
+          description: YAML file with software versions used in this module.
+          pattern: "versions.yml"
+authors:
+  - "@ochkalova"
+  - "@jmattock5"

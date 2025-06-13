@@ -1,6 +1,6 @@
 include { CANU as CANU_PACBIO } from '../../modules/nf-core/canu/main'
 include { FLYE                } from '../../modules/nf-core/flye/main'
-include { MINIMAP2_ALIGN      } from '../../modules/nf-core/minimap2/align/main'
+include { MINIMAP2_ALIGN      } from '../../modules/local/minimap2/align/main'
 include { RACON               } from '../../modules/nf-core/racon/main'
 
 workflow PACBIO_LQ {

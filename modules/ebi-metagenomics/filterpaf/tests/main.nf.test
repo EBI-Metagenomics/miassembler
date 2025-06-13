@@ -1,0 +1,64 @@
+
+nextflow_process {
+
+    name "Test Process FILTERPAF"
+    script "../main.nf"
+    process "FILTERPAF"
+
+    tag "modules"
+    tag "modules_ebimetagenomics"
+    tag "filterpaf"
+
+    test("filterpaf") {
+
+        when {
+            params {
+                min_qcov = 0.3
+                min_pid  = 0.4
+            }
+            process {
+                """
+                input[0] = [
+                    [ id:'test' ],
+                    file("${moduleDir}/tests/data/test.paf", checkIfExists: true)
+                ]
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert snapshot(process.out).match() }
+            )
+        }
+
+    }
+
+    test("filterpaf - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                min_qcov = 0.3
+                min_pid  = 0.4
+            }
+            process {
+                """
+                input[0] = [
+                    [ id:'test' ],
+                    file("${moduleDir}/tests/data/test.paf", checkIfExists: true)
+                ]
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert snapshot(process.out).match() }
+            )
+        }
+    }
+}

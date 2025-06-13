@@ -1,0 +1,44 @@
+name: "decontaminate_contigs"
+description: |
+  MGnify decontamination workflow for contigs.
+
+  Decontamination algorithm:
+    Remove contigs with query coverage ≥ min_qcov
+      AND
+    percentage identity ≥ min_pid
+
+keywords:
+  - host decontamination
+  - decontamination
+  - genome alignment
+  - minimap2
+
+components:
+  - minimap2
+  - filterpaf
+  - seqkit
+
+input:
+  - contigs_and_reference:
+      type: tuple
+      description: |
+        An input channel containing one or more tuples with pairs contigs - contaminant reference.
+        Fasta files can be compressed or uncompressed.
+        Structure: [ [meta, assembly_fasta], reference_fasta ]
+      pattern: "*.{fa,fna,fasta}[.gz]"
+
+output:
+  - cleaned_contigs:
+      type: map
+      description: |
+        Channel containing decontaminated assembly contigs.
+        Structure: [ val(meta), path(fasta_file) ]
+      pattern: "*.{fa,fna,fasta}[.gz]"
+  - versions:
+      type: file
+      description: |
+        File containing software versions.
+        Structure: [ path(versions.yml) ]
+      pattern: "versions.yml"
+authors:
+  - "@ochkalova"

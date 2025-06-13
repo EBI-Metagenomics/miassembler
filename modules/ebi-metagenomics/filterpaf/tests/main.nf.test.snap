@@ -1,0 +1,68 @@
+{
+    "filterpaf - stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "test.txt:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "1": [
+                    "versions.yml:md5,394280fc078876591e1dab58866e90de"
+                ],
+                "mapped_contigs_txt": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "test.txt:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "versions": [
+                    "versions.yml:md5,394280fc078876591e1dab58866e90de"
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.2",
+            "nextflow": "24.10.1"
+        },
+        "timestamp": "2025-05-22T14:18:58.976714528"
+    },
+    "filterpaf": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "test.txt:md5,51e09c5bb215ecd7e9bf0ad82316f13b"
+                    ]
+                ],
+                "1": [
+                    "versions.yml:md5,394280fc078876591e1dab58866e90de"
+                ],
+                "mapped_contigs_txt": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "test.txt:md5,51e09c5bb215ecd7e9bf0ad82316f13b"
+                    ]
+                ],
+                "versions": [
+                    "versions.yml:md5,394280fc078876591e1dab58866e90de"
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.2",
+            "nextflow": "25.04.2"
+        },
+        "timestamp": "2025-05-28T09:02:54.103907"
+    }
+}

@@ -86,32 +86,43 @@ workflow MIASSEMBLER {
     log.info(logo + paramsSummaryLog(workflow) + citation)
 
     if (params.samplesheet) {
-        def groupReads = { study_accession, reads_accession, fq1, fq2, library_layout, library_strategy, platform, assembler, assembly_memory, assembler_config ->
+        def groupReads = { study_accession, reads_accession, fq1, fq2, library_layout, library_strategy, platform, assembler, assembly_memory, assembler_config, contaminant_reference, human_reference, phix_reference ->
             if (fq2 == []) {
-                return tuple(["id": reads_accession,
-                              "study_accession": study_accession,
-                              "single_end": true,
-                              "library_layout": library_layout,
-                              "library_strategy": library_strategy,
-                              "platform": params.platform ?: platform,
-                              "assembler": assembler ?: params.assembler,
-                              "assembly_memory": assembly_memory ?: params.assembly_memory,
-                              "assembler_config": assembler_config ?: params.long_reads_assembler_config
-                            ],
-                            [fq1]
-                        )
+                return tuple(
+                    [
+                        "id": reads_accession,
+                        "study_accession": study_accession,
+                        "single_end": true,
+                        "library_layout": library_layout,
+                        "library_strategy": library_strategy,
+                        "platform": params.platform ?: platform,
+                        "assembler": assembler ?: params.assembler,
+                        "assembly_memory": assembly_memory ?: params.assembly_memory,
+                        "assembler_config": assembler_config ?: params.long_reads_assembler_config,
+                        "contaminant_reference": contaminant_reference ?: params.contaminant_reference,
+                        "human_reference": human_reference ?: params.human_reference,
+                        "phix_reference": phix_reference ?: params.phix_reference
+                    ],
+                    [fq1]
+                )
             } else {
-                return tuple(["id": reads_accession,
-                              "study_accession": study_accession,
-                              "single_end": false,
-                              "library_layout": library_layout,
-                              "library_strategy": library_strategy,
-                              "platform": params.platform ?: platform,
-                              "assembler": assembler ?: params.assembler,
-                              "assembly_memory": assembly_memory ?: params.assembly_memory,
-                              "assembler_config": assembler_config ?: params.long_reads_assembler_config
-                            ],
-                            [fq1, fq2])
+                return tuple(
+                    [
+                        "id": reads_accession,
+                        "study_accession": study_accession,
+                        "single_end": false,
+                        "library_layout": library_layout,
+                        "library_strategy": library_strategy,
+                        "platform": params.platform ?: platform,
+                        "assembler": assembler ?: params.assembler,
+                        "assembly_memory": assembly_memory ?: params.assembly_memory,
+                        "assembler_config": assembler_config ?: params.long_reads_assembler_config,
+                        "contaminant_reference": contaminant_reference ?: params.contaminant_reference,
+                        "human_reference": human_reference ?: params.human_reference,
+                        "phix_reference": phix_reference ?: params.phix_reference
+                    ],
+                    [fq1, fq2]
+                )
             }
         }
 
@@ -146,7 +157,10 @@ workflow MIASSEMBLER {
                         "library_strategy": params.library_strategy ?: library_strategy,
                         "library_layout": params.library_layout ?: library_layout,
                         "single_end": params.single_end ?: library_layout == "single",
-                        "platform": params.platform ?: platform
+                        "platform": params.platform ?: platform,
+                        "contaminant_reference": params.contaminant_reference,
+                        "human_reference": params.human_reference,
+                        "phix_reference": params.phix_reference
                     ],
                     reads
                 ]
