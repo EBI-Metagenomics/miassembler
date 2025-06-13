@@ -65,11 +65,37 @@
                 "type": "string"
             },
             "contaminant_reference": {
-                "errorMessage": "Fasta file for decontamination cannot contain spaces and must have extension '.fa.gz' or '.fasta.gz'",
+                "errorMessage": "Fasta file for decontamination, cannot contain spaces and must have extension '.fa', '.fasta', '.fna', '.fa.gz', '.fasta.gz or '.fna.gz'",
                 "anyOf": [
                     {
                         "type": "string",
-                        "pattern": "^\\S+\\.f(ast)?a\\.gz$"
+                        "pattern": "^\\S+\\.(fa|fasta|fna)(\\.gz)?$"
+                    },
+                    {
+                        "type": "string",
+                        "maxLength": 0
+                    }
+                ]
+            },
+            "human_reference": {
+                "errorMessage": "Human reference genome to use for decontamination, cannot contain spaces and must have extension '.fa', '.fasta', '.fna', '.fa.gz', '.fasta.gz or '.fna.gz'",
+                "anyOf": [
+                    {
+                        "type": "string",
+                        "pattern": "^\\S+\\.(fa|fasta|fna)(\\.gz)?$"
+                    },
+                    {
+                        "type": "string",
+                        "maxLength": 0
+                    }
+                ]
+            },
+            "phix_reference": {
+                "errorMessage": "PhiX reference genome to use for decontamination, cannot contain spaces and must have extension '.fa', '.fasta', '.fna', '.fa.gz', '.fasta.gz or '.fna.gz'",
+                "anyOf": [
+                    {
+                        "type": "string",
+                        "pattern": "^\\S+\\.(fa|fasta|fna)(\\.gz)?$"
                     },
                     {
                         "type": "string",
