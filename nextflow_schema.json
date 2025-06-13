@@ -208,13 +208,13 @@
                 },
                 "min_qcov": {
                     "type": "number",
-                    "description": "",
-                    "default": ""
+                    "description": "Minimum query coverage threshold (0.0-1.0). Specifies the minimum fraction of the contig sequence that must align to the reference genome for the contig to be classifed as contamination.",
+                    "default": 0.3
                 },
                 "min_pid": {
                     "type": "number",
-                    "description": "",
-                    "default": ""
+                    "description": "Minimum percent identity threshold (0.0-1.0). Specifies the minimum sequence similarity between the contig and reference genome alignment required to classify as contamination.",
+                    "default": 0.4
                 }
             }
         },

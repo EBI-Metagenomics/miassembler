@@ -1,7 +1,7 @@
 include { DECONTAMINATE_CONTIGS as HUMAN_DECONTAMINATE_CONTIGS } from '../../subworkflows/ebi-metagenomics/decontaminate_contigs/main'
-include { DECONTAMINATE_CONTIGS as PHIX_DECONTAMINATE_CONTIGS } from '../../subworkflows/ebi-metagenomics/decontaminate_contigs/main'
-include { DECONTAMINATE_CONTIGS as HOST_DECONTAMINATE_CONTIGS       } from '../../subworkflows/ebi-metagenomics/decontaminate_contigs/main'
-include { SEQKIT_SEQ                                                } from '../../modules/nf-core/seqkit/seq/main'
+include { DECONTAMINATE_CONTIGS as PHIX_DECONTAMINATE_CONTIGS  } from '../../subworkflows/ebi-metagenomics/decontaminate_contigs/main'
+include { DECONTAMINATE_CONTIGS as HOST_DECONTAMINATE_CONTIGS  } from '../../subworkflows/ebi-metagenomics/decontaminate_contigs/main'
+include { SEQKIT_SEQ                                           } from '../../modules/nf-core/seqkit/seq/main'
 
 process PUBLISH_CLEANED_CONTIGS {
 
