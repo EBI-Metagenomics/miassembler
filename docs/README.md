@@ -10,9 +10,9 @@ The pipeline steps for both processes follow.
 
 For the assembly of short metagenomic reads the pipeline uses [SPAdes](https://doi.org/10.1089/cmb.2012.0021) or [MEGAHIT](https://doi.org/10.1093/bioinformatics/btv033).
 
-1. Read QC using [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
+1. Read QC using [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) and read decontamination using [BWA-MEM2](https://github.com/bwa-mem2/bwa-mem2) and [Samtools](https://github.com/samtools/samtools)
 2. Present QC for raw reads and assembly [MultiQC](http://multiqc.info/)
-3. Performs assembly using [MEGAHIT](https://github.com/voutcn/megahit) and [SPAdes](http://cab.spbu.ru/software/spades/), and checks assembly quality using [Quast](http://quast.sourceforge.net/quast)
+3. Performs assembly using [MEGAHIT](https://github.com/voutcn/megahit) or [SPAdes](http://cab.spbu.ru/software/spades/), and checks assembly quality using [Quast](http://quast.sourceforge.net/quast)
 4. Removes contaminated contigs using [Minimap2](https://github.com/lh3/minimap2) and [SeqKit](https://bioinf.shenwei.me/seqkit/)
 5. Calculates assembly coverage using [MetaBAT2](https://bitbucket.org/berkeleylab/metabat/src/master/) metabat2_jgi_summarizebamcontigdepths for per contig depth and [Samtools idxstats](http://www.htslib.org/doc/samtools-idxstats.html) for alignment summary statistics.
 
