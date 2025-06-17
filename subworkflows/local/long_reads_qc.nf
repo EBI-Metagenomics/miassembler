@@ -60,7 +60,7 @@ workflow LONG_READS_QC {
         "human",
         "fastq", // out sequence extension
         true,    // output bam format
-        "bai",   // bam index extension
+        false,   // no bam index extension needed
         false,   // no CIGAR in paf format
         true     // allow for long CIGAR
     )
@@ -94,7 +94,7 @@ workflow LONG_READS_QC {
         "host",
         "fastq", // out sequence extension
         true,    // output bam format
-        "bai",   // bam index extension
+        false,   // no bam index extension needed
         false,   // no CIGAR in paf format
         true     // allow for long CIGAR
     )
