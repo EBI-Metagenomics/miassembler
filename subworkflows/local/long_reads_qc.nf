@@ -59,10 +59,12 @@ workflow LONG_READS_QC {
         ch_human_decontamination_input.reference,
         "human",
         "fastq", // out sequence extension
-        true,    // output bam format
+        true,    // bam_format = true enables filtering of the bam file with samtools inside minimap2 module
         false,   // no bam index extension needed
         false,   // no CIGAR in paf format
-        true     // allow for long CIGAR
+        true     // cigar_bam = true enables -L minimap2 option that is required for long reads alignment
+                 // because of the CIGAR-related bug that BAM format has
+                 // see explanation here https://github.com/lh3/minimap2?tab=readme-ov-file#working-with-65535-cigar-operations
     )
 
     ch_versions = ch_versions.mix(MINIMAP2_ALIGN_HUMAN.out.versions)
@@ -93,10 +95,12 @@ workflow LONG_READS_QC {
         ch_decontamination_input.reference,
         "host",
         "fastq", // out sequence extension
-        true,    // output bam format
+        true,    // bam_format = true enables filtering of the bam file with samtools inside minimap2 module
         false,   // no bam index extension needed
         false,   // no CIGAR in paf format
-        true     // allow for long CIGAR
+        true     // cigar_bam = true enables -L minimap2 option that is required for long reads alignment
+                 // because of the CIGAR-related bug that BAM format has
+                 // see explanation here https://github.com/lh3/minimap2?tab=readme-ov-file#working-with-65535-cigar-operations
     )
 
     ch_versions = ch_versions.mix(MINIMAP2_ALIGN_HOST.out.versions)
