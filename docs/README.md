@@ -20,7 +20,7 @@ For the assembly of short metagenomic reads the pipeline uses [SPAdes](https://d
 
 - `--reference_genomes_folder`: Path to the folder that contains all required reference genomes in FASTA format as well as their indexes generated with bwa-mem2. **phiX** is provided on [FTP](https://ftp.ebi.ac.uk/pub/databases/metagenomics/pipelines/references/)
 
-bwa-mem2 index files must be generated for all genomes provided as refrences for read and contig decontamination.
+bwa-mem2 index files must be generated for all genomes provided as references for read decontamination.
 
 #### How to index reference genome with BWA-MEM2
 
