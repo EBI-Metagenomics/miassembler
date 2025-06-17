@@ -33,6 +33,8 @@ workflow DECONTAMINATE_CONTIGS {
     MINIMAP2_ALIGN(
         minimap2_input_ch.contigs,
         minimap2_input_ch.reference,
+        "",                // no prefix needed for paf generation
+        "",                // no extension needed for paf generation
         false,             // bam_format
         false,             // bam_index_extension
         false,             // cigar_paf_format

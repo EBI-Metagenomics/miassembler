@@ -1,6 +1,6 @@
 include { FASTP as FASTP_LR                      } from '../../modules/nf-core/fastp/main'
-include { MINIMAP2_ALIGN as MINIMAP2_ALIGN_HUMAN } from '../../modules/local/minimap2/align/main'
-include { MINIMAP2_ALIGN as MINIMAP2_ALIGN_HOST  } from '../../modules/local/minimap2/align/main'
+include { MINIMAP2_ALIGN as MINIMAP2_ALIGN_HUMAN } from '../../modules/nf-core/minimap2/align/main'
+include { MINIMAP2_ALIGN as MINIMAP2_ALIGN_HOST  } from '../../modules/nf-core/minimap2/align/main'
 
 workflow LONG_READS_QC {
 
