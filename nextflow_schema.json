@@ -213,7 +213,7 @@
                 },
                 "min_pid": {
                     "type": "number",
-                    "description": "Minimum percent identity threshold (0.0-1.0). Specifies the minimum sequence similarity between the contig and reference genome alignment required to classify the contig as contamination.",
+                    "description": "Minimum percentage identity threshold (0.0-1.0). Specifies the minimum sequence similarity between the contig and reference genome alignment required to classify the contig as contamination.",
                     "default": 0.4
                 }
             }
