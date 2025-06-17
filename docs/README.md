@@ -4,7 +4,7 @@
 
 This pipeline supports both short and long reads; however, it does not yet support hybrid assemblies.
 
-The steps of the pipeline for short- and long-reads processing
+The pipeline steps for both processes follow.
 
 ## Short reads
 
