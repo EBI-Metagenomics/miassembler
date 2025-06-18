@@ -38,44 +38,33 @@
                     "type": "boolean",
                     "description": "To use if the ENA study is private, *this feature ony works on EBI infrastructure at the moment*"
                 },
-                "reference_genome": {
-                    "type": "string",
-                    "description": "The genome to be used to clean the assembly, the genome will be taken from the Microbiome Informatics internal directory",
-                    "enum": [
-                        "chicken.fna",
-                        "salmon.fna",
-                        "cod.fna",
-                        "pig.fna",
-                        "cow.fna",
-                        "mouse.fna",
-                        "honeybee.fna",
-                        "rainbow_trout.fna",
-                        "rat.fna",
-                        "sheep.fna",
-                        "soybean.fna",
-                        "zebrafish.fna"
-                    ]
-                },
                 "reference_genomes_folder": {
                     "type": "string",
-                    "description": "The folder with the reference genomes, defaults to the Microbiome Informatics internal directory.",
+                    "description": "The folder with the reference genomes.",
                     "format": "directory-path"
                 },
-                "blast_reference_genomes_folder": {
+                "contaminant_reference": {
                     "type": "string",
-                    "description": "The folder with the reference genome blast indexes, defaults to the Microbiome Informatics internal directory.",
-                    "format": "directory-path"
+                    "description": "Filename of the reference genome located in <reference_genomes_folder> to be used for host decontamination"
                 },
-                "bwamem2_reference_genomes_folder": {
+                "skip_human_decontamination": {
+                    "type": "boolean",
+                    "description": "Scrubbing human contamination from raw reads and assembled contigs is performed by default as standard procedure. Set this flag to true to skip human decontamination.",
+                    "help_text": "CAUTION: Setting this variable to true will skip the removal of human sequences from raw reads and assembled contigs.",
+                    "default": false
+                },
+                "human_reference": {
                     "type": "string",
-                    "description": "The folder with the reference genome bwa-mem2 indexes, defaults to the Microbiome Informatics internal directory.",
-                    "format": "directory-path"
+                    "description": "Filename of the human genome reference located in <reference_genomes_folder> to be used for human decontamination. Option is strongly encouraged as contamination with human DNA during laboratory sequencing is widespread and can impact analysis results."
+                },
+                "phix_reference": {
+                    "type": "string",
+                    "description": "Filename of the PhiX genome reference located in <reference_genomes_folder> to be used for decontamination of Illumina reads"
                 },
                 "diamond_db": {
                     "type": "string",
                     "format": "file-path",
-                    "description": "Path to diamond db (e.g. NCBI-nr) to perform frameshift correction",
-                    "default": ""
+                    "description": "Path to diamond db (e.g. NCBI-nr) to perform frameshift correction"
                 },
                 "outdir": {
                     "type": "string",
@@ -155,31 +144,6 @@
                     "type": "string",
                     "default": "1.2.9"
                 },
-                "remove_human_phix": {
-                    "type": "boolean",
-                    "description": "Set true to removing human and phiX reads pre-assembly, and contigs matching those genomes.",
-                    "default": true
-                },
-                "remove_human": {
-                    "type": "boolean",
-                    "description": "Set true to removing human reads pre-assembly, and contigs matching those genomes.",
-                    "default": true
-                },
-                "human_phix_blast_index_name": {
-                    "type": "string",
-                    "description": "Filename of the combined Human and phiX BLAST db.",
-                    "default": "human_phix"
-                },
-                "human_phix_bwamem2_index_name": {
-                    "type": "string",
-                    "description": "Filename of the combined Human and phiX bwa-mem2 index.",
-                    "default": "human_phix"
-                },
-                "human_fasta_prefix": {
-                    "type": "string",
-                    "description": "Prefix in the filename of the human genome reference.",
-                    "default": "human"
-                },
                 "assembly_memory": {
                     "type": "number",
                     "default": 100,
@@ -246,6 +210,16 @@
                     "type": "integer",
                     "default": 2,
                     "description": "Minimum number of contigs in human+phiX+host cleaned assembly."
+                },
+                "min_qcov": {
+                    "type": "number",
+                    "description": "Minimum query coverage threshold (0.0-1.0). Specifies the minimum fraction of the contig sequence that must align to the reference genome for the contig to be classifed as contamination.",
+                    "default": 0.3
+                },
+                "min_pid": {
+                    "type": "number",
+                    "description": "Minimum percentage identity threshold (0.0-1.0). Specifies the minimum sequence similarity between the contig and reference genome alignment required to classify the contig as contamination.",
+                    "default": 0.4
                 }
             }
         },

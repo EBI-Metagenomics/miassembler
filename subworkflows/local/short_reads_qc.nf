@@ -1,17 +1,15 @@
-include { FASTP                                             } from '../../modules/nf-core/fastp/main'
-include { BWAMEM2DECONTNOBAMS as HUMAN_PHIX_DECONTAMINATION } from '../../modules/ebi-metagenomics/bwamem2decontnobams/main'
-include { BWAMEM2DECONTNOBAMS as HOST_DECONTAMINATION       } from '../../modules/ebi-metagenomics/bwamem2decontnobams/main'
+include { FASTP                                              } from '../../modules/nf-core/fastp/main'
+include { BWAMEM2DECONTNOBAMS as HUMAN_READS_DECONTAMINATION } from '../../modules/ebi-metagenomics/bwamem2decontnobams/main'
+include { BWAMEM2DECONTNOBAMS as PHIX_READS_DECONTAMINATION  } from '../../modules/ebi-metagenomics/bwamem2decontnobams/main'
+include { BWAMEM2DECONTNOBAMS as HOST_READS_DECONTAMINATION  } from '../../modules/ebi-metagenomics/bwamem2decontnobams/main'
 
 workflow SHORT_READS_QC {
 
     take:
     reads            // [ val(meta), path(reads) ]
-    reference_genome // [ val(meta2), path(reference_genome) ] | meta2 contains the name of the reference genome
 
     main:
-    def ch_versions = Channel.empty()
-    def ch_bwamem2_human_phix_refs = Channel.empty()
-    def ch_bwamem2_host_refs = Channel.empty()
+    ch_versions = Channel.empty()
 
     FASTP(
         reads,
@@ -24,44 +22,89 @@ workflow SHORT_READS_QC {
 
     ch_versions = ch_versions.mix(FASTP.out.versions)
 
-    def decontaminated_reads = Channel.empty()
+    /***************************************************************************/
+    /* Perform decontamination from human sequences if requested               */
+    /***************************************************************************/
+    FASTP.out.reads
+        .branch { meta, _reads ->
+            run_decontamination: meta.human_reference != null
+            skip_decontamination: meta.human_reference == null
+        }
+        .set { human_subdivided_reads }
 
-    if ( params.remove_human_phix ) {
+    human_subdivided_reads.run_decontamination
+        .multiMap { meta, reads_ ->
+            reads: [meta, reads_]
+            reference: [ [id:"human"], file("${params.reference_genomes_folder}/${meta.human_reference}.*", checkIfExists: true) ]
+        }
+        .set { ch_human_decontamination_input }
 
-        ch_bwamem2_human_phix_refs = Channel.fromPath( "${params.bwamem2_reference_genomes_folder}/${params.human_phix_blast_index_name}*", checkIfExists: true)
-            .collect().map {
-                files -> [ ["id": params.human_phix_blast_index_name], files ]
-            }
-
-        HUMAN_PHIX_DECONTAMINATION(
-            FASTP.out.reads,
-            ch_bwamem2_human_phix_refs
+    HUMAN_READS_DECONTAMINATION(
+            ch_human_decontamination_input.reads,
+            ch_human_decontamination_input.reference
         )
 
-        ch_versions = ch_versions.mix(HUMAN_PHIX_DECONTAMINATION.out.versions)
+    ch_versions = ch_versions.mix(HUMAN_READS_DECONTAMINATION.out.versions)
 
-        decontaminated_reads = HUMAN_PHIX_DECONTAMINATION.out.decont_reads
+    human_cleaned_reads = human_subdivided_reads.skip_decontamination.mix(
+        HUMAN_READS_DECONTAMINATION.out.decont_reads
+    )
 
-    } else {
-        decontaminated_reads = FASTP.out.reads
-    }
+    /***************************************************************************/
+    /* Perform decontamination from PhiX sequences if requested               */
+    /***************************************************************************/
+    human_cleaned_reads
+        .branch { meta, _reads ->
+            run_decontamination: meta.phix_reference != null
+            skip_decontamination: meta.phix_reference == null
+        }
+        .set { phix_subdivided_reads }
 
-    if ( reference_genome != null ) {
+    phix_subdivided_reads.run_decontamination
+        .multiMap { meta, reads ->
+            reads: [meta, reads]
+            reference: [ [id:"phix"], file("${params.reference_genomes_folder}/${meta.phix_reference}.*") ]
+        }
+        .set { ch_phix_decontamination_input }
 
-        ch_bwamem2_host_refs = Channel.fromPath( "${params.bwamem2_reference_genomes_folder}/${reference_genome}*", checkIfExists: true)
-            .collect().map {
-                files -> [ ["id": reference_genome], files ]
-            }
-
-        HOST_DECONTAMINATION(
-            HUMAN_PHIX_DECONTAMINATION.out.decont_reads,
-            ch_bwamem2_host_refs
+    PHIX_READS_DECONTAMINATION(
+            ch_phix_decontamination_input.reads,
+            ch_phix_decontamination_input.reference
         )
 
-        ch_versions = ch_versions.mix(HOST_DECONTAMINATION.out.versions)
+    ch_versions = ch_versions.mix(PHIX_READS_DECONTAMINATION.out.versions)
 
-        decontaminated_reads = HOST_DECONTAMINATION.out.decont_reads
-    }
+    phix_cleaned_reads = phix_subdivided_reads.skip_decontamination.mix(
+        PHIX_READS_DECONTAMINATION.out.decont_reads
+    )
+
+    /***************************************************************************/
+    /* Perform decontamination from arbitrary contaminant sequences            */
+    /***************************************************************************/
+    phix_cleaned_reads
+        .branch { meta, _reads ->
+            run_decontamination: meta.contaminant_reference != null
+            skip_decontamination: meta.contaminant_reference == null
+        }
+        .set { subdivided_reads }
+
+    subdivided_reads.run_decontamination
+        .multiMap { meta, reads_ ->
+            reads: [meta, reads_]
+            reference: [ [id:file(meta.contaminant_reference).baseName], file("${params.reference_genomes_folder}/${meta.contaminant_reference}.*") ]
+        }
+        .set { ch_decontamination_input }
+
+    HOST_READS_DECONTAMINATION(
+            ch_decontamination_input.reads,
+            ch_decontamination_input.reference
+        )
+
+    ch_versions = ch_versions.mix(HOST_READS_DECONTAMINATION.out.versions)
+
+    decontaminated_reads = subdivided_reads.skip_decontamination.mix(
+        HOST_READS_DECONTAMINATION.out.decont_reads
+    )
 
     emit:
     qc_reads   = decontaminated_reads
