@@ -25,7 +25,7 @@ nextflow_pipeline {
 
     }
 
-    test("Samplesheet - no assembled - reads filtered ") {
+    test("Samplesheet - no assembled - reads filtered") {
 
         tag "samplesheet"
         tag "SR"
@@ -327,9 +327,9 @@ nextflow_pipeline {
                 assert trace.succeeded().count{ task -> task.name.contains("LONG_READS_QC:MINIMAP2_ALIGN_HUMAN") } == 2
                 assert trace.succeeded().count{ task -> task.name.contains("FASTQC_AFTER") } == 2
                 assert trace.succeeded().count{ task -> task.name.contains("PACBIO_HIFI:HIFIADAPTERFILT") } == 1
-                
+
                 assert trace.failed().count{ task -> task.name.contains("PACBIO_HIFI:FLYE") } == 1
-                
+
                 assert trace.succeeded().count{ task -> task.name.contains("ONT_HQ:PORECHOP_ABI") } == 1
                 assert trace.succeeded().count{ task -> task.name.contains("ONT_HQ:FLYE") } == 1
                 assert trace.succeeded().count{ task -> task.name.contains("LONG_READS_ASSEMBLY_QC:HUMAN_DECONTAMINATE_CONTIGS") } == 3
@@ -380,6 +380,61 @@ nextflow_pipeline {
 
 
                 assert trace.tasks().size() == 15
+            }
+        }
+    }
+
+    test("Skip human decontamination - warning displayed and processes skipped") {
+
+        tag "samplesheet"
+        tag "skip_human_decontamination"
+        tag "SR"
+
+        when {
+            params {
+                assembler                   = "spades"
+                samplesheet                 = "${projectDir}/tests/samplesheet/test.csv"
+                skip_human_decontamination  = true
+
+                human_reference             = null
+                phix_reference              = "phix.fasta"
+            }
+        }
+
+        then {
+            with(workflow) {
+                assert success
+
+                // Verify human decontamination processes are not executed
+                assert trace.succeeded().count{ task -> task.name.contains("MINIMAP2_ALIGN_HUMAN") } == 0
+                assert trace.succeeded().count{ task -> task.name.contains("HUMAN_DECONTAMINATE_CONTIGS") } == 0
+                assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 2
+                assert trace.succeeded().count{ task -> task.name.contains("PHIX_READS_DECONTAMINATION") } == 3
+                assert trace.succeeded().count{ task -> task.name.contains("FASTQC_BEFORE") } == 3
+                assert trace.succeeded().count{ task -> task.name.contains("MULTIQC_STUDY") } == 2
+            }
+        }
+    }
+
+    test("Skip human decontamination - throw an error if the human_reference is provided and skip human decont is true") {
+
+        tag "samplesheet"
+        tag "skip_human_decontamination"
+        tag "SR"
+
+        when {
+            params {
+                assembler                   = "spades"
+                samplesheet                 = "${projectDir}/tests/samplesheet/test.csv"
+                // This is incompatible - we want the human decontamination to be avoided if possible
+                skip_human_decontamination  = true
+                human_reference             = "human.fna"
+            }
+        }
+
+        then {
+            with(workflow) {
+                assert !success
             }
         }
     }

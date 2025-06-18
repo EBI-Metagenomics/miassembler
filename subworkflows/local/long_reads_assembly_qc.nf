@@ -21,7 +21,7 @@ workflow LONG_READS_ASSEMBLY_QC {
 
     human_subdivided_assemblies.run_decontamination
         .map { meta, contigs ->
-            [ [meta, contigs], "${params.reference_genomes_folder}/${meta.human_reference}" ]
+            [ [meta, contigs], file("${params.reference_genomes_folder}/${meta.human_reference}", checkIfExists: true) ]
         }
         .set { ch_human_decontamination_input }
 
@@ -45,7 +45,7 @@ workflow LONG_READS_ASSEMBLY_QC {
 
     subdivided_assemblies.run_decontamination
         .map { meta, contigs ->
-            [ [meta, contigs], "${params.reference_genomes_folder}/${meta.contaminant_reference}" ]
+            [ [meta, contigs], file("${params.reference_genomes_folder}/${meta.contaminant_reference}", checkIfExists: true) ]
         }
         .set { ch_decontamination_input }
 

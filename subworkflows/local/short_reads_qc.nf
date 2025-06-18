@@ -33,9 +33,9 @@ workflow SHORT_READS_QC {
         .set { human_subdivided_reads }
 
     human_subdivided_reads.run_decontamination
-        .multiMap { meta, reads ->
-            reads: [meta, reads]
-            reference: [ [id:"human"], file("${params.reference_genomes_folder}/${meta.human_reference}.*") ]
+        .multiMap { meta, reads_ ->
+            reads: [meta, reads_]
+            reference: [ [id:"human"], file("${params.reference_genomes_folder}/${meta.human_reference}.*", checkIfExists: true) ]
         }
         .set { ch_human_decontamination_input }
 
@@ -89,8 +89,8 @@ workflow SHORT_READS_QC {
         .set { subdivided_reads }
 
     subdivided_reads.run_decontamination
-        .multiMap { meta, reads ->
-            reads: [meta, reads]
+        .multiMap { meta, reads_ ->
+            reads: [meta, reads_]
             reference: [ [id:file(meta.contaminant_reference).baseName], file("${params.reference_genomes_folder}/${meta.contaminant_reference}.*") ]
         }
         .set { ch_decontamination_input }

@@ -29,6 +29,7 @@ Input/output options
   --private_study                         [boolean] To use if the ENA study is private, *this feature ony works on EBI infrastructure at the moment*
   --reference_genomes_folder              [string]  The folder with the reference genomes.
   --contaminant_reference                 [string]  Filename of the reference genome located in <reference_genomes_folder> to be used for host decontamination
+  --skip_human_decontamination            [boolean] Scrubbing human contamination from raw reads and assembled contigs is performed by default as standard procedure. Set this flag to true to skip human decontamination. [default: false]
   --human_reference                       [string]  Filename of the human genome reference located in <reference_genomes_folder> to be used for human decontamination
   --phix_reference                        [string]  Filename of the PhiX genome reference located in <reference_genomes_folder> to be used for decontamination of Illumina reads
   --diamond_db                            [string]  Path to diamond db (e.g. NCBI-nr) to perform frameshift correction [default: ]

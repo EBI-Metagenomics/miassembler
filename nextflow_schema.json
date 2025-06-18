@@ -47,6 +47,12 @@
                     "type": "string",
                     "description": "Filename of the reference genome located in <reference_genomes_folder> to be used for host decontamination"
                 },
+                "skip_human_decontamination": {
+                    "type": "boolean",
+                    "description": "Scrubbing human contamination from raw reads and assembled contigs is performed by default as standard procedure. Set this flag to true to skip human decontamination.",
+                    "help_text": "CAUTION: Setting this variable to true will skip the removal of human sequences from raw reads and assembled contigs.",
+                    "default": false
+                },
                 "human_reference": {
                     "type": "string",
                     "description": "Filename of the human genome reference located in <reference_genomes_folder> to be used for human decontamination"
