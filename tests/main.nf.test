@@ -396,6 +396,7 @@ nextflow_pipeline {
                 samplesheet                 = "${projectDir}/tests/samplesheet/test.csv"
                 skip_human_decontamination  = true
 
+                human_reference             = null
                 phix_reference              = "phix.fasta"
             }
         }
