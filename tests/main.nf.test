@@ -427,7 +427,7 @@ nextflow_pipeline {
                 samplesheet                 = "${projectDir}/tests/samplesheet/test.csv"
                 // This is incompatible - we want the human decontamination to be avoided if possible
                 skip_human_decontamination  = true
-                human_reference              = "human.fasta"
+                human_reference             = "human.fasta"
             }
         }
 
