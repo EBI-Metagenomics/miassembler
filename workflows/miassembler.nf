@@ -85,6 +85,18 @@ workflow MIASSEMBLER {
     // Print parameter summary log to screen
     log.info(logo + paramsSummaryLog(workflow) + citation)
 
+    // ***************************************************************************** //
+    // Custom validation for human decontamination of reads and assembled contigs   //
+    // ***************************************************************************** //
+
+    if (params.skip_human_decontamination) {
+        log.warn("Human sequences will not be removed from raw reads or assembled contigs.")
+
+        if (params.human_reference) {
+            error "Setting 'skip_human_decontamination = true' is incompatible with providing 'params.human_reference'."
+        }
+    }
+
     if (params.samplesheet) {
         def groupReads = { study_accession, reads_accession, fq1, fq2, library_layout, library_strategy, platform, assembler, assembly_memory, assembler_config, contaminant_reference, human_reference, phix_reference ->
             if (fq2 == []) {
@@ -100,7 +112,7 @@ workflow MIASSEMBLER {
                         "assembly_memory": assembly_memory ?: params.assembly_memory,
                         "assembler_config": assembler_config ?: params.long_reads_assembler_config,
                         "contaminant_reference": contaminant_reference ?: params.contaminant_reference,
-                        "human_reference": human_reference ?: params.human_reference,
+                        "human_reference": params.skip_human_decontamination ? null : (human_reference ?: params.human_reference),
                         "phix_reference": phix_reference ?: params.phix_reference
                     ],
                     [fq1]
@@ -118,7 +130,7 @@ workflow MIASSEMBLER {
                         "assembly_memory": assembly_memory ?: params.assembly_memory,
                         "assembler_config": assembler_config ?: params.long_reads_assembler_config,
                         "contaminant_reference": contaminant_reference ?: params.contaminant_reference,
-                        "human_reference": human_reference ?: params.human_reference,
+                        "human_reference": params.skip_human_decontamination ? null : (human_reference ?: params.human_reference),
                         "phix_reference": phix_reference ?: params.phix_reference
                     ],
                     [fq1, fq2]
@@ -159,7 +171,7 @@ workflow MIASSEMBLER {
                         "single_end": params.single_end ?: library_layout == "single",
                         "platform": params.platform ?: platform,
                         "contaminant_reference": params.contaminant_reference,
-                        "human_reference": params.human_reference,
+                        "human_reference": params.skip_human_decontamination ? null : params.human_reference,
                         "phix_reference": params.phix_reference
                     ],
                     reads
@@ -232,6 +244,10 @@ workflow MIASSEMBLER {
     ch_multiqc_base_files = ch_multiqc_base_files.mix( CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect() )
     ch_multiqc_base_files = ch_multiqc_base_files.mix( ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml') )
     ch_multiqc_base_files = ch_multiqc_base_files.mix( ch_methods_description.collectFile(name: 'methods_description_mqc.yaml') )
+
+    if (params.skip_human_decontamination) {
+        ch_multiqc_base_files = ch_multiqc_base_files.mix( channel.from( file("$projectDir/assets/human_decontamination_mqc.html", checkIfExists: true) ) )
+    }
 
     /**************************************/
     /* MultiQC report for the whole study */
