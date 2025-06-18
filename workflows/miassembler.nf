@@ -99,6 +99,12 @@ workflow MIASSEMBLER {
 
     if (params.samplesheet) {
         def groupReads = { study_accession, reads_accession, fq1, fq2, library_layout, library_strategy, platform, assembler, assembly_memory, assembler_config, contaminant_reference, human_reference, phix_reference ->
+
+            def human_reference_path = human_reference ?: params.human_reference
+            if (!params.skip_human_decontamination && human_reference_path == null) {
+                error "Invalid row, skip_human_decontamination is false but there is no human reference on row: ${study_accession}, ${reads_accession}."
+            }
+
             if (fq2 == []) {
                 return tuple(
                     [
@@ -112,7 +118,7 @@ workflow MIASSEMBLER {
                         "assembly_memory": assembly_memory ?: params.assembly_memory,
                         "assembler_config": assembler_config ?: params.long_reads_assembler_config,
                         "contaminant_reference": contaminant_reference ?: params.contaminant_reference,
-                        "human_reference": params.skip_human_decontamination ? null : (human_reference ?: params.human_reference),
+                        "human_reference": human_reference_path, // -> if this value is null (which is not the same as an empty string) the decontamination won't be executed
                         "phix_reference": phix_reference ?: params.phix_reference
                     ],
                     [fq1]
