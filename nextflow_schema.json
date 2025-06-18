@@ -55,7 +55,7 @@
                 },
                 "human_reference": {
                     "type": "string",
-                    "description": "Filename of the human genome reference located in <reference_genomes_folder> to be used for human decontamination"
+                    "description": "Filename of the human genome reference located in <reference_genomes_folder> to be used for human decontamination. Option is strongly encouraged as contamination with human DNA during laboratory sequencing is widespread and can impact analysis results."
                 },
                 "phix_reference": {
                     "type": "string",
@@ -64,8 +64,7 @@
                 "diamond_db": {
                     "type": "string",
                     "format": "file-path",
-                    "description": "Path to diamond db (e.g. NCBI-nr) to perform frameshift correction",
-                    "default": ""
+                    "description": "Path to diamond db (e.g. NCBI-nr) to perform frameshift correction"
                 },
                 "outdir": {
                     "type": "string",
