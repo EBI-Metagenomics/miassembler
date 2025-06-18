@@ -136,7 +136,7 @@ workflow MIASSEMBLER {
                         "assembly_memory": assembly_memory ?: params.assembly_memory,
                         "assembler_config": assembler_config ?: params.long_reads_assembler_config,
                         "contaminant_reference": contaminant_reference ?: params.contaminant_reference,
-                        "human_reference": params.skip_human_decontamination ? null : (human_reference ?: params.human_reference),
+                        "human_reference": human_reference_path, // -> if this value is null (which is not the same as an empty string) the decontamination won't be executed
                         "phix_reference": phix_reference ?: params.phix_reference
                     ],
                     [fq1, fq2]
@@ -163,6 +163,10 @@ workflow MIASSEMBLER {
         )
 
         ch_versions = ch_versions.mix(FETCHTOOL_READS.out.versions)
+
+        if (!params.skip_human_decontamination && params.human_reference == null) {
+                error "Human decontamination is enabled but no human reference is provided. Please specify 'human_reference' parameter or set 'skip_human_decontamination = true'."
+            }
 
         // Push the library strategy into the meta of the reads, this is to make it easier to handle downstream
         fetch_reads_transformed = FETCHTOOL_READS.out.reads.map { meta, reads, library_strategy, library_layout, platform ->
@@ -377,4 +381,3 @@ workflow MIASSEMBLER {
 
     short_reads_qc_failed_entries.collectFile(name: "qc_failed_runs.csv", storeDir: "${params.outdir}", newLine: true, cache: false)
 }
-
