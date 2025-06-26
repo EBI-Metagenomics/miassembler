@@ -27,12 +27,12 @@ Input/output options
   --study_accession                       [string]  The ENA Study secondary accession
   --reads_accession                       [string]  The ENA Run primary accession
   --private_study                         [boolean] To use if the ENA study is private, *this feature ony works on EBI infrastructure at the moment*
-  --reference_genome                      [string]  The genome to be used to clean the assembly, the genome will be taken from the Microbiome Informatics internal directory  (accepted: chicken.fna, salmon.fna, cod.fna, pig.fna,
-cow.fna, mouse.fna, honeybee.fna, rainbow_trout.fna, rat.fna, sheep.fna, soybean.fna, zebrafish.fna)
-  --reference_genomes_folder              [string]  The folder with the reference genomes, defaults to the Microbiome Informatics internal directory.
-  --blast_reference_genomes_folder        [string]  The folder with the reference genome blast indexes, defaults to the Microbiome Informatics internal directory.
-  --bwamem2_reference_genomes_folder      [string]  The folder with the reference genome bwa-mem2 indexes, defaults to the Microbiome Informatics internal directory.
-  --diamond_db                            [string]  Path to diamond db (e.g. NCBI-nr) to perform frameshift correction [default: ]
+  --reference_genomes_folder              [string]  The folder with the reference genomes.
+  --contaminant_reference                 [string]  Filename of the reference genome located in <reference_genomes_folder> to be used for host decontamination
+  --skip_human_decontamination            [boolean] Scrubbing human contamination from raw reads and assembled contigs is performed by default as standard procedure. Set this flag to true to skip human decontamination. [default: false]
+  --human_reference                       [string]  Filename of the human genome reference located in <reference_genomes_folder> to be used for human decontamination. Option is strongly encouraged as contamination with human DNA during laboratory sequencing is widespread and can impact analysis results.
+  --phix_reference                        [string]  Filename of the PhiX genome reference located in <reference_genomes_folder> to be used for decontamination of Illumina reads
+  --diamond_db                            [string]  Path to diamond db (e.g. NCBI-nr) to perform frameshift correction.
   --outdir                                [string]  The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. [default: results]
   --email                                 [string]  Email address for completion summary.
   --multiqc_title                         [string]  MultiQC report title. Printed as page header, used for filename if not otherwise specified.
@@ -43,17 +43,11 @@ Input metadata options
   --flye_version                          [string]  [default: 2.9]
   --spades_version                        [string]  [default: 3.15.5]
   --megahit_version                       [string]  [default: 1.2.9]
-  --remove_human_phix                     [boolean] Set true to removing human and phiX reads pre-assembly, and contigs matching those genomes. [default: true]
-  --remove_human                          [boolean] Set true to removing human reads pre-assembly, and contigs matching those genomes. [default: true]
-  --human_phix_blast_index_name           [string]  Filename of the combined Human and phiX BLAST db. [default: human_phix]
-  --human_phix_bwamem2_index_name         [string]  Filename of the combined Human and phiX bwa-mem2 index. [default: human_phix]
-  --human_fasta_prefix                    [string]  Prefix in the filename of the human genome reference. [default: human]
   --assembly_memory                       [number]  Default memory allocated for the assembly process. [default: 100]
   --spades_only_assembler                 [boolean] Run SPAdes/metaSPAdes without the error correction step. [default: true]
 
 Reads QC options
-  --short_reads_filter_ratio_threshold    [number]  The maximum fraction of reads that are allowed to be filtered out. If exceeded, it flags excessive filtering. The default value is 0.1, meaning that if less than 10% of the reads
-are retained after filtering, the threshold is considered exceeded, and the run is not assembled. [default: 0.1]
+  --short_reads_filter_ratio_threshold    [number]  The maximum fraction of reads that are allowed to be filtered out. If exceeded, it flags excessive filtering. The default value is 0.1, meaning that if less than 10% of the reads are retained after filtering, the threshold is considered exceeded, and the run is not assembled. [default: 0.1]
   --short_reads_low_reads_count_threshold [number]  The minimum number of reads required after filtering. If below, it flags a low read count and the run is not assembled. [default: 1000]
   --long_reads_min_read_length            [integer] Minimum read length for pre-assembly quality filtering [default: 200]
   --long_reads_pacbio_quality_threshold   [number]  The Q20 threshold that a pacbio sample needs to exceed to be labelled as HiFi. [default: 0.9]
@@ -63,6 +57,9 @@ Assembly QC options
   --short_reads_min_contig_length         [integer] Minimum contig length filter for short reads. [default: 500]
   --short_reads_min_contig_length_metat   [integer] Minimum contig length filter for short reads metaT. [default: 200]
   --short_reads_contig_threshold          [integer] Minimum number of contigs in human+phiX+host cleaned assembly. [default: 2]
+
+  --min_qcov                              [number]  Minimum query coverage threshold (0.0-1.0). Specifies the minimum fraction of the contig sequence that must align to the reference genome for the contig to be classifed as contamination. [default: 0.3]
+  --min_pid                               [number]  Minimum percent identity threshold (0.0-1.0). Specifies the minimum sequence similarity between the contig and reference genome alignment required to classify the contig as contamination. [default: 0.4]
 
 Generic options
   --multiqc_methods_description           [string] Custom MultiQC yaml file containing HTML including a methods description.
@@ -78,7 +75,8 @@ Example:
 nextflow run ebi-metagenomics/miassembler \
   -profile codon_slurm \
   --assembler metaspades \
-  --reference_genome human \
+  --reference_genome human.fasta \
+  --reference_genomes_folder references/
   --outdir testing_results \
   --study_accession SRP002480 \
   --reads_accession SRR1631361
@@ -104,6 +102,9 @@ The samplesheet is a comma-separated file (.csv) with the following columns:
 - assembler: Relevant for short reads, where either megahit, metaspades, or spades can be picked. Flye is also supported
 - assembly_memory: Integer value specifying the memory allocated for the assembly process.
 - assembler_config: Configuration to use flye with. One of "nano-raw", "nano-corr", "nano-hq", "pacbio-raw", "pacbio-corr", "pacbio-hifi".
+- contaminant_reference: Filename of fasta reference to be used for host decontamination of reads and assembly. BWA-MEM2 index files must be in the same folder and their names must start with <contaminant_reference>. In contrast to --contaminant_reference pipeline param provided
+- human_reference: Filename of human genome reference to be used for human decontamination of reads and assembly. BWA-MEM2 index files must be in the same folder and their names must start with <human_reference>.
+- phix_reference: Filename of PhiX genome reference to be used for PhiX decontamination of reads and assembly. BWA-MEM2 index files must be in the same folder and their names must start with <phix_reference>.
 
 The header row is mandatory.
 
@@ -121,9 +122,9 @@ PRJ3,ERR3,/path/to/reads/ERR3_1.fq.gz,/path/to/reads/ERR3_2.fq.gz,paired,transcr
 Example with additional columns:
 
 ```csv
-study_accession,reads_accession,fastq_1,fastq_2,library_layout,library_strategy,assembler,assembly_memory,assembler_config,platform
-PRJ1,ERR1,/path/to/reads/ERR1_1.fq.gz,/path/to/reads/ERR1_2.fq.gz,paired,metagenomic,spades,16
-PRJ2,ERR2,/path/to/reads/ERR2.fq.gz,,single,genomic,flye,32,nano-hq,ont
+study_accession,reads_accession,fastq_1,fastq_2,library_layout,library_strategy,assembler,assembly_memory,assembler_config,platform,contaminant_reference,human_reference,phix_reference
+PRJ1,ERR1,/path/to/reads/ERR1_1.fq.gz,/path/to/reads/ERR1_2.fq.gz,paired,metagenomic,spades,16,,,,,
+PRJ2,ERR2,/path/to/reads/ERR2.fq.gz,,single,genomic,flye,32,nano-hq,ont,chicken.fa,human.fa,phix.fa
 ```
 
 ### ENA Private Data

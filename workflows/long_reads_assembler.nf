@@ -56,7 +56,6 @@ workflow LONG_READS_ASSEMBLER {
 
     LONG_READS_QC (
         input_reads,
-        params.reference_genome
     )
     ch_versions = ch_versions.mix(LONG_READS_QC.out.versions)
 
@@ -131,17 +130,14 @@ workflow LONG_READS_ASSEMBLER {
     ch_versions = ch_versions.mix(PACBIO_HIFI.out.versions)
 
     def assembly = ONT_LQ.out.contigs.mix(ONT_HQ.out.contigs,
-                                      PACBIO_LQ.out.contigs,
-                                      PACBIO_HIFI.out.contigs)
+                                        PACBIO_LQ.out.contigs,
+                                        PACBIO_HIFI.out.contigs)
 
     // /**********************************************************************************/
     // /* Post-assembly: host decontamination, frame-shift correction, coverage and stats */
     // /**********************************************************************************/
 
-    LONG_READS_ASSEMBLY_QC(
-        assembly,
-        params.reference_genome
-    )
+    LONG_READS_ASSEMBLY_QC(assembly)
     ch_versions = ch_versions.mix(LONG_READS_ASSEMBLY_QC.out.versions)
 
     def decontaminated_assembly = LONG_READS_ASSEMBLY_QC.out.contigs

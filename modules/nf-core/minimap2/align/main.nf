@@ -35,7 +35,6 @@ process MINIMAP2_ALIGN {
     def args4 = task.ext.args4 ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     def bam_index = bam_index_extension ? "${prefix}.bam##idx##${prefix}.bam.${bam_index_extension} --write-index" : "${prefix}.bam"
-    def map_mode = "${meta.platform}" ? "-x map-${meta.platform}" : ''
     def bam_output = bam_format ? "-a | samtools ${fa_fq_format} -f 4 | gzip > ${prefix}.${prefix2}.minimap.${fa_fq_format}.gz" : "-o ${prefix}.paf"
     def bam_real_output = fa_fq_format.matches('bam') ? "-a | samtools sort -@ ${task.cpus-1} -o ${bam_index} ${args2}" : ""
     def cigar_paf = cigar_paf_format && !bam_format ? "-c" : ''
@@ -44,7 +43,7 @@ process MINIMAP2_ALIGN {
     def samtools_reset_fastq = bam_input ? "samtools reset --threads ${task.cpus-1} $args3 $reads | samtools ${fa_fq_format} --threads ${task.cpus-1} $args4 |" : ''
     def query = bam_input ? "-" : reads
     def target = reference ?: (bam_input ? error("BAM input requires reference") : reads)
-    
+
     if(bam_real_output != "")
         bam_output = bam_real_output
 
@@ -53,7 +52,6 @@ process MINIMAP2_ALIGN {
     minimap2 \\
         $args \\
         -t $task.cpus \\
-        $map_mode \\
         $target \\
         $query \\
         $cigar_paf \\

@@ -6,12 +6,9 @@ workflow LONG_READS_QC {
 
     take:
     input_reads        // [ val(meta), path(reads) ]
-    reference_genome   // [ val(meta2), path(reference_genome) ]
 
     main:
-    def ch_versions = Channel.empty()
-    def human_reference = Channel.empty()
-    def host_reference = Channel.empty()
+    ch_versions = Channel.empty()
 
     FASTP_LR(
         input_reads,
@@ -24,11 +21,11 @@ workflow LONG_READS_QC {
 
     ch_versions = ch_versions.mix(FASTP_LR.out.versions)
 
-    def reads_json = FASTP_LR.out.reads.join( FASTP_LR.out.json )
+    reads_json = FASTP_LR.out.reads.join( FASTP_LR.out.json )
 
-    def reads_quality_levels = reads_json.map { meta, reads, json ->
+    reads_quality_levels = reads_json.map { meta, reads, json ->
         def json_txt = new groovy.json.JsonSlurper().parseText(json.text)
-        
+
         def q20_percentage = json_txt?.summary?.before_filtering?.q20_rate ?: 0;
 
         if (meta.platform == "ont"){
@@ -48,62 +45,77 @@ workflow LONG_READS_QC {
 
     // TODO: add filter if too many reads are removed
 
-    def decontaminated_reads = Channel.empty()
+    /***************************************************************************/
+    /* Perform decontamination from human sequences if requested               */
+    /***************************************************************************/
+    reads_quality_levels
+        .branch { meta, _reads ->
+            run_decontamination: meta.human_reference != null
+            skip_decontamination: meta.human_reference == null
+        }
+        .set { human_subdivided_reads }
 
-    if ( params.remove_human ) {
-        // TODO: make this consistent with short_reads
-        // can we use the same flag, even if one has phix but not the other?
-        // Check file extensions too
+    human_subdivided_reads.run_decontamination
+        .multiMap { meta, reads_ ->
+            reads: [meta, reads_]
+            reference: [ [id:"human"], file("${params.reference_genomes_folder}/${meta.human_reference}", checkIfExists: true)]
+        }
+        .set { ch_human_decontamination_input }
 
-        human_reference = Channel.fromPath(
-            "${params.reference_genomes_folder}/${params.human_fasta_prefix}.f*a", checkIfExists: true)
-            .collect().map {
-                files -> [ ["id": params.human_fasta_prefix], files ]
-            }
+    MINIMAP2_ALIGN_HUMAN(
+        ch_human_decontamination_input.reads,
+        ch_human_decontamination_input.reference,
+        "human",
+        "fastq", // out sequence extension
+        true,    // bam_format = true enables filtering of the bam file with samtools inside minimap2 module
+        false,   // no bam index extension needed
+        false,   // no CIGAR in paf format
+        true     // cigar_bam = true enables -L minimap2 option that is required for long reads alignment
+                 // because of the CIGAR-related bug that BAM format has
+                 // see explanation here https://github.com/lh3/minimap2?tab=readme-ov-file#working-with-65535-cigar-operations
+    )
 
-        // TODO: can we change the way human/host are given via prefixes?
+    ch_versions = ch_versions.mix(MINIMAP2_ALIGN_HUMAN.out.versions)
 
-        MINIMAP2_ALIGN_HUMAN(
-            reads_quality_levels,
-            human_reference,
-            "human",
-            "fastq", // out sequence extension
-            true,    // output bam format
-            "bai",   // bam index extension
-            false,   // no CIGAR in paf format
-            true     // allow for long CIGAR
-        )
+    human_cleaned_reads = human_subdivided_reads.skip_decontamination.mix(
+        MINIMAP2_ALIGN_HUMAN.out.filtered_output
+    )
 
-        ch_versions = ch_versions.mix(MINIMAP2_ALIGN_HUMAN.out.versions)
+    /***************************************************************************/
+    /* Perform decontamination from arbitrary contaminant sequences            */
+    /***************************************************************************/
+    human_cleaned_reads
+        .branch { meta, _reads ->
+            run_decontamination: meta.contaminant_reference != null
+            skip_decontamination: meta.contaminant_reference == null
+        }
+        .set { subdivided_reads }
 
-        decontaminated_reads = MINIMAP2_ALIGN_HUMAN.out.filtered_output
+    subdivided_reads.run_decontamination
+        .multiMap { meta, reads_ ->
+            reads: [meta, reads_]
+            reference: [ [id:file(meta.contaminant_reference).baseName], file("${params.reference_genomes_folder}/${meta.contaminant_reference}", checkIfExists: true) ]
+        }
+        .set { ch_decontamination_input }
 
-    } else {
-        decontaminated_reads = reads_quality_levels
-    }
+    MINIMAP2_ALIGN_HOST(
+        ch_decontamination_input.reads,
+        ch_decontamination_input.reference,
+        "host",
+        "fastq", // out sequence extension
+        true,    // bam_format = true enables filtering of the bam file with samtools inside minimap2 module
+        false,   // no bam index extension needed
+        false,   // no CIGAR in paf format
+        true     // cigar_bam = true enables -L minimap2 option that is required for long reads alignment
+                 // because of the CIGAR-related bug that BAM format has
+                 // see explanation here https://github.com/lh3/minimap2?tab=readme-ov-file#working-with-65535-cigar-operations
+    )
 
-    if ( reference_genome != null ) {
+    ch_versions = ch_versions.mix(MINIMAP2_ALIGN_HOST.out.versions)
 
-        host_reference = Channel.fromPath( "${params.reference_genomes_folder}/${reference_genome}*", checkIfExists: true)
-            .collect().map {
-                files -> [ ["id": reference_genome], files ]
-            }
-
-        MINIMAP2_ALIGN_HOST(
-            decontaminated_reads,
-            host_reference,
-            "host",
-            "fastq", // out sequence extension
-            true,    // output bam format
-            "bai",   // bam index extension
-            false,   // no CIGAR in paf format
-            true     // allow for long CIGAR
-        )
-
-        ch_versions = ch_versions.mix(MINIMAP2_ALIGN_HOST.out.versions)
-
-        decontaminated_reads = MINIMAP2_ALIGN_HOST.out.filtered_output
-    }
+    decontaminated_reads = subdivided_reads.skip_decontamination.mix(
+        MINIMAP2_ALIGN_HOST.out.filtered_output
+    )
 
     emit:
     qc_reads   = decontaminated_reads

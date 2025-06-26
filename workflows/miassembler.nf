@@ -85,33 +85,62 @@ workflow MIASSEMBLER {
     // Print parameter summary log to screen
     log.info(logo + paramsSummaryLog(workflow) + citation)
 
+    // ***************************************************************************** //
+    // Custom validation for human decontamination of reads and assembled contigs   //
+    // ***************************************************************************** //
+
+    if (params.skip_human_decontamination) {
+        log.warn("Human sequences will not be removed from raw reads or assembled contigs.")
+
+        if (params.human_reference) {
+            error "Setting 'skip_human_decontamination = true' is incompatible with providing 'params.human_reference'."
+        }
+    }
+
     if (params.samplesheet) {
-        def groupReads = { study_accession, reads_accession, fq1, fq2, library_layout, library_strategy, platform, assembler, assembly_memory, assembler_config ->
+        def groupReads = { study_accession, reads_accession, fq1, fq2, library_layout, library_strategy, platform, assembler, assembly_memory, assembler_config, contaminant_reference, human_reference, phix_reference ->
+
+            def human_reference_path = human_reference ?: params.human_reference
+            if (!params.skip_human_decontamination && human_reference_path == null) {
+                error "Invalid row, skip_human_decontamination is false but there is no human reference on row: ${study_accession}, ${reads_accession}."
+            }
+
             if (fq2 == []) {
-                return tuple(["id": reads_accession,
-                              "study_accession": study_accession,
-                              "single_end": true,
-                              "library_layout": library_layout,
-                              "library_strategy": library_strategy,
-                              "platform": params.platform ?: platform,
-                              "assembler": assembler ?: params.assembler,
-                              "assembly_memory": assembly_memory ?: params.assembly_memory,
-                              "assembler_config": assembler_config ?: params.long_reads_assembler_config
-                            ],
-                            [fq1]
-                        )
+                return tuple(
+                    [
+                        "id": reads_accession,
+                        "study_accession": study_accession,
+                        "single_end": true,
+                        "library_layout": library_layout,
+                        "library_strategy": library_strategy,
+                        "platform": params.platform ?: platform,
+                        "assembler": assembler ?: params.assembler,
+                        "assembly_memory": assembly_memory ?: params.assembly_memory,
+                        "assembler_config": assembler_config ?: params.long_reads_assembler_config,
+                        "contaminant_reference": contaminant_reference ?: params.contaminant_reference,
+                        "human_reference": human_reference_path, // -> if this value is null (which is not the same as an empty string) the decontamination won't be executed
+                        "phix_reference": phix_reference ?: params.phix_reference
+                    ],
+                    [fq1]
+                )
             } else {
-                return tuple(["id": reads_accession,
-                              "study_accession": study_accession,
-                              "single_end": false,
-                              "library_layout": library_layout,
-                              "library_strategy": library_strategy,
-                              "platform": params.platform ?: platform,
-                              "assembler": assembler ?: params.assembler,
-                              "assembly_memory": assembly_memory ?: params.assembly_memory,
-                              "assembler_config": assembler_config ?: params.long_reads_assembler_config
-                            ],
-                            [fq1, fq2])
+                return tuple(
+                    [
+                        "id": reads_accession,
+                        "study_accession": study_accession,
+                        "single_end": false,
+                        "library_layout": library_layout,
+                        "library_strategy": library_strategy,
+                        "platform": params.platform ?: platform,
+                        "assembler": assembler ?: params.assembler,
+                        "assembly_memory": assembly_memory ?: params.assembly_memory,
+                        "assembler_config": assembler_config ?: params.long_reads_assembler_config,
+                        "contaminant_reference": contaminant_reference ?: params.contaminant_reference,
+                        "human_reference": human_reference_path, // -> if this value is null (which is not the same as an empty string) the decontamination won't be executed
+                        "phix_reference": phix_reference ?: params.phix_reference
+                    ],
+                    [fq1, fq2]
+                )
             }
         }
 
@@ -135,6 +164,10 @@ workflow MIASSEMBLER {
 
         ch_versions = ch_versions.mix(FETCHTOOL_READS.out.versions)
 
+        if (!params.skip_human_decontamination && params.human_reference == null) {
+                error "Human decontamination is enabled but no human reference is provided. Please specify 'human_reference' parameter or set 'skip_human_decontamination = true'."
+            }
+
         // Push the library strategy into the meta of the reads, this is to make it easier to handle downstream
         fetch_reads_transformed = FETCHTOOL_READS.out.reads.map { meta, reads, library_strategy, library_layout, platform ->
             {
@@ -146,7 +179,10 @@ workflow MIASSEMBLER {
                         "library_strategy": params.library_strategy ?: library_strategy,
                         "library_layout": params.library_layout ?: library_layout,
                         "single_end": params.single_end ?: library_layout == "single",
-                        "platform": params.platform ?: platform
+                        "platform": params.platform ?: platform,
+                        "contaminant_reference": params.contaminant_reference,
+                        "human_reference": params.skip_human_decontamination ? null : params.human_reference,
+                        "phix_reference": params.phix_reference
                     ],
                     reads
                 ]
@@ -218,6 +254,10 @@ workflow MIASSEMBLER {
     ch_multiqc_base_files = ch_multiqc_base_files.mix( CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect() )
     ch_multiqc_base_files = ch_multiqc_base_files.mix( ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml') )
     ch_multiqc_base_files = ch_multiqc_base_files.mix( ch_methods_description.collectFile(name: 'methods_description_mqc.yaml') )
+
+    if (params.skip_human_decontamination) {
+        ch_multiqc_base_files = ch_multiqc_base_files.mix( channel.from( file("$projectDir/assets/human_decontamination_mqc.html", checkIfExists: true) ) )
+    }
 
     /**************************************/
     /* MultiQC report for the whole study */
@@ -341,4 +381,3 @@ workflow MIASSEMBLER {
 
     short_reads_qc_failed_entries.collectFile(name: "qc_failed_runs.csv", storeDir: "${params.outdir}", newLine: true, cache: false)
 }
-
