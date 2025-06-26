@@ -28,10 +28,18 @@ workflow LONG_READS_QC {
 
         def q20_percentage = json_txt?.summary?.before_filtering?.q20_rate ?: 0;
 
-        if ( q20_percentage >= params.long_reads_pacbio_quality_threshold ) {
-            return [ meta + [quality: "high"], reads]
-        } else {
-            return [ meta + [quality: "low"], reads]
+        if (meta.platform == "ont"){
+            if ( q20_percentage >= params.long_reads_ont_quality_threshold ) {
+                return [ meta + [quality: "high"], reads]
+            } else {
+                return [ meta + [quality: "low"], reads]
+            }
+        } else if (meta.platform == "pb") {
+            if ( q20_percentage >= params.long_reads_pacbio_quality_threshold ) {
+                return [ meta + [quality: "high"], reads]
+            } else {
+                return [ meta + [quality: "low"], reads]
+            }
         }
     }
 

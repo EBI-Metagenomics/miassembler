@@ -183,6 +183,13 @@
                 "long_reads_pacbio_quality_threshold": {
                     "type": "number",
                     "description": "The Q20 threshold that a pacbio sample needs to exceed to be labelled as HiFi.",
+                    "default": 0.9,
+                    "minimum": 0.0,
+                    "maximum": 1.0
+                },
+                "long_reads_ont_quality_threshold": {
+                    "type": "number",
+                    "description": "The Q20 threshold that an ONT sample needs to exceed to be labelled as high-quality.",
                     "default": 0.8,
                     "minimum": 0.0,
                     "maximum": 1.0
