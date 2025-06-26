@@ -9,7 +9,7 @@ process SEQKIT_GREP {
         'biocontainers/seqkit:2.9.0--h9ee0642_0' }"
 
     input:
-    tuple val(meta), path(sequence)
+    tuple val(meta), path(sequence, name: "input.fasta.gz")
     path pattern
 
     output:
@@ -32,7 +32,7 @@ process SEQKIT_GREP {
         $args \\
         --threads $task.cpus \\
         ${pattern_file} \\
-        ${sequence} \\
+        input.fasta.gz \\
         -o ${prefix}.${suffix}.gz \\
 
     cat <<-END_VERSIONS > versions.yml
