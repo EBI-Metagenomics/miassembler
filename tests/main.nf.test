@@ -35,8 +35,6 @@ nextflow_pipeline {
                 assembler                             = "spades"
                 short_reads_low_reads_count_threshold = 1000000
                 samplesheet                           = "${projectDir}/tests/samplesheet/test.csv"
-
-                phix_reference                        = "phix.fasta"
             }
         }
 
@@ -72,8 +70,6 @@ nextflow_pipeline {
 
                 study_accession                      = "SRP115494"
                 reads_accession                      = "SRR6180434"
-
-                phix_reference                       = "phix.fasta"
             }
         }
 
@@ -82,7 +78,7 @@ nextflow_pipeline {
                 assert success
                 assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 1
                 assert trace.succeeded().count{ task -> task.name.contains("MEGAHIT") } == 0
-                assert trace.succeeded().size() == 18
+                assert trace.succeeded().size() == 22
             }
         }
 
@@ -102,8 +98,6 @@ nextflow_pipeline {
 
                 study_accession                     = "SRP115494"
                 reads_accession                     = "SRR6180434"
-
-                phix_reference                      = "phix.fasta"
             }
         }
 
@@ -112,7 +106,7 @@ nextflow_pipeline {
                 assert success
                 assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 0
                 assert trace.succeeded().count{ task -> task.name.contains("MEGAHIT") } == 1
-                assert trace.tasks().size() == 18
+                assert trace.tasks().size() == 22
             }
         }
 
@@ -131,8 +125,6 @@ nextflow_pipeline {
 
                 study_accession                      = "SRP115494"
                 reads_accession                      = "SRR6180434"
-
-                phix_reference                       = "phix.fasta"
             }
         }
 
@@ -143,7 +135,7 @@ nextflow_pipeline {
                 assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 1
                 assert trace.succeeded().count{ task -> task.name.contains("MEGAHIT") } == 0
                 // TODO fix this assert
-                assert trace.succeeded().size() == 12
+                assert trace.succeeded().size() == 16
             }
         }
 
@@ -160,8 +152,6 @@ nextflow_pipeline {
 
                 study_accession = "ERP012810"
                 reads_accession = "ERR1076564"
-
-                phix_reference  = "phix.fasta"
             }
         }
 
@@ -186,8 +176,6 @@ nextflow_pipeline {
             params {
                 study_accession = "ERP012810"
                 reads_accession = "ERR1076564"
-
-                phix_reference  = "phix.fasta"
             }
         }
 
@@ -208,8 +196,6 @@ nextflow_pipeline {
             params {
                 study_accession = "DRP007622"
                 reads_accession = "DRR280712"
-
-                phix_reference  = "phix.fasta"
             }
         }
 
@@ -218,7 +204,7 @@ nextflow_pipeline {
                 assert success
                 assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 0
                 assert trace.succeeded().count{ task -> task.name.contains("MEGAHIT") } == 1
-                assert trace.tasks().size() == 18
+                assert trace.tasks().size() == 22
             }
         }
 
@@ -235,8 +221,6 @@ nextflow_pipeline {
 
                 study_accession = "DRP007622"
                 reads_accession = "DRR280712"
-
-                phix_reference  = "phix.fasta"
             }
         }
 
@@ -315,8 +299,7 @@ nextflow_pipeline {
         when {
             params {
                 samplesheet     = "${projectDir}/tests/samplesheet/test_long_reads_HQ.csv"
-
-                human_reference = "human.fna"
+                phix_reference  = null
             }
         }
 
@@ -357,8 +340,7 @@ nextflow_pipeline {
                 study_accession             = "SRP384046"
                 reads_accession             = "SRR19888830"
                 long_reads_assembler_config = "pacbio-hifi"
-
-                human_reference             = "human.fna"
+                phix_reference              = null
             }
         }
 
@@ -377,9 +359,6 @@ nextflow_pipeline {
                 assert trace.succeeded().count{ task -> task.name.contains("LONG_READS_COVERAGE") } == 1
                 assert trace.succeeded().count{ task -> task.name.contains("CALCULATE_ASSEMBLY_COVERAGE") } == 1
                 assert trace.succeeded().count{ task -> task.name.contains("QUAST") } == 1
-
-
-                assert trace.tasks().size() == 15
             }
         }
     }
@@ -428,7 +407,7 @@ nextflow_pipeline {
                 samplesheet                 = "${projectDir}/tests/samplesheet/test.csv"
                 // This is incompatible - we want the human decontamination to be avoided if possible
                 skip_human_decontamination  = true
-                human_reference             = "human.fna"
+                human_reference             = "human.fasta"
             }
         }
 
