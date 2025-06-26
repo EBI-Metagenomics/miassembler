@@ -1,5 +1,5 @@
 repository_type: pipeline
-org_path: ebi-metagenomics
+org_path: null
 template:
   prefix: ebi-metagenomics
   skip:
