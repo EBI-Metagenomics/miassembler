@@ -405,7 +405,7 @@ nextflow_pipeline {
             params {
                 assembler                   = "spades"
                 samplesheet                 = "${projectDir}/tests/samplesheet/test.csv"
-                // This is incompatible - we want the human decontamination to be avoided if possible
+                // It's incompatible to try to skip the decontamination of human data while setting the human_reference. We strongly discourage skipping this step.
                 skip_human_decontamination  = true
                 human_reference             = "human.fasta"
             }
