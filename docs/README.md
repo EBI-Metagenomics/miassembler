@@ -47,17 +47,17 @@ The reference genomes folder must follow the structure below:
 ├── ...
 ...
 ```
+
 For each genome, create a subdirectory that includes:
 
 - a `bwa-mem2/` folder containing the BWA-MEM2 index files
 - a `minimap2/` folder containing the Minimap2 index file
 - the FASTA file itself (`<genome_prefix>.fna`)
 
-
 > **Important**:
+>
 > - All FASTA files must use the `.fna` extension.
 > - All index files must follow the naming convention: `<genome_prefix>.fna.<index_extension>`.
-
 
 #### How to index a reference genome with BWA-MEM2
 
@@ -86,6 +86,7 @@ cd minimap2 && make
 # Then create the index:
 ./minimap2 -d <genome>.fna.mmi <genome>.fna
 ```
+
 This will produce a single `.mmi` file, which should be placed inside the `minimap2/` subfolder of the corresponding genome directory.
 
 ## Long reads
