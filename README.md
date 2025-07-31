@@ -27,7 +27,7 @@ Input/output options
   --study_accession                       [string]  The ENA Study secondary accession
   --reads_accession                       [string]  The ENA Run primary accession
   --private_study                         [boolean] To use if the ENA study is private, *this feature ony works on EBI infrastructure at the moment*
-  --reference_genomes_folder              [string]  The folder containing the reference genomes. It must follow a specific structure—see docs/README for details.
+  --reference_genomes_folder              [string]  The folder containing the reference genomes. It must follow a specific structure — see docs/README for details.
   --contaminant_reference                 [string]  Filename prefix (no extension) of the reference genome located in <reference_genomes_folder> to be used for host decontamination
   --skip_human_decontamination            [boolean] Scrubbing human contamination from raw reads and assembled contigs is performed by default as standard procedure. Set this flag to true to skip human decontamination. [default: false]
   --human_reference                       [string]  Filename prefix (no extension) of the human genome reference located in <reference_genomes_folder> to be used for human decontamination. Option is strongly encouraged as contamination with human DNA during laboratory sequencing is widespread and can impact analysis results.

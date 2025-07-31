@@ -40,7 +40,7 @@
                 },
                 "reference_genomes_folder": {
                     "type": "string",
-                    "description": "The folder containing the reference genomes. It must follow a specific structure—see docs/README for details.",
+                    "description": "The folder containing the reference genomes. It must follow a specific structure — see docs/README for details.",
                     "format": "directory-path"
                 },
                 "contaminant_reference": {

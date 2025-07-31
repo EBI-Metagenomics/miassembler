@@ -61,29 +61,19 @@ For each genome, create a subdirectory that includes:
 
 #### How to index a reference genome with BWA-MEM2
 
-As explained in [bwa-mem2's README](https://github.com/bwa-mem2/bwa-mem2?tab=readme-ov-file#getting-started):
+Refer to the [BWA-MEM2 installation guide](https://github.com/bwa-mem2/bwa-mem2?tab=readme-ov-file#installation) for instructions on installing BWA-MEM2. Once installed, you can index your reference genome using the following command:
 
 ```
-# Use precompiled binaries (recommended)
-curl -L https://github.com/bwa-mem2/bwa-mem2/releases/download/v2.2.1/bwa-mem2-2.2.1_x64-linux.tar.bz2 \
-  | tar jxf -
-
-# Index your reference genome with
-bwa-mem2-2.2.1_x64-linux/bwa-mem2 index <genome>.fna
+bwa-mem2 index <genome>.fna
 ```
 
 This will generate several index files in the current directory. Move these files into the `bwa-mem2/` subfolder of the corresponding genome directory.
 
 #### How to index a reference genome with Minimap2
 
-To generate a [Minimap2](https://github.com/lh3/minimap2) index (.mmi file), run:
+If Minimap2 is not already installed, follow [these instructions](https://github.com/lh3/minimap2?tab=readme-ov-file#install) to install it. To generate a Minimap2 index (.mmi file), run:
 
 ```
-# Install minimap2 if not already available
-git clone https://github.com/lh3/minimap2
-cd minimap2 && make
-
-# Then create the index:
 ./minimap2 -d <genome>.fna.mmi <genome>.fna
 ```
 
