@@ -35,7 +35,7 @@ workflow SHORT_READS_QC {
     human_subdivided_reads.run_decontamination
         .multiMap { meta, reads_ ->
             reads: [meta, reads_]
-            reference: [ [id:"human"], file("${params.reference_genomes_folder}/${meta.human_reference}.*", checkIfExists: true) ]
+            reference: [ [id:"human"], file("${params.reference_genomes_folder}/${meta.human_reference}/bwa-mem2/${meta.human_reference}.fna.*", checkIfExists: true) ]
         }
         .set { ch_human_decontamination_input }
 
@@ -63,7 +63,7 @@ workflow SHORT_READS_QC {
     phix_subdivided_reads.run_decontamination
         .multiMap { meta, reads ->
             reads: [meta, reads]
-            reference: [ [id:"phix"], file("${params.reference_genomes_folder}/${meta.phix_reference}.*") ]
+            reference: [ [id:"phix"], file("${params.reference_genomes_folder}/${meta.phix_reference}/bwa-mem2/${meta.phix_reference}.fna.*") ]
         }
         .set { ch_phix_decontamination_input }
 
@@ -91,7 +91,7 @@ workflow SHORT_READS_QC {
     subdivided_reads.run_decontamination
         .multiMap { meta, reads_ ->
             reads: [meta, reads_]
-            reference: [ [id:file(meta.contaminant_reference).baseName], file("${params.reference_genomes_folder}/${meta.contaminant_reference}.*") ]
+            reference: [ [id:file(meta.contaminant_reference).baseName], file("${params.reference_genomes_folder}/${meta.contaminant_reference}/bwa-mem2/${meta.contaminan_reference}.fna.*") ]
         }
         .set { ch_decontamination_input }
 
