@@ -28,10 +28,10 @@ Input/output options
   --reads_accession                       [string]  The ENA Run primary accession
   --private_study                         [boolean] To use if the ENA study is private, *this feature ony works on EBI infrastructure at the moment*
   --reference_genomes_folder              [string]  The folder containing the reference genomes. It must follow a specific structure — see docs/README for details.
-  --contaminant_reference                 [string]  Filename prefix (no extension) of the reference genome located in <reference_genomes_folder> to be used for host decontamination
+  --contaminant_reference                 [string]  Name of the subfolder with the reference genome located in <reference_genomes_folder> to be used for host decontamination
   --skip_human_decontamination            [boolean] Scrubbing human contamination from raw reads and assembled contigs is performed by default as standard procedure. Set this flag to true to skip human decontamination. [default: false]
-  --human_reference                       [string]  Filename prefix (no extension) of the human genome reference located in <reference_genomes_folder> to be used for human decontamination. Option is strongly encouraged as contamination with human DNA during laboratory sequencing is widespread and can impact analysis results.
-  --phix_reference                        [string]  Filename prefix (no extension) of the PhiX genome reference located in <reference_genomes_folder> to be used for decontamination of Illumina reads
+  --human_reference                       [string]  Name of the subfolder with the human genome reference located in <reference_genomes_folder> to be used for human decontamination. Option is strongly encouraged as contamination with human DNA during laboratory sequencing is widespread and can impact analysis results.
+  --phix_reference                        [string]  Name of the subfolder with the PhiX genome reference located in <reference_genomes_folder> to be used for decontamination of Illumina reads
   --diamond_db                            [string]  Path to diamond db (e.g. NCBI-nr) to perform frameshift correction.
   --outdir                                [string]  The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. [default: results]
   --email                                 [string]  Email address for completion summary.
@@ -102,9 +102,9 @@ The samplesheet is a comma-separated file (.csv) with the following columns:
 - assembler: Relevant for short reads, where either megahit, metaspades, or spades can be picked. Flye is also supported
 - assembly_memory: Integer value specifying the memory allocated for the assembly process.
 - assembler_config: Configuration to use flye with. One of "nano-raw", "nano-corr", "nano-hq", "pacbio-raw", "pacbio-corr", "pacbio-hifi".
-- contaminant_reference: Filename of fasta reference to be used for host decontamination of reads and assembly. BWA-MEM2 index files must be in the same folder and their names must start with <contaminant_reference>. In contrast to --contaminant_reference pipeline param provided
-- human_reference: Filename of human genome reference to be used for human decontamination of reads and assembly. BWA-MEM2 index files must be in the same folder and their names must start with <human_reference>.
-- phix_reference: Filename of PhiX genome reference to be used for PhiX decontamination of reads and assembly. BWA-MEM2 index files must be in the same folder and their names must start with <phix_reference>.
+- contaminant_reference: Filename of fasta reference to be used for host decontamination of reads and assembly. BWA-MEM2 index files must exist in <contaminant_reference>/bwa-mem2/ and their names must start with <contaminant_reference>.fna.*.
+- human_reference: Name of the subfolder with genome reference to be used for human decontamination of reads and assembly. BWA-MEM2 index files must exist in <human_reference>/bwa-mem2/ and their names must start with <human_reference>.fna.*.
+- phix_reference: Filename of PhiX genome reference to be used for PhiX decontamination of reads and assembly. BWA-MEM2 index files must must exist in <phix_reference>/bwa-mem2/ and their names must start with <phix_reference>.fna.*.
 
 The header row is mandatory.
 
