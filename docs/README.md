@@ -55,7 +55,6 @@ bwa-mem2 index <genome>.fna
 
 This will generate several index files in the current directory. Move these files into the `bwa-mem2/` subfolder of the corresponding genome directory.
 
-
 ## Long reads
 
 The pipeline uses [Flye](https://github.com/mikolmogorov/Flye) to assemble long reads.

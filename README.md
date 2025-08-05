@@ -102,9 +102,9 @@ The samplesheet is a comma-separated file (.csv) with the following columns:
 - assembler: Relevant for short reads, where either megahit, metaspades, or spades can be picked. Flye is also supported
 - assembly_memory: Integer value specifying the memory allocated for the assembly process.
 - assembler_config: Configuration to use flye with. One of "nano-raw", "nano-corr", "nano-hq", "pacbio-raw", "pacbio-corr", "pacbio-hifi".
-- contaminant_reference: Filename of fasta reference to be used for host decontamination of reads and assembly. BWA-MEM2 index files must exist in <contaminant_reference>/bwa-mem2/ and their names must start with <contaminant_reference>.fna.*.
-- human_reference: Name of the subfolder with genome reference to be used for human decontamination of reads and assembly. BWA-MEM2 index files must exist in <human_reference>/bwa-mem2/ and their names must start with <human_reference>.fna.*.
-- phix_reference: Filename of PhiX genome reference to be used for PhiX decontamination of reads and assembly. BWA-MEM2 index files must must exist in <phix_reference>/bwa-mem2/ and their names must start with <phix_reference>.fna.*.
+- contaminant_reference: Filename of fasta reference to be used for host decontamination of reads and assembly. BWA-MEM2 index files must exist in <contaminant_reference>/bwa-mem2/ and their names must start with <contaminant_reference>.fna.\*.
+- human_reference: Name of the subfolder with genome reference to be used for human decontamination of reads and assembly. BWA-MEM2 index files must exist in <human_reference>/bwa-mem2/ and their names must start with <human_reference>.fna.\*.
+- phix_reference: Filename of PhiX genome reference to be used for PhiX decontamination of reads and assembly. BWA-MEM2 index files must must exist in <phix_reference>/bwa-mem2/ and their names must start with <phix_reference>.fna.\*.
 
 The header row is mandatory.
 
