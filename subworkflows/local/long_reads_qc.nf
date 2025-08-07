@@ -2,7 +2,7 @@ include { FASTP as FASTP_LR                      } from '../../modules/nf-core/f
 include { MINIMAP2_ALIGN as MINIMAP2_ALIGN_HUMAN } from '../../modules/nf-core/minimap2/align/main'
 include { MINIMAP2_ALIGN as MINIMAP2_ALIGN_HOST  } from '../../modules/nf-core/minimap2/align/main'
 
-include { LONG_READS_ONT_QC                      } from 'long_reads_ont_qc'
+include { LONG_READS_ONT_QC                      } from './long_reads_ont_qc'
 
 workflow LONG_READS_QC {
 
@@ -59,7 +59,7 @@ workflow LONG_READS_QC {
 
     // putting together pacbio and non-cleaned ont
     fastp_adapter_free_reads = LONG_READS_ONT_QC.out.ont_qc_reads.mix(
-        reads_platform.pb
+        reads_platform.pacbio
     )
 
     // TODO: add filter if too many reads are removed

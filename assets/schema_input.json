@@ -102,6 +102,19 @@
                         "maxLength": 0
                     }
                 ]
+            },
+            "lambdaphage_reference": {
+                "errorMessage": "lambdaphage reference genome to use for decontamination, cannot contain spaces and must have extension '.fa', '.fasta', '.fna', '.fa.gz', '.fasta.gz or '.fna.gz'",
+                "anyOf": [
+                    {
+                        "type": "string",
+                        "pattern": "^\\S+\\.(fa|fasta|fna)(\\.gz)?$"
+                    },
+                    {
+                        "type": "string",
+                        "maxLength": 0
+                    }
+                ]
             }
         },
         "required": ["study_accession", "reads_accession", "fastq_1", "library_layout", "library_strategy"]
