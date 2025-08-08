@@ -1,4 +1,5 @@
 include { FASTP as FASTP_LR                      } from '../../modules/nf-core/fastp/main'
+include { CHOPPER as CHOPPER_PACBIO_LQ           } from '../../modules/nf-core/chopper/main'
 include { MINIMAP2_ALIGN as MINIMAP2_ALIGN_HUMAN } from '../../modules/nf-core/minimap2/align/main'
 include { MINIMAP2_ALIGN as MINIMAP2_ALIGN_HOST  } from '../../modules/nf-core/minimap2/align/main'
 
@@ -45,21 +46,32 @@ workflow LONG_READS_QC {
     }
     reads_quality_levels.view()
 
-    /*********************************************************************/
-    /* Remove ONT adapters and chop Nanopore sequences only              */
-    /*********************************************************************/
+    /***********************************/
+    /* Adapters and sequence chopping  */
+    /***********************************/
     reads_quality_levels.branch { meta, reads ->
         ont: meta.platform == "ont"
-        pacbio: meta.platform == "pb"
+        pacbio_low: (meta.platform == "pb") && (meta.quality == "low")
+        pacbio_high: (meta.platform == "pb") && (meta.quality == "high")
     }.set {reads_platform}
+
+    // Remove ONT adapters and chop lambdaphage from ONT sequences only
 
     LONG_READS_ONT_QC(
         reads_platform.ont
     )
 
+    // Trimming start and end of reads has a decent effect on pb lq
+
+    CHOPPER_PACBIO_LQ(
+        reads_platform.pacbio_low,
+        []
+    )
+
     // putting together pacbio and non-cleaned ont
-    fastp_adapter_free_reads = LONG_READS_ONT_QC.out.ont_qc_reads.mix(
-        reads_platform.pacbio
+    fastp_chopped_reads = LONG_READS_ONT_QC.out.ont_qc_reads.mix(
+        CHOPPER_PACBIO_LQ.out.fastq,
+        reads_platform.pacbio_high
     )
 
     // TODO: add filter if too many reads are removed
@@ -67,7 +79,7 @@ workflow LONG_READS_QC {
     /***************************************************************************/
     /* Perform decontamination from human sequences if requested               */
     /***************************************************************************/
-    fastp_adapter_free_reads
+    fastp_chopped_reads
         .branch { meta, _reads ->
             run_decontamination: meta.human_reference != null
             skip_decontamination: meta.human_reference == null

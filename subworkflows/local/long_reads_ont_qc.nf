@@ -39,10 +39,9 @@ workflow LONG_READS_ONT_QC {
     )
     ch_versions = ch_versions.mix(CHOPPER_LAMBDA.out.versions)
 
-    // chopper is still needed for start-of-sequence trimming
     CHOPPER_NOLAMBDA(
         lambdaphage_subdivided_reads.skip_decontamination,
-        ""
+        []
     )
     ch_versions = ch_versions.mix(CHOPPER_NOLAMBDA.out.versions)
 

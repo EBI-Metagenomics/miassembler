@@ -11,7 +11,7 @@ workflow PACBIO_LQ {
     ch_versions = Channel.empty()
 
     FLYE(
-        qc_reads
+        qc_reads,
         "--pacbio-raw"
     )
     ch_versions = ch_versions.mix(FLYE.out.versions)

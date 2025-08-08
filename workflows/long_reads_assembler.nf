@@ -55,7 +55,7 @@ workflow LONG_READS_ASSEMBLER {
     ch_versions = ch_versions.mix(FASTQC_BEFORE.out.versions)
 
     LONG_READS_QC (
-        input_reads,
+        input_reads
     )
     ch_versions = ch_versions.mix(LONG_READS_QC.out.versions)
 
@@ -70,9 +70,9 @@ workflow LONG_READS_ASSEMBLER {
     /*
         The selection process ensures that:
         - The user selected assembler configuration is always used (either from the samplesheet assembler column (with precedence) or the params.assembler)
-        - Low-quality ONT reads are trimmed with canu and assembled with flye --nano-corr/raw), unless specified otherwise.
+        - Low-quality ONT reads are trimmed with chopper and assembled with flye --nano-corr/raw), unless specified otherwise.
         - High-quality ONT reads are trimmed with porechop_abi and assembled with flye --nano-hq), unless specified otherwise.
-        - Low-quality pacbio reads are trimmed with canu and assembled with flye --pacbio-corr/raw), unless specified otherwise.
+        - Low-quality pacbio reads are assembled with flye --pacbio-corr/raw), unless specified otherwise.
         - High-quality pacbio reads are trimmed with HiFiAdapterFilt and assembled with flye --pacbio-hifi), unless specified otherwise.
         Extra polishing steps are applied to low-quality reads. All subworkflows also apply post-assembly host decontamination.
     */
