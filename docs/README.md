@@ -18,9 +18,9 @@ For the assembly of short metagenomic reads the pipeline uses [SPAdes](https://d
 
 ### Required Databases
 
-- `--reference_genomes_folder`: Path to the folder containing all required reference genomes in FASTA format, along with their indexes generated using `bwa-mem2` and `minimap2`. These genomes are used during read and contig decontamination steps. Frequently used reference genomes are available on our [FTP server](https://ftp.ebi.ac.uk/pub/databases/metagenomics/pipelines/references/).
+- `--reference_genomes_folder`: Path to the folder containing all required reference genomes in FASTA format, along with their indexes generated using `bwa-mem2`. These genomes are used during read and contig decontamination steps. Frequently used reference genomes are available on our [FTP server](https://ftp.ebi.ac.uk/pub/databases/metagenomics/pipelines/references/).
 
-The reference genomes folder must follow the structure below:
+Each reference genome should be organized as follows:
 
 ```
 <reference_genomes_folder>
@@ -31,27 +31,13 @@ The reference genomes folder must follow the structure below:
 │   │   ├── <genome_1>.fna.ann
 │   │   ├── <genome_1>.fna.bwt.2bit.64
 │   │   └── <genome_1>.fna.pac
-│   ├── <genome_1>.fna
-│   └── minimap2
-│       └── <genome_1>.fna.mmi
-├── <genome_2>
-|   ├── bwa-mem2
-|   │   ├── <genome_2>.fna.0123
-|   │   ├── <genome_2>.fna.amb
-|   │   ├── <genome_2>.fna.ann
-|   │   ├── <genome_2>.fna.bwt.2bit.64
-|   │   └── <genome_2>.fna.pac
-|   ├── minimap2
-|   │   └── <genome_2>.fna.mmi
-|   └── <genome_2>.fna
-├── ...
+│   └── <genome_1>.fna
 ...
 ```
 
 For each genome, create a subdirectory that includes:
 
 - a `bwa-mem2/` folder containing the BWA-MEM2 index files
-- a `minimap2/` folder containing the Minimap2 index file
 - the FASTA file itself (`<genome_prefix>.fna`)
 
 > **Important**:
@@ -68,16 +54,6 @@ bwa-mem2 index <genome>.fna
 ```
 
 This will generate several index files in the current directory. Move these files into the `bwa-mem2/` subfolder of the corresponding genome directory.
-
-#### How to index a reference genome with Minimap2
-
-If Minimap2 is not already installed, follow [these instructions](https://github.com/lh3/minimap2?tab=readme-ov-file#install) to install it. To generate a Minimap2 index (.mmi file), run:
-
-```
-./minimap2 -d <genome>.fna.mmi <genome>.fna
-```
-
-This will produce a single `.mmi` file, which should be placed inside the `minimap2/` subfolder of the corresponding genome directory.
 
 ## Long reads
 

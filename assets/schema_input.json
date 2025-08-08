@@ -65,11 +65,11 @@
                 "type": "string"
             },
             "contaminant_reference": {
-                "errorMessage": "Fasta file for decontamination, cannot contain spaces and must have extension '.fa', '.fasta', '.fna', '.fa.gz', '.fasta.gz or '.fna.gz'",
+                "errorMessage": "Fasta file prefix to be used as part of the decontamination process, corresponding folder must exist in the reference_genomes_folder",
                 "anyOf": [
                     {
                         "type": "string",
-                        "pattern": "^\\S+\\.(fa|fasta|fna)(\\.gz)?$"
+                        "pattern": "^\\S+$"
                     },
                     {
                         "type": "string",
@@ -78,11 +78,11 @@
                 ]
             },
             "human_reference": {
-                "errorMessage": "Human reference genome to use for decontamination, cannot contain spaces and must have extension '.fa', '.fasta', '.fna', '.fa.gz', '.fasta.gz or '.fna.gz'",
+                "errorMessage": "Human reference genome prefix to use for decontamination, corresponding folder must exist in the reference_genomes_folder",
                 "anyOf": [
                     {
                         "type": "string",
-                        "pattern": "^\\S+\\.(fa|fasta|fna)(\\.gz)?$"
+                        "pattern": "^\\S+$"
                     },
                     {
                         "type": "string",
@@ -91,11 +91,11 @@
                 ]
             },
             "phix_reference": {
-                "errorMessage": "PhiX reference genome to use for decontamination, cannot contain spaces and must have extension '.fa', '.fasta', '.fna', '.fa.gz', '.fasta.gz or '.fna.gz'",
+                "errorMessage": "PhiX reference genome prefix to use for decontamination, corresponding folder must exist in the reference_genomes_folder",
                 "anyOf": [
                     {
                         "type": "string",
-                        "pattern": "^\\S+\\.(fa|fasta|fna)(\\.gz)?$"
+                        "pattern": "^\\S+$"
                     },
                     {
                         "type": "string",
