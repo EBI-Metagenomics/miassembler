@@ -98,7 +98,7 @@ workflow MIASSEMBLER {
     }
 
     if (params.samplesheet) {
-        def groupReads = { study_accession, reads_accession, fq1, fq2, library_layout, library_strategy, platform, assembler, assembly_memory, assembler_config, contaminant_reference, human_reference, phix_reference ->
+        def groupReads = { study_accession, reads_accession, fq1, fq2, library_layout, library_strategy, platform, assembler, assembly_memory, assembler_config, contaminant_reference, human_reference, phix_reference, lambdaphage_reference ->
 
             def human_reference_path = human_reference ?: params.human_reference
             if (!params.skip_human_decontamination && human_reference_path == null) {
@@ -119,7 +119,8 @@ workflow MIASSEMBLER {
                         "assembler_config": assembler_config ?: params.long_reads_assembler_config,
                         "contaminant_reference": contaminant_reference ?: params.contaminant_reference,
                         "human_reference": human_reference_path, // -> if this value is null (which is not the same as an empty string) the decontamination won't be executed
-                        "phix_reference": phix_reference ?: params.phix_reference
+                        "phix_reference": phix_reference ?: params.phix_reference,
+                        "lambdaphage_reference": lambdaphage_reference ?: params.lambdaphage_reference
                     ],
                     [fq1]
                 )
@@ -137,7 +138,8 @@ workflow MIASSEMBLER {
                         "assembler_config": assembler_config ?: params.long_reads_assembler_config,
                         "contaminant_reference": contaminant_reference ?: params.contaminant_reference,
                         "human_reference": human_reference_path, // -> if this value is null (which is not the same as an empty string) the decontamination won't be executed
-                        "phix_reference": phix_reference ?: params.phix_reference
+                        "phix_reference": phix_reference ?: params.phix_reference,
+                        "lambdaphage_reference": lambdaphage_reference ?: params.lambdaphage_reference
                     ],
                     [fq1, fq2]
                 )
@@ -182,7 +184,8 @@ workflow MIASSEMBLER {
                         "platform": params.platform ?: platform,
                         "contaminant_reference": params.contaminant_reference,
                         "human_reference": params.skip_human_decontamination ? null : params.human_reference,
-                        "phix_reference": params.phix_reference
+                        "phix_reference": params.phix_reference,
+                        "lambdaphage_reference": params.lambdaphage_reference
                     ],
                     reads
                 ]

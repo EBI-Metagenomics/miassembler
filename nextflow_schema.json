@@ -61,6 +61,10 @@
                     "type": "string",
                     "description": "Filename of the PhiX genome reference located in <reference_genomes_folder> to be used for decontamination of Illumina reads"
                 },
+                "lambdaphage_reference": {
+                    "type": "string",
+                    "description": "Filename of the lambda phage genome reference located in <reference_genomes_folder> to be used for decontamination of Oxford Nanopore reads"
+                },
                 "diamond_db": {
                     "type": "string",
                     "format": "file-path",
