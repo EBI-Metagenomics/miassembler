@@ -42,7 +42,6 @@ workflow LONG_READS_QC {
             }
         }
     }
-    reads_quality_levels.view()
 
     /***********************************/
     /* Adapters and sequence chopping  */
