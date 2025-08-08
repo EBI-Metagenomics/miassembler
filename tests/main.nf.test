@@ -306,7 +306,7 @@ nextflow_pipeline {
         then {
             with(workflow) {
                 assert trace.succeeded().count{ task -> task.name.contains("FASTQC_BEFORE") } == 2
-                assert trace.succeeded().count{ task -> task.name.contains("LONG_READS_QC:FASTP_LR") } == 2
+                assert trace.succeeded().count{ task -> task.name.contains("LONG_READS_QC:FASTPLONG") } == 2
                 assert trace.succeeded().count{ task -> task.name.contains("LONG_READS_QC:MINIMAP2_ALIGN_HUMAN") } == 2
                 assert trace.succeeded().count{ task -> task.name.contains("FASTQC_AFTER") } == 2
                 assert trace.succeeded().count{ task -> task.name.contains("PACBIO_HIFI:HIFIADAPTERFILT") } == 1
@@ -350,7 +350,7 @@ nextflow_pipeline {
 
                 assert trace.succeeded().count{ task -> task.name.contains("FETCHTOOL_READS") } == 1
                 assert trace.succeeded().count{ task -> task.name.contains("FASTQC_BEFORE") } == 1
-                assert trace.succeeded().count{ task -> task.name.contains("LONG_READS_QC:FASTP_LR") } == 1
+                assert trace.succeeded().count{ task -> task.name.contains("LONG_READS_QC:FASTPLONG") } == 1
                 assert trace.succeeded().count{ task -> task.name.contains("LONG_READS_QC:MINIMAP2_ALIGN_HUMAN") } == 1
                 assert trace.succeeded().count{ task -> task.name.contains("FASTQC_AFTER") } == 1
                 assert trace.succeeded().count{ task -> task.name.contains("PACBIO_HIFI:HIFIADAPTERFILT") } == 1
