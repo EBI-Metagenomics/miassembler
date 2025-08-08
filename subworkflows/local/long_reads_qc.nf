@@ -1,4 +1,4 @@
-include { FASTP as FASTP_LR                      } from '../../modules/nf-core/fastp/main'
+include { FASTPLONG                              } from '../../modules/nf-core/fastplong/main'
 include { CHOPPER as CHOPPER_PACBIO_LQ           } from '../../modules/nf-core/chopper/main'
 include { MINIMAP2_ALIGN as MINIMAP2_ALIGN_HUMAN } from '../../modules/nf-core/minimap2/align/main'
 include { MINIMAP2_ALIGN as MINIMAP2_ALIGN_HOST  } from '../../modules/nf-core/minimap2/align/main'
@@ -13,17 +13,15 @@ workflow LONG_READS_QC {
     main:
     ch_versions = Channel.empty()
 
-    FASTP_LR(
+    FASTPLONG(
         input_reads,
         [],      // no input adapters
         false,   // keep passing reads in the output
-        false,   // omit trimmed reads in the output
-        false,   // don't merge all reads in the output
-        false    // don't trim for polyA
+        false    // omit trimmed reads in the output
     )
-    ch_versions = ch_versions.mix(FASTP_LR.out.versions)
+    ch_versions = ch_versions.mix(FASTPLONG.out.versions)
 
-    reads_json = FASTP_LR.out.reads.join( FASTP_LR.out.json )
+    reads_json = FASTPLONG.out.reads.join( FASTPLONG.out.json )
 
     reads_quality_levels = reads_json.map { meta, reads, json ->
         def json_txt = new groovy.json.JsonSlurper().parseText(json.text)
@@ -150,6 +148,6 @@ workflow LONG_READS_QC {
 
     emit:
     qc_reads   = decontaminated_reads
-    fastp_json = FASTP_LR.out.json
+    fastp_json = FASTPLONG.out.json
     versions   = ch_versions
 }
