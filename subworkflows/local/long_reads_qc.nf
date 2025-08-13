@@ -1,6 +1,9 @@
-include { FASTP as FASTP_LR                      } from '../../modules/nf-core/fastp/main'
+include { FASTPLONG                              } from '../../modules/nf-core/fastplong/main'
+include { CHOPPER as CHOPPER_PACBIO_LQ           } from '../../modules/nf-core/chopper/main'
 include { MINIMAP2_ALIGN as MINIMAP2_ALIGN_HUMAN } from '../../modules/nf-core/minimap2/align/main'
 include { MINIMAP2_ALIGN as MINIMAP2_ALIGN_HOST  } from '../../modules/nf-core/minimap2/align/main'
+
+include { LONG_READS_ONT_QC                      } from './long_reads_ont_qc'
 
 workflow LONG_READS_QC {
 
@@ -10,18 +13,15 @@ workflow LONG_READS_QC {
     main:
     ch_versions = Channel.empty()
 
-    FASTP_LR(
+    FASTPLONG(
         input_reads,
         [],      // no input adapters
         false,   // keep passing reads in the output
-        false,   // omit trimmed reads in the output
-        false,   // don't merge all reads in the output
-        false    // don't trim for polyA
+        false    // omit trimmed reads in the output
     )
+    ch_versions = ch_versions.mix(FASTPLONG.out.versions)
 
-    ch_versions = ch_versions.mix(FASTP_LR.out.versions)
-
-    reads_json = FASTP_LR.out.reads.join( FASTP_LR.out.json )
+    reads_json = FASTPLONG.out.reads.join( FASTPLONG.out.json )
 
     reads_quality_levels = reads_json.map { meta, reads, json ->
         def json_txt = new groovy.json.JsonSlurper().parseText(json.text)
@@ -43,12 +43,40 @@ workflow LONG_READS_QC {
         }
     }
 
+    /***********************************/
+    /* Adapters and sequence chopping  */
+    /***********************************/
+    reads_quality_levels.branch { meta, reads ->
+        ont: meta.platform == "ont"
+        pacbio_low: (meta.platform == "pb") && (meta.quality == "low")
+        pacbio_high: (meta.platform == "pb") && (meta.quality == "high")
+    }.set {reads_platform}
+
+    // Remove ONT adapters and chop lambdaphage from ONT sequences only
+
+    LONG_READS_ONT_QC(
+        reads_platform.ont
+    )
+
+    // Trimming start and end of reads has a decent effect on pb lq
+
+    CHOPPER_PACBIO_LQ(
+        reads_platform.pacbio_low,
+        []
+    )
+
+    // putting together pacbio and non-cleaned ont
+    fastp_chopped_reads = LONG_READS_ONT_QC.out.ont_qc_reads.mix(
+        CHOPPER_PACBIO_LQ.out.fastq,
+        reads_platform.pacbio_high
+    )
+
     // TODO: add filter if too many reads are removed
 
     /***************************************************************************/
     /* Perform decontamination from human sequences if requested               */
     /***************************************************************************/
-    reads_quality_levels
+    fastp_chopped_reads
         .branch { meta, _reads ->
             run_decontamination: meta.human_reference != null
             skip_decontamination: meta.human_reference == null
@@ -119,6 +147,6 @@ workflow LONG_READS_QC {
 
     emit:
     qc_reads   = decontaminated_reads
-    fastp_json = FASTP_LR.out.json
+    fastp_json = FASTPLONG.out.json
     versions   = ch_versions
 }
