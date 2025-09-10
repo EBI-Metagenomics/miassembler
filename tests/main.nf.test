@@ -376,7 +376,7 @@ nextflow_pipeline {
                 skip_human_decontamination  = true
 
                 human_reference             = null
-                phix_reference              = "phix.fasta"
+                phix_reference              = "phix"
             }
         }
 
@@ -407,7 +407,7 @@ nextflow_pipeline {
                 samplesheet                 = "${projectDir}/tests/samplesheet/test.csv"
                 // It's incompatible to try to skip the decontamination of human data while setting the human_reference. We strongly discourage skipping this step.
                 skip_human_decontamination  = true
-                human_reference             = "human.fasta"
+                human_reference             = "human"
             }
         }
 
