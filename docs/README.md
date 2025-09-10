@@ -65,7 +65,8 @@ The output from fastp is used to determine whether data are low-quality or high-
 
 1. Oxford Nanopore Technology + Low Quality data:
 
-   - **Adapters trimming** with [Canu](https://canu.readthedocs.io/en/latest/)
+   - **Adapters trimming** with [Porechop_ABI](https://github.com/bonsai-team/Porechop_ABI)
+   - **Lambdaphage removal and start/end trimming** with [chopper](https://github.com/wdecoster/chopper)
    - **Assembly** with Flye `--nano-raw`
    - **Assembly polish** with [racon](https://github.com/isovic/racon)
    - **Assembly polish** with [medaka](https://github.com/nanoporetech/medaka)
@@ -77,7 +78,6 @@ The output from fastp is used to determine whether data are low-quality or high-
 
 3. PacBio + Low Quality data:
 
-   - **Adapters trimming** with Canu
    - **Assembly** with Flye `--pacbio-raw`
    - **Assembly polish** with racon
 

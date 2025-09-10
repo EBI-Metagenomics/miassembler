@@ -1,32 +1,25 @@
-include { CANU as CANU_ONT } from '../../modules/nf-core/canu/main'
-include { FLYE             } from '../../modules/nf-core/flye/main'
-include { MINIMAP2_ALIGN   } from '../../modules/nf-core/minimap2/align/main'
-include { RACON            } from '../../modules/nf-core/racon/main'
-include { MEDAKA           } from '../../modules/nf-core/medaka/main'
+include { FLYE           } from '../../modules/nf-core/flye/main'
+include { MINIMAP2_ALIGN } from '../../modules/nf-core/minimap2/align/main'
+include { RACON          } from '../../modules/nf-core/racon/main'
+include { MEDAKA         } from '../../modules/nf-core/medaka/main'
 
 workflow ONT_LQ {
     take:
-    reads                   // [ val(meta), path(reads) ]
+    qc_reads                   // [ val(meta), path(reads) ]
 
     main:
 
     ch_versions = Channel.empty()
 
-    CANU_ONT(
-        reads,
-        "-nanopore",
-        "5m"
-    )
-    ch_versions = ch_versions.mix(CANU_ONT.out.versions)
-
     FLYE(
-        CANU_ONT.out.corrected_trimmed_reads,
+        qc_reads,
         "--nano-raw"
     )
     ch_versions = ch_versions.mix(FLYE.out.versions)
 
+    // paf generation
     MINIMAP2_ALIGN(
-        CANU_ONT.out.corrected_trimmed_reads,
+        qc_reads,
         FLYE.out.fasta,
         "",     // no prefix needed for paf generation
         "",     // no extension needed for paf generation
@@ -37,7 +30,7 @@ workflow ONT_LQ {
     )
     ch_versions = ch_versions.mix(MINIMAP2_ALIGN.out.versions)
 
-    reads_flye_contigs_paf = CANU_ONT.out.corrected_trimmed_reads
+    reads_flye_contigs_paf = qc_reads
             .join(FLYE.out.fasta)
             .join(MINIMAP2_ALIGN.out.paf)
 
@@ -46,7 +39,7 @@ workflow ONT_LQ {
     )
     ch_versions = ch_versions.mix(RACON.out.versions)
 
-    reads_racon_contigs = CANU_ONT.out.corrected_trimmed_reads.join(RACON.out.improved_assembly)
+    reads_racon_contigs = qc_reads.join(RACON.out.improved_assembly)
 
     MEDAKA(
         reads_racon_contigs
