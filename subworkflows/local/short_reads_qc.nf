@@ -91,7 +91,7 @@ workflow SHORT_READS_QC {
     subdivided_reads.run_decontamination
         .multiMap { meta, reads_ ->
             reads: [meta, reads_]
-            reference: [ [id:file(meta.contaminant_reference).baseName], file("${params.reference_genomes_folder}/${meta.contaminant_reference}/bwa-mem2/${meta.contaminan_reference}.fna.*") ]
+            reference: [ [id:file(meta.contaminant_reference).baseName], file("${params.reference_genomes_folder}/${meta.contaminant_reference}/bwa-mem2/${meta.contaminant_reference}.fna.*") ]
         }
         .set { ch_decontamination_input }
 
