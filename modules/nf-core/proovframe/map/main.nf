@@ -25,8 +25,9 @@ process PROOVFRAME_MAP {
     proovframe \\
         map \\
         ${args} \\
-        --db ${faa} \\
-        -o ${prefix}.tsv  \\
+        --threads ${task.cpus} \\
+        -a ${faa} \\
+        -o ${prefix}.tsv \\
         ${fasta}
 
     cat <<-END_VERSIONS > versions.yml
