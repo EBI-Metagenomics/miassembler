@@ -16,26 +16,44 @@ For the assembly of short metagenomic reads the pipeline uses [SPAdes](https://d
 4. Removes contaminated contigs using [Minimap2](https://github.com/lh3/minimap2) and [SeqKit](https://bioinf.shenwei.me/seqkit/)
 5. Calculates assembly coverage using [MetaBAT2](https://bitbucket.org/berkeleylab/metabat/src/master/) metabat2_jgi_summarizebamcontigdepths for per-contig depth and [Samtools idxstats](http://www.htslib.org/doc/samtools-idxstats.html) for alignment summary statistics.
 
-### Required DBs:
+### Required Databases
 
-- `--reference_genomes_folder`: Path to the folder that contains all required reference genomes in FASTA format as well as their indexes generated with bwa-mem2. **phiX** is provided on [FTP](https://ftp.ebi.ac.uk/pub/databases/metagenomics/pipelines/references/)
+- `--reference_genomes_folder`: Path to the folder containing all required reference genomes in FASTA format, along with their indexes generated using `bwa-mem2`. These genomes are used during read and contig decontamination steps. Frequently used reference genomes are available on our [FTP server](https://ftp.ebi.ac.uk/pub/databases/metagenomics/pipelines/references/).
 
-bwa-mem2 index files must be generated for all genomes provided as references for read decontamination.
-
-#### How to index reference genome with BWA-MEM2
-
-As explained in [bwa-mem2's README](https://github.com/bwa-mem2/bwa-mem2?tab=readme-ov-file#getting-started):
+Each reference genome should be organized as follows:
 
 ```
-# Use precompiled binaries (recommended)
-curl -L https://github.com/bwa-mem2/bwa-mem2/releases/download/v2.2.1/bwa-mem2-2.2.1_x64-linux.tar.bz2 \
-  | tar jxf -
-
-# Index your reference genome with
-bwa-mem2-2.2.1_x64-linux/bwa-mem2 index ref.fa
+<reference_genomes_folder>
+├── <genome_1>
+│   ├── bwa-mem2
+│   │   ├── <genome_1>.fna.0123
+│   │   ├── <genome_1>.fna.amb
+│   │   ├── <genome_1>.fna.ann
+│   │   ├── <genome_1>.fna.bwt.2bit.64
+│   │   └── <genome_1>.fna.pac
+│   └── <genome_1>.fna
+...
 ```
 
-This will generate multiple index files in a folder. Place them together with source FASTA file to `reference_genomes_folder`.
+For each genome, create a subdirectory that includes:
+
+- a `bwa-mem2/` folder containing the BWA-MEM2 index files
+- the FASTA file itself (`<genome_prefix>.fna`)
+
+> **Important**:
+>
+> - All FASTA files must use the `.fna` extension.
+> - All index files must follow the naming convention: `<genome_prefix>.fna.<index_extension>`.
+
+#### How to index a reference genome with BWA-MEM2
+
+Refer to the [BWA-MEM2 installation guide](https://github.com/bwa-mem2/bwa-mem2?tab=readme-ov-file#installation) for instructions on installing BWA-MEM2. Once installed, you can index your reference genome using the following command:
+
+```
+bwa-mem2 index <genome>.fna
+```
+
+This will generate several index files in the current directory. Move these files into the `bwa-mem2/` subfolder of the corresponding genome directory.
 
 ## Long reads
 
@@ -74,7 +92,7 @@ For low quality ONT and PacBio data, [proovframe](https://github.com/thackl/proo
 
 Finally, assembly coverage is calculated using [MetaBAT2](https://bitbucket.org/berkeleylab/metabat/src/master/) metabat2_jgi_summarizebamcontigdepths for per contig depth and [Samtools idxstats](http://www.htslib.org/doc/samtools-idxstats.html) for alignment summary statistics.
 
-### Required DBs:
+### Required Databases
 
 - `--reference_genomes_folder`: Path to the folder that contains all required reference genomes in FASTA format.
 - `--diamond_db`: pre-formatted diamond db to use in the frameshift correction step. Internally, we use NCBI_nr.

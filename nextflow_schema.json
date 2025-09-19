@@ -40,12 +40,12 @@
                 },
                 "reference_genomes_folder": {
                     "type": "string",
-                    "description": "The folder with the reference genomes.",
+                    "description": "The folder containing the reference genomes. It must follow a specific structure — see docs/README for details.",
                     "format": "directory-path"
                 },
                 "contaminant_reference": {
                     "type": "string",
-                    "description": "Filename of the reference genome located in <reference_genomes_folder> to be used for host decontamination"
+                    "description": "Name of the subfolder with the reference genome located in <reference_genomes_folder> to be used for host decontamination"
                 },
                 "skip_human_decontamination": {
                     "type": "boolean",
@@ -55,11 +55,11 @@
                 },
                 "human_reference": {
                     "type": "string",
-                    "description": "Filename of the human genome reference located in <reference_genomes_folder> to be used for human decontamination. Option is strongly encouraged as contamination with human DNA during laboratory sequencing is widespread and can impact analysis results."
+                    "description": "Name of the subfolder with the human genome reference located in <reference_genomes_folder> to be used for human decontamination. Option is strongly encouraged as contamination with human DNA during laboratory sequencing is widespread and can impact analysis results."
                 },
                 "phix_reference": {
                     "type": "string",
-                    "description": "Filename of the PhiX genome reference located in <reference_genomes_folder> to be used for decontamination of Illumina reads"
+                    "description": "Name of the subfolder with the PhiX genome reference located in <reference_genomes_folder> to be used for decontamination of Illumina reads"
                 },
                 "lambdaphage_reference": {
                     "type": "string",

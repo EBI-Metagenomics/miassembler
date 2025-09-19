@@ -86,7 +86,7 @@ workflow LONG_READS_QC {
     human_subdivided_reads.run_decontamination
         .multiMap { meta, reads_ ->
             reads: [meta, reads_]
-            reference: [ [id:"human"], file("${params.reference_genomes_folder}/${meta.human_reference}", checkIfExists: true)]
+            reference: [ [id:"human"], file("${params.reference_genomes_folder}/${meta.human_reference}/${meta.human_reference}.fna", checkIfExists: true)]
         }
         .set { ch_human_decontamination_input }
 
@@ -122,7 +122,7 @@ workflow LONG_READS_QC {
     subdivided_reads.run_decontamination
         .multiMap { meta, reads_ ->
             reads: [meta, reads_]
-            reference: [ [id:file(meta.contaminant_reference).baseName], file("${params.reference_genomes_folder}/${meta.contaminant_reference}", checkIfExists: true) ]
+            reference: [ [id:file(meta.contaminant_reference).baseName], file("${params.reference_genomes_folder}/${meta.contaminant_reference}/${meta.contaminant_reference}.fna", checkIfExists: true) ]
         }
         .set { ch_decontamination_input }
 
