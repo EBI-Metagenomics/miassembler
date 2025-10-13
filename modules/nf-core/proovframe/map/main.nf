@@ -26,7 +26,7 @@ process PROOVFRAME_MAP {
         map \\
         ${args} \\
         --threads ${task.cpus} \\
-        -db ${faa} \\
+        --db ${faa} \\
         -o ${prefix}.tsv \\
         ${fasta}
 
