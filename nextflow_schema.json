@@ -38,6 +38,10 @@
                     "type": "boolean",
                     "description": "To use if the ENA study is private, *this feature ony works on EBI infrastructure at the moment*"
                 },
+                "use_fire_download": {
+                    "type": "boolean",
+                    "description": "Download reads and assemblies from s3 fire"
+                },
                 "reference_genomes_folder": {
                     "type": "string",
                     "description": "The folder containing the reference genomes. It must follow a specific structure — see docs/README for details.",
