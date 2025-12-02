@@ -44,7 +44,7 @@ workflow SHORT_READS_ASSEMBLER {
     def ch_versions = Channel.empty()
     def reads_to_assemble = input_reads
 
-    // If running for a private study on EBI infrastructure //
+    // If running on EBI infrastructure //
     if (params.use_fire_download) {
         /*
          * For private studies we need to bypass Nextflow S3 integration until https://github.com/nextflow-io/nextflow/issues/4873 is fixed
