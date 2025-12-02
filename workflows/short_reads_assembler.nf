@@ -47,7 +47,6 @@ workflow SHORT_READS_ASSEMBLER {
     // If running on EBI infrastructure //
     if (params.use_fire_download) {
         /*
-         * For private studies we need to bypass Nextflow S3 integration until https://github.com/nextflow-io/nextflow/issues/4873 is fixed
          * The EBI parameter is needed as this only works on EBI network, FIRE is not accessible otherwise
         */
         DOWNLOAD_FROM_FIRE(
