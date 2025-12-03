@@ -1,0 +1,22 @@
+Changes in component 'nf-core/fastplong'
+'modules/nf-core/fastplong/environment.yml' is unchanged
+'modules/nf-core/fastplong/meta.yml' is unchanged
+Changes in 'fastplong/main.nf':
+--- modules/nf-core/fastplong/main.nf
++++ modules/nf-core/fastplong/main.nf
+@@ -32,8 +32,10 @@
+     def output_file = discard_trimmed_pass ? '' : "--out ${prefix}.fastplong.fastq.gz"
+     def report_title = task.ext.report_title ?: "${prefix}_fastplong_report"
+     """
++    [ ! -f  ${prefix}.fastq.gz ] && ln -sf $reads ${prefix}.fastq.gz
++ 
+     fastplong \\
+-        --in ${reads} \\
++        --in ${prefix}.fastq.gz \\
+         $output_file \\
+         --json ${prefix}.fastplong.json \\
+         --html ${prefix}.fastplong.html \\
+
+'modules/nf-core/fastplong/tests/main.nf.test.snap' is unchanged
+'modules/nf-core/fastplong/tests/main.nf.test' is unchanged
+************************************************************

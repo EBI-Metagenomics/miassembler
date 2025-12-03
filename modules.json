@@ -58,6 +58,12 @@
                         "installed_by": ["modules"],
                         "patch": "modules/nf-core/fastp/fastp.diff"
                     },
+                    "fastplong": {
+                        "branch": "master",
+                        "git_sha": "75b97b50bf04c938e938334822ef5c1b0431ad91",
+                        "installed_by": ["modules"],
+                        "patch": "modules/nf-core/fastplong/fastplong.diff"
+                    },
                     "fastqc": {
                         "branch": "master",
                         "git_sha": "21f230b8cca43755bf73470e6fd0290832a98aef",
