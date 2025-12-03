@@ -27,6 +27,7 @@ Input/output options
   --study_accession                       [string]  The ENA Study secondary accession
   --reads_accession                       [string]  The ENA Run primary accession
   --private_study                         [boolean] To use if the ENA study is private, *this feature ony works on EBI infrastructure at the moment*
+  --use_fire_download                     [boolean] Download reads and assemblies from s3 fire
   --reference_genomes_folder              [string]  The folder containing the reference genomes. It must follow a specific structure — see docs/README for details.
   --contaminant_reference                 [string]  Name of the subfolder with the reference genome located in <reference_genomes_folder> to be used for host decontamination
   --skip_human_decontamination            [boolean] Scrubbing human contamination from raw reads and assembled contigs is performed by default as standard procedure. Set this flag to true to skip human decontamination. [default: false]
@@ -131,11 +132,19 @@ PRJ2,ERR2,/path/to/reads/ERR2.fq.gz,,single,genomic,flye,32,nano-hq,ont,chicken.
 
 The pipeline includes a module to download private data from ENA using the EMBL-EBI FIRE (File Replication) system. This system is restricted for use within the EMBL-EBI network and will not work unless connected to that network.
 
-If you have private data to assemble, you must provide the full path to the files on a system that Nextflow can access.
+If you have **private data to assemble**, you must provide the full path to the files on a system that **Nextflow can access**.
 
-#### Microbiome Informatics Team
+### FIRE Download Support (EBI Network Only)
 
-To process private data, the pipeline should be launched with the `--private_study` flag, and the samplesheet must include the private FTP (transfer services) paths. The `download_from_fire` module will be utilized to download the files.
+> [!IMPORTANT]
+> This functionality is only enabled on EBI Network (which is only accessible to EBI Staff)
+> There are no funcional changes on the annotation, this only affects the download raw-reads step
+
+The pipeline includes support for downloading raw-reads files directly from the EBI FIRE system. This feature is only available when running on the EBI network and is disabled by default (`--use_fire_download false`).
+
+To process private data, the pipeline should be launched with the `--use_fire_download` flag, and the samplesheet must include the private FTP (transfer services) paths. The `download_from_fire` module will be utilized to download the files.
+
+If you are **not using samplesheet** as input you need to add `--private_study` flag to activate a private mode in fetchtool.
 
 This module uses [Nextflow secrets](https://www.nextflow.io/docs/latest/secrets.html#how-it-works). Specifically, it requires the `FIRE_ACCESS_KEY` and `FIRE_SECRET_KEY` secrets to authenticate and download the files.
 

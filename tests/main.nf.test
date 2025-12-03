@@ -277,6 +277,7 @@ nextflow_pipeline {
                 assembler     = "spades"
                 samplesheet   = "${projectDir}/tests/samplesheet/test.csv"
                 private_study = true
+                use_fire_download = true
             }
         }
 
