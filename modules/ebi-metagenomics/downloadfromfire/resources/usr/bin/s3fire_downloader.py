@@ -2,15 +2,16 @@
 
 import argparse
 import logging
-from typing import Optional, Tuple, List
 import os
+import re
 
 import boto3
 from botocore import UNSIGNED
 from botocore.config import Config
 
-
 FIRE_ENDPOINT: str = "https://hl.fire.sdo.ebi.ac.uk"
+PUBLIC_FTP_PATH: str = "ftp://ftp.sra.ebi.ac.uk/vol1/"
+PRIVATE_FTP_PATH: str = "ftp://ftp.dcc-private.ebi.ac.uk/vol1/"
 PUBLIC_BUCKET: str = "era-public"
 PRIVATE_BUCKET: str = "era-private"
 
@@ -19,32 +20,41 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
-def transform_ftp_to_s3(ftp_path: str) -> Tuple[str, str]:
+def transform_ftp_to_s3(ftp_path: str) -> tuple[str, str]:
     """
-    Transforms an FTP path to a FIRE S3 object key, it also returns if it's public or private.
-
+    Transforms an FTP or HTTP path to a FIRE S3 object key, it also returns if it's public or private.
     :param ftp_path: The FTP path of the file to be transformed.
     :type ftp_path: str
     :return: A tuple containing the S3 object key and the corresponding bucket name.
-    :rtype: Tuple[str, str]
+    :rtype: tuple[str, str]
     :raises ValueError: If the FTP path does not match the expected format.
     """
-    if ftp_path.startswith("ftp.sra.ebi.ac.uk/vol1/"):
-        s3_key = ftp_path.replace("ftp.sra.ebi.ac.uk/vol1/", "")
-        logger.info(f"Detected a public file for FTP path: {ftp_path}")
+    # Normalize protocol to ftp://
+    normalized_path = re.sub(r"^(https?|ftp)://", "ftp://", ftp_path)
+    if not normalized_path.startswith("ftp://"):
+        normalized_path = f"ftp://{normalized_path}"
+
+    # Check if public or private
+    if normalized_path.startswith(PUBLIC_FTP_PATH):
+        s3_key = normalized_path.replace(PUBLIC_FTP_PATH, "")
+        logger.info(f"Detected a public file for FTP path: {normalized_path}")
         return s3_key, PUBLIC_BUCKET
-    elif ftp_path.startswith("ftp.dcc-private.ebi.ac.uk/vol1/"):
-        s3_key = ftp_path.replace("ftp.dcc-private.ebi.ac.uk/vol1/", "")
-        logger.info(f"Detected a private file for FTP path: {ftp_path}")
+    elif normalized_path.startswith(PRIVATE_FTP_PATH):
+        s3_key = normalized_path.replace(PRIVATE_FTP_PATH, "")
+        logger.info(f"Detected a private file for FTP path: {normalized_path}")
         return s3_key, PRIVATE_BUCKET
     else:
         raise ValueError(
-            f"Invalid FTP path: {ftp_path}. Must start with 'ftp.sra.ebi.ac.uk/vol1/' or 'ftp.dcc-private.ebi.ac.uk/vol1/'."
+            f"Invalid FTP path: {normalized_path}. Must start with {PUBLIC_FTP_PATH} or {PRIVATE_FTP_PATH}."
         )
 
 
 def download_file_from_fire(
-    s3_key: str, bucket: str, outdir: str, access_key: Optional[str] = None, secret_key: Optional[str] = None
+    s3_key: str,
+    bucket: str,
+    outdir: str,
+    access_key: str | None = None,
+    secret_key: str | None = None,
 ) -> None:
     """
     Downloads an individual file from FIRE S3 using its object key.
@@ -56,9 +66,9 @@ def download_file_from_fire(
     :param outdir: The local directory to save the downloaded file.
     :type outdir: str
     :param access_key: The access key for private S3 buckets (optional for public files).
-    :type access_key: Optional[str]
+    :type access_key: str | None
     :param secret_key: The secret key for private S3 buckets (optional for public files).
-    :type secret_key: Optional[str]
+    :type secret_key: str | None
     :return: None
     :rtype: None
     :raises ValueError: If credentials are missing for private files.
@@ -68,7 +78,9 @@ def download_file_from_fire(
     if bucket == PRIVATE_BUCKET:
         if not access_key or not secret_key:
             logger.error("Missing credentials for private files.")
-            raise ValueError("Access key and secret key are required for private files.")
+            raise ValueError(
+                "Access key and secret key are required for private files."
+            )
         s3_args.update(
             aws_access_key_id=access_key,
             aws_secret_access_key=secret_key,
@@ -83,7 +95,9 @@ def download_file_from_fire(
     local_file_path = os.path.join(outdir, os.path.basename(s3_key))
 
     try:
-        logger.info(f"Downloading {s3_key} from S3 bucket {bucket} to {local_file_path}...")
+        logger.info(
+            f"Downloading {s3_key} from S3 bucket {bucket} to {local_file_path}..."
+        )
         s3.download_file(bucket, s3_key, local_file_path)
         logger.info(f"File successfully downloaded to: {local_file_path}")
     except Exception as e:
@@ -91,18 +105,23 @@ def download_file_from_fire(
         raise
 
 
-def download_files(ftp_paths: List[str], outdir: str, access_key: Optional[str], secret_key: Optional[str]) -> None:
+def download_files(
+    ftp_paths: list[str],
+    outdir: str,
+    access_key: str | None,
+    secret_key: str | None,
+) -> None:
     """
     Downloads multiple files from their FTP paths.
 
     :param ftp_paths: List of FTP paths to download.
-    :type ftp_paths: List[str]
+    :type ftp_paths: list[str]
     :param outdir: Directory to save the downloaded files.
     :type outdir: str
     :param access_key: Access key for private files.
-    :type access_key: Optional[str]
+    :type access_key: str | None
     :param secret_key: Secret key for private files.
-    :type secret_key: Optional[str]
+    :type secret_key: str | None
     """
     for ftp_path in ftp_paths:
         s3_key, bucket = transform_ftp_to_s3(ftp_path)
@@ -117,11 +136,23 @@ def main() -> None:
         "--ftp-paths",
         nargs="+",
         required=True,
-        help="Space-separated list of FTP paths to download (e.g., ftp.sra.ebi.ac.uk/vol1/.../file1 ftp.sra.ebi.ac.uk/vol1/.../file2).",
+        help=f"Space-separated list of FTP paths to download (e.g., {PUBLIC_FTP_PATH}.../file1 {PRIVATE_FTP_PATH}.../file2).",
     )
-    parser.add_argument("--outdir", required=True, help="Local destination directory for the downloaded files.")
-    parser.add_argument("--access-key", required=False, help="S3 access key (required for private files).")
-    parser.add_argument("--secret-key", required=False, help="S3 secret key (required for private files).")
+    parser.add_argument(
+        "--outdir",
+        required=True,
+        help="Local destination directory for the downloaded files.",
+    )
+    parser.add_argument(
+        "--access-key",
+        required=False,
+        help="S3 access key (required for private files).",
+    )
+    parser.add_argument(
+        "--secret-key",
+        required=False,
+        help="S3 secret key (required for private files).",
+    )
     args = parser.parse_args()
 
     logger.info("Starting the file download process...")
