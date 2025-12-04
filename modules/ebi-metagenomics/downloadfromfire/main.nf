@@ -12,19 +12,19 @@ process DOWNLOAD_FROM_FIRE {
         'community.wave.seqera.io/library/pip_boto3:501beb4bd409b3e1' }"
 
     input:
-    tuple val(meta), val(input_reads)
+    tuple val(meta), val(input_paths)
 
     output:
-    tuple val(meta), path("fastq_files/*fastq.gz"), emit: reads
-    path "versions.yml"                           , emit: versions
+    tuple val(meta), path("downloaded_files/*fa*.gz"), emit: downloaded_files
+    path "versions.yml"                              , emit: versions
 
     script:
     """
     s3fire_downloader.py \\
         --access-key \${FIRE_ACCESS_KEY} \\
         --secret-key \${FIRE_SECRET_KEY} \\
-        --ftp-paths ${input_reads.join(" ")} \\
-        --outdir fastq_files
+        --ftp-paths ${input_paths.join(" ")} \\
+        --outdir downloaded_files
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -35,10 +35,10 @@ process DOWNLOAD_FROM_FIRE {
 
     stub:
     """
-    mkdir -p fastq_files
-    touch fastq_files/${meta.id}_1.fastq
-    touch fastq_files/${meta.id}_2.fastq
-    gzip fastq_files/*
+    mkdir -p downloaded_files
+    touch downloaded_files/${meta.id}_1.fastq
+    touch downloaded_files/${meta.id}_2.fastq
+    gzip downloaded_files/*
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

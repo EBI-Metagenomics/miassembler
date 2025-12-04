@@ -16,6 +16,11 @@
                         "git_sha": "32049180387cf2406254acf57882fc55915cb52e",
                         "installed_by": ["modules"]
                     },
+                    "downloadfromfire": {
+                        "branch": "main",
+                        "git_sha": "afc056e9aa0376982a10d458402e200c05d87609",
+                        "installed_by": ["modules"]
+                    },
                     "filterpaf": {
                         "branch": "main",
                         "git_sha": "ad73b5f1d3e4ed60ba329d3e5be3afdca32f938f",

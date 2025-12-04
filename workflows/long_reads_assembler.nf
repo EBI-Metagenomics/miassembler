@@ -7,7 +7,6 @@
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
-
 include { LONG_READS_QC                } from '../subworkflows/local/long_reads_qc'
 
 include { ONT_LQ                       } from '../subworkflows/local/ont_lq'
@@ -27,7 +26,6 @@ include { LONG_READS_ASSEMBLY_COVERAGE } from '../subworkflows/local/long_reads_
 //
 // MODULE: Installed directly from nf-core/modules
 //
-
 include { FASTQC as FASTQC_BEFORE      } from '../modules/nf-core/fastqc/main'
 include { FASTQC as FASTQC_AFTER       } from '../modules/nf-core/fastqc/main'
 include { QUAST                        } from '../modules/nf-core/quast/main'

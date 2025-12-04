@@ -37,8 +37,9 @@ include { LONG_READS_ASSEMBLER        } from '../workflows/long_reads_assembler'
     IMPORT NF-CORE MODULES/SUBWORKFLOWS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
-
-include { FETCHTOOL_READS             } from '../modules/local/fetchtool_reads'
+include { DOWNLOAD_FROM_FIRE as DOWNLOAD_FROM_FIRE_SHORT_READS } from '../modules/ebi-metagenomics/downloadfromfire/main'
+include { DOWNLOAD_FROM_FIRE as DOWNLOAD_FROM_FIRE_LONG_READS  } from '../modules/ebi-metagenomics/downloadfromfire/main'
+include { FETCHTOOL_READS                                      } from '../modules/local/fetchtool_reads'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -224,18 +225,46 @@ workflow MIASSEMBLER {
         }
     .set { reads_to_assemble }
 
+    /**********************/
+    // DOWNLOAD THE READS //
+    /**********************/
+
+    def short_reads = reads_to_assemble.short_reads
+    def long_reads = reads_to_assemble.long_reads
+
+    // If running on EBI infrastructure, and on samplehseets otherwise the fetch tool will kick in //
+    if (params.samplesheet && params.use_fire_download) {
+        /*
+         * For private studies we need to bypass Nextflow S3 integration until https://github.com/nextflow-io/nextflow/issues/4873 is fixed
+         * The EBI parameter is needed as this only works on EBI network, FIRE is not accessible otherwise
+        */
+        DOWNLOAD_FROM_FIRE_SHORT_READS(
+            short_reads
+        )
+        ch_versions = ch_versions.mix(DOWNLOAD_FROM_FIRE_SHORT_READS.out.versions.first())
+
+        short_reads = DOWNLOAD_FROM_FIRE_SHORT_READS.out.downloaded_files
+
+        DOWNLOAD_FROM_FIRE_LONG_READS(
+            long_reads
+        )
+        ch_versions = ch_versions.mix(DOWNLOAD_FROM_FIRE_LONG_READS.out.versions.first())
+
+        short_reads = DOWNLOAD_FROM_FIRE_SHORT_READS.out.downloaded_files
+    }
+
     /***************************************/
     /* Assemble short reads and long reads */
     /***************************************/
 
     SHORT_READS_ASSEMBLER(
-        reads_to_assemble.short_reads
+        short_reads
     )
 
     ch_versions = ch_versions.mix(SHORT_READS_ASSEMBLER.out.versions)
 
     LONG_READS_ASSEMBLER(
-        reads_to_assemble.long_reads
+        long_reads
     )
 
     ch_versions = ch_versions.mix(LONG_READS_ASSEMBLER.out.versions)
