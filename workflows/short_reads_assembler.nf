@@ -8,8 +8,6 @@
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
 
-include { DOWNLOAD_FROM_FIRE            } from '../modules/local/download_from_fire.nf'
-
 include { SHORT_READS_QC                } from '../subworkflows/local/short_reads_qc'
 include { SHORT_READS_ASSEMBLY_QC       } from '../subworkflows/local/short_reads_assembly_qc'
 include { SHORT_READS_ASSEMBLY_COVERAGE } from '../subworkflows/local/short_reads_assembly_coverage'
@@ -42,21 +40,6 @@ workflow SHORT_READS_ASSEMBLER {
     main:
 
     def ch_versions = Channel.empty()
-    def reads_to_assemble = input_reads
-
-    // If running on EBI infrastructure //
-    if (params.use_fire_download) {
-        /*
-         * The EBI parameter is needed as this only works on EBI network, FIRE is not accessible otherwise
-        */
-        DOWNLOAD_FROM_FIRE(
-            input_reads
-        )
-
-        ch_versions = ch_versions.mix(DOWNLOAD_FROM_FIRE.out.versions.first())
-
-        reads_to_assemble = DOWNLOAD_FROM_FIRE.out.reads
-    }
 
     /***************************/
     /* Selecting the assembler */
@@ -68,7 +51,7 @@ workflow SHORT_READS_ASSEMBLER {
         - Paired-end reads are assembled with MetaSPAdes, unless specified otherwise
         - An error is raised if the assembler and read layout are incompatible (shouldn't happen...)
     */
-    def reads_by_assembler = reads_to_assemble.map { meta, reads ->
+    def reads_by_assembler = input_reads.map { meta, reads ->
         def selected_assembler = meta.assembler
         if (selected_assembler == "megahit" || (meta.single_end && selected_assembler == null)) {
             return [meta + [assembler: "megahit", assembler_version: params.megahit_version], reads]
