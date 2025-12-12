@@ -250,7 +250,7 @@ workflow MIASSEMBLER {
         )
         ch_versions = ch_versions.mix(DOWNLOAD_FROM_FIRE_LONG_READS.out.versions.first())
 
-        short_reads = DOWNLOAD_FROM_FIRE_SHORT_READS.out.downloaded_files
+        long_reads = DOWNLOAD_FROM_FIRE_LONG_READS.out.downloaded_files
     }
 
     /***************************************/
