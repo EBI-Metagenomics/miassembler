@@ -23,8 +23,8 @@ workflow FRAMESHIFT_CORRECTION {
     def ch_versions = Channel.empty()
 
     PROOVFRAME_MAP(
-        [],
         contigs,
+        [ [],[] ],
         [ [id:'diamond_db'], "${params.diamond_db}" ]
     )
     ch_versions = ch_versions.mix(PROOVFRAME_MAP.out.versions)

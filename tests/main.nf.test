@@ -299,7 +299,7 @@ nextflow_pipeline {
         // therefore, frameshift correction is also triggered as low-quality is detected
         when {
             params {
-                samplesheet     = "${projectDir}/tests/samplesheet/test_long_reads_HQ.csv"
+                samplesheet     = "${projectDir}/tests/samplesheet/test_long_reads.csv"
                 phix_reference  = null
                 diamond_db      = "${projectDir}/tests/diamond_db/mini_db.dmnd"
             }
