@@ -313,7 +313,7 @@ nextflow_pipeline {
                 assert trace.succeeded().count{ task -> task.name.contains("FASTQC_AFTER") } == 4
                 assert trace.succeeded().count{ task -> task.name.contains("PACBIO_HIFI:HIFIADAPTERFILT") } == 1
 
-                assert trace.failed().count{ task -> task.name.contains("FLYE") } == 3
+                assert trace.failed().count{ task -> task.name.contains("FLYE") } == 2
 
                 assert trace.succeeded().count{ task -> task.name.contains("PORECHOP_ABI") } == 2
                 assert trace.succeeded().count{ task -> task.name.contains("ONT_HQ:FLYE") } == 1
