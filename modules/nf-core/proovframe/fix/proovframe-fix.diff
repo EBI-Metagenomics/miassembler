@@ -1,5 +1,4 @@
-Changes in module 'nf-core/proovframe/fix'
-'modules/nf-core/proovframe/fix/meta.yml' is unchanged
+Changes in component 'nf-core/proovframe/fix'
 'modules/nf-core/proovframe/fix/environment.yml' is unchanged
 Changes in 'proovframe/fix/main.nf':
 --- modules/nf-core/proovframe/fix/main.nf
@@ -25,6 +24,7 @@ Changes in 'proovframe/fix/main.nf':
  
      cat <<-END_VERSIONS > versions.yml
 
+'modules/nf-core/proovframe/fix/meta.yml' is unchanged
 'modules/nf-core/proovframe/fix/tests/main.nf.test' is unchanged
 'modules/nf-core/proovframe/fix/tests/main.nf.test.snap' is unchanged
 ************************************************************

@@ -1,0 +1,2 @@
+study_accession,reads_accession,fastq_1,fastq_2,library_layout,library_strategy,platform,assembler,assembly_memory,assembler_config
+SRP000001,SRR000001,https://github.com/EBI-Metagenomics/miassembler/raw/main/tests/test_reads/fake_pb_hifi.fastq.gz,,single,metagenomic,ont,,,nano-hq
