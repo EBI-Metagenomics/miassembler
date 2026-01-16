@@ -305,14 +305,20 @@ nextflow_pipeline {
         then {
             with(workflow) {
                 assert success
+
+                assert trace.succeeded().count{ task -> task.name.contains("MEDAKA") } == 0
+                assert trace.succeeded().count{ task -> task.name.contains("ONT_HQ") } == 1
+
+                assert trace.tasks().size() == 15
             }
         }
     }
 
-    test("SAMPLESHEET LR ONT LQ") {
+    test("Samplesheet LR ONT LQ") {
 
         tag "samplesheet"
         tag "LR"
+        tag "thisoneforreal"
 
         when {
             params {
@@ -324,6 +330,10 @@ nextflow_pipeline {
         then {
             with(workflow) {
                 assert success
+
+                assert trace.succeeded().count{ task -> task.name.contains("ONT_LQ") } == 4
+                
+                assert trace.tasks().size() == 20
             }
         }
     }
@@ -343,6 +353,10 @@ nextflow_pipeline {
         then {
             with(workflow) {
                 assert success
+
+                assert trace.succeeded().count{ task -> task.name.contains("PACBIO_HIFI") } == 2
+                
+                assert trace.tasks().size() == 14
             }
         }
     }
@@ -363,6 +377,10 @@ nextflow_pipeline {
         then {
             with(workflow) {
                 assert success
+
+                assert trace.succeeded().count{ task -> task.name.contains("PACBIO_LQ") } == 4
+                
+                assert trace.tasks().size() == 19
             }
         }
     }
