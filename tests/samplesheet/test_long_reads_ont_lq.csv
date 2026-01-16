@@ -1,0 +1,2 @@
+study_accession,reads_accession,fastq_1,fastq_2,library_layout,library_strategy,platform,assembler,assembly_memory,assembler_config
+DRP010345,DRR287268,/hps/nobackup/rdf/metagenomics/service-team/users/germanab/miassembler/tests/test_reads/DRR287268_1.fastq.gz,,single,metagenomic,ont,,,,,,,
