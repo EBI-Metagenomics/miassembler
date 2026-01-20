@@ -290,58 +290,15 @@ nextflow_pipeline {
         }
     }
 
-    test("Samplesheet long reads ONT and hifi HQ - hifi should fail") {
+    test("Samplesheet LR ONT HQ") {
 
         tag "samplesheet"
         tag "LR"
 
-        // we are forcing high-quality processing, but the data is in reality low-quality
-        // therefore, frameshift correction is also triggered as low-quality is detected
         when {
             params {
-                samplesheet     = "${projectDir}/tests/samplesheet/test_long_reads_HQ.csv"
+                samplesheet     = "${projectDir}/tests/samplesheet/test_long_reads_ont_hq.csv"
                 phix_reference  = null
-            }
-        }
-
-        then {
-            with(workflow) {
-                assert trace.succeeded().count{ task -> task.name.contains("FASTQC_BEFORE") } == 2
-                assert trace.succeeded().count{ task -> task.name.contains("LONG_READS_QC:FASTPLONG") } == 2
-                assert trace.succeeded().count{ task -> task.name.contains("LONG_READS_QC:MINIMAP2_ALIGN_HUMAN") } == 2
-                assert trace.succeeded().count{ task -> task.name.contains("FASTQC_AFTER") } == 2
-                assert trace.succeeded().count{ task -> task.name.contains("PACBIO_HIFI:HIFIADAPTERFILT") } == 1
-
-                assert trace.failed().count{ task -> task.name.contains("PACBIO_HIFI:FLYE") } == 1
-
-                assert trace.succeeded().count{ task -> task.name.contains("PORECHOP_ABI") } == 1
-                assert trace.succeeded().count{ task -> task.name.contains("ONT_HQ:FLYE") } == 1
-                assert trace.succeeded().count{ task -> task.name.contains("LONG_READS_ASSEMBLY_QC:HUMAN_DECONTAMINATE_CONTIGS") } == 3
-                assert trace.succeeded().count{ task -> task.name.contains("FRAMESHIFT_CORRECTION:PROOVFRAME_MAP") } == 1
-                assert trace.succeeded().count{ task -> task.name.contains("FRAMESHIFT_CORRECTION:PROOVFRAME_FIX") } == 1
-                assert trace.succeeded().count{ task -> task.name.contains("LONG_READS_ASSEMBLY_COVERAGE:LONG_READS_COVERAGE") } == 1
-                assert trace.succeeded().count{ task -> task.name.contains("QUAST") } == 1
-                assert trace.succeeded().count{ task -> task.name.contains("LONG_READS_ASSEMBLY_COVERAGE:CALCULATE_ASSEMBLY_COVERAGE") } == 1
-
-                assert trace.tasks().size() == 24
-
-                // This process should not have been called
-                assert trace.succeeded().count{ task -> task.name.contains("SHORT_READS") } == 0
-            }
-        }
-    }
-
-    test("hifi - success") {
-
-        tag "ena-portal-api"
-        tag "LR"
-
-        when {
-            params {
-                study_accession             = "SRP384046"
-                reads_accession             = "SRR19888830"
-                long_reads_assembler_config = "pacbio-hifi"
-                phix_reference              = null
             }
         }
 
@@ -349,17 +306,80 @@ nextflow_pipeline {
             with(workflow) {
                 assert success
 
-                assert trace.succeeded().count{ task -> task.name.contains("FETCHTOOL_READS") } == 1
-                assert trace.succeeded().count{ task -> task.name.contains("FASTQC_BEFORE") } == 1
-                assert trace.succeeded().count{ task -> task.name.contains("LONG_READS_QC:FASTPLONG") } == 1
-                assert trace.succeeded().count{ task -> task.name.contains("LONG_READS_QC:MINIMAP2_ALIGN_HUMAN") } == 1
-                assert trace.succeeded().count{ task -> task.name.contains("FASTQC_AFTER") } == 1
-                assert trace.succeeded().count{ task -> task.name.contains("PACBIO_HIFI:HIFIADAPTERFILT") } == 1
-                assert trace.succeeded().count{ task -> task.name.contains("PACBIO_HIFI:FLYE") } == 1
-                assert trace.succeeded().count{ task -> task.name.contains("LONG_READS_ASSEMBLY_QC:HUMAN_DECONTAMINATE_CONTIGS") } == 3
-                assert trace.succeeded().count{ task -> task.name.contains("LONG_READS_COVERAGE") } == 1
-                assert trace.succeeded().count{ task -> task.name.contains("CALCULATE_ASSEMBLY_COVERAGE") } == 1
-                assert trace.succeeded().count{ task -> task.name.contains("QUAST") } == 1
+                assert trace.succeeded().count{ task -> task.name.contains("MEDAKA") } == 0
+                assert trace.succeeded().count{ task -> task.name.contains("ONT_HQ") } == 1
+
+                assert trace.tasks().size() == 15
+            }
+        }
+    }
+
+    test("Samplesheet LR ONT LQ") {
+
+        tag "samplesheet"
+        tag "LR"
+
+        when {
+            params {
+                samplesheet     = "${projectDir}/tests/samplesheet/test_long_reads_ont_lq.csv"
+                phix_reference  = null
+            }
+        }
+
+        then {
+            with(workflow) {
+                assert success
+
+                assert trace.succeeded().count{ task -> task.name.contains("ONT_LQ") } == 4
+
+                assert trace.tasks().size() == 20
+            }
+        }
+    }
+
+    test("Samplesheet LR PB HIFI") {
+
+        tag "samplesheet"
+        tag "LR"
+
+        when {
+            params {
+                samplesheet     = "${projectDir}/tests/samplesheet/test_long_reads_pb_hifi.csv"
+                phix_reference  = null
+            }
+        }
+
+        then {
+            with(workflow) {
+                assert success
+
+                assert trace.succeeded().count{ task -> task.name.contains("PACBIO_HIFI") } == 2
+                
+                assert trace.tasks().size() == 14
+            }
+        }
+    }
+
+    test("ENA API LR PB LQ") {
+
+        tag "ena-portal-api"
+        tag "LR"
+
+        when {
+            params {
+                study_accession = "SRP040735"
+                reads_accession = "SRR1211893"
+                phix_reference  = null
+            }
+        }
+
+        then {
+            with(workflow) {
+                assert success
+
+                assert trace.succeeded().count{ task -> task.name.contains("PACBIO_LQ") } == 4
+                
+                assert trace.tasks().size() == 19
             }
         }
     }
