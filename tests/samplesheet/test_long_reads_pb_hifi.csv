@@ -1,2 +1,2 @@
 study_accession,reads_accession,fastq_1,fastq_2,library_layout,library_strategy,platform,assembler,assembly_memory,assembler_config,contaminant_reference,human_reference,phix_reference,lambdaphage_reference
-SRP000001,SRR000001,https://github.com/EBI-Metagenomics/miassembler/raw/main/tests/test_reads/fake_pb_hifi.fastq.gz,,single,metagenomic,pb,,,pacbio-hifi,,,,
+SRP000001,SRR000001,https://github.com/EBI-Metagenomics/miassembler/raw/update/proovframe/tests/test_reads/fake_pb_hifi.fastq.gz,,single,metagenomic,pb,,,pacbio-hifi,,,,

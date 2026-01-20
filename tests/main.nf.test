@@ -318,7 +318,6 @@ nextflow_pipeline {
 
         tag "samplesheet"
         tag "LR"
-        tag "thisoneforreal"
 
         when {
             params {
@@ -332,7 +331,7 @@ nextflow_pipeline {
                 assert success
 
                 assert trace.succeeded().count{ task -> task.name.contains("ONT_LQ") } == 4
-                
+
                 assert trace.tasks().size() == 20
             }
         }
