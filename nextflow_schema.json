@@ -260,6 +260,14 @@
                     "fa_icon": "fas fa-repeat",
                     "hidden": true,
                     "help_text": "Each retry will increase the memory by 50%. Use to limit how many times this increase-and-retry happens."
+                },
+                "max_flye_retries": {
+                    "type": "integer",
+                    "description": "Maximum number of task attempt retries for flye assembly steps only.",
+                    "default": 3,
+                    "fa_icon": "fas fa-repeat",
+                    "hidden": true,
+                    "help_text": "Each retry will increase the memory by 50%. Use to limit how many times this increase-and-retry happens."
                 }
             }
         },
