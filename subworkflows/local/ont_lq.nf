@@ -17,10 +17,16 @@ workflow ONT_LQ {
     )
     ch_versions = ch_versions.mix(FLYE.out.versions)
 
-    // paf generation
+    minimap2_input = qc_reads
+        .join(FLYE.out.fasta)
+        .multiMap { meta, reads, fasta ->
+            reads:     [meta, reads]
+            reference: [meta, fasta]
+        }
+
     MINIMAP2_ALIGN(
-        qc_reads,
-        FLYE.out.fasta,
+        minimap2_input.reads,
+        minimap2_input.reference,
         "",     // no prefix needed for paf generation
         "",     // no extension needed for paf generation
         false,  // no bam format
@@ -30,8 +36,8 @@ workflow ONT_LQ {
     )
     ch_versions = ch_versions.mix(MINIMAP2_ALIGN.out.versions)
 
-    reads_flye_contigs_paf = qc_reads
-            .join(FLYE.out.fasta)
+    reads_flye_contigs_paf = minimap2_input.reads
+            .join(minimap2_input.reference)
             .join(MINIMAP2_ALIGN.out.paf)
 
     RACON(
