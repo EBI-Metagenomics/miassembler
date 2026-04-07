@@ -1,20 +1,6 @@
 include { PROOVFRAME_FIX } from '../../modules/nf-core/proovframe/fix/main'
 include { PROOVFRAME_MAP } from '../../modules/nf-core/proovframe/map/main'
 
-// process PUBLISH_CLEANED_CONTIGS {
-
-//     input:
-//     tuple val(meta), path(cleaned_contigs)
-
-//     output:
-//     tuple val(meta), path("${meta.id}_cleaned.contigs.fa.gz")
-
-//     script:
-//     """
-//     cp ${cleaned_contigs} ${meta.id}_cleaned.contigs.fa.gz
-//     """
-// }
-
 workflow FRAMESHIFT_CORRECTION {
     take:
     contigs                   // [ val(meta), path(contigs) ]
@@ -29,15 +15,18 @@ workflow FRAMESHIFT_CORRECTION {
     )
     ch_versions = ch_versions.mix(PROOVFRAME_MAP.out.versions)
 
+    pf_fix_input = contigs
+        .join(PROOVFRAME_MAP.out.tsv)
+        .multiMap { meta, contigs, tsv ->
+            contigs:    [meta, contigs]
+            pf_map_out: [meta, tsv]
+    }
+
     PROOVFRAME_FIX(
-        contigs,
-        PROOVFRAME_MAP.out.tsv
+        pf_fix_input.contigs,
+        pf_fix_input.pf_map_out
     )
     ch_versions = ch_versions.mix(PROOVFRAME_FIX.out.versions)
-
-    // PUBLISH_CLEANED_CONTIGS(
-    //     PROOVFRAME_FIX.out.out_fa
-    // )
 
     emit:
     corrected_contigs  = PROOVFRAME_FIX.out.out_fa
