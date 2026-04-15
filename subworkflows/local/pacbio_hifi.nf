@@ -1,5 +1,5 @@
 include { HIFIADAPTERFILT } from '../../modules/local/hifiadapterfilt/main'
-include { FLYE            } from '../../modules/nf-core/flye/main'
+include { METAMDBG_ASM    } from '../../modules/nf-core/metamdbg/asm/main'
 
 workflow PACBIO_HIFI {
     take:
@@ -7,20 +7,20 @@ workflow PACBIO_HIFI {
 
     main:
 
-    ch_versions = Channel.empty()
+    ch_versions = channel.empty()
 
     HIFIADAPTERFILT(
         reads
     )
     ch_versions = ch_versions.mix(HIFIADAPTERFILT.out.versions)
 
-    FLYE(
+    METAMDBG_ASM(
         HIFIADAPTERFILT.out.filt,
-        "--pacbio-hifi"
+        "hifi"
     )
-    ch_versions = ch_versions.mix(FLYE.out.versions)
+    ch_versions = ch_versions.mix(METAMDBG_ASM.out.versions)
 
     emit:
-    contigs  = FLYE.out.fasta
+    contigs  = METAMDBG_ASM.out.contigs
     versions = ch_versions
 }

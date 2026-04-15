@@ -1,4 +1,4 @@
-include { FLYE         } from '../../modules/nf-core/flye/main'
+include { METAMDBG_ASM } from '../../modules/nf-core/metamdbg/asm/main'
 
 workflow ONT_HQ {
     take:
@@ -6,15 +6,15 @@ workflow ONT_HQ {
 
     main:
 
-    def ch_versions = Channel.empty()
+    def ch_versions = channel.empty()
 
-    FLYE(
+    METAMDBG_ASM(
         qc_reads,
-        "--nano-hq"
+        "ont"
     )
-    ch_versions = ch_versions.mix(FLYE.out.versions)
+    ch_versions = ch_versions.mix(METAMDBG_ASM.out.versions)
 
     emit:
-    contigs  = FLYE.out.fasta
+    contigs  = METAMDBG_ASM.out.contigs
     versions = ch_versions
 }
