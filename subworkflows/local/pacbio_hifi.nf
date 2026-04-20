@@ -18,7 +18,7 @@ workflow PACBIO_HIFI {
         HIFIADAPTERFILT.out.filt,
         "hifi"
     )
-    ch_versions = ch_versions.mix(METAMDBG_ASM.out.versions)
+    ch_versions = ch_versions.mix(METAMDBG_ASM.out.versions_metamdbg)
 
     emit:
     contigs  = METAMDBG_ASM.out.contigs
