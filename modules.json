@@ -92,6 +92,11 @@
                         "installed_by": ["modules"],
                         "patch": "modules/nf-core/megahit/megahit.diff"
                     },
+                    "metamdbg/asm": {
+                        "branch": "master",
+                        "git_sha": "d98a40aa72dcab8e7aebb9a3873c5e1ada286779",
+                        "installed_by": ["modules"]
+                    },
                     "minimap2/align": {
                         "branch": "master",
                         "git_sha": "a33ef9475558c6b8da08c5f522ddaca1ec810306",
