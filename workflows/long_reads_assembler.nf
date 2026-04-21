@@ -96,7 +96,14 @@ workflow LONG_READS_ASSEMBLER {
                 error "Invalid quality ${meta.quality} or platform ${meta.platform} for ${meta.id}"
             }
         } else {
-            return [meta + ["assembler": "flye", "assembler_version": params.flye_version], reads]
+            if (meta.quality == "high") {
+                return [meta + ["assembler": "metamdbg", "assembler_version": params.metamdbg_version], reads]
+            }
+            else if (meta.quality == "low") {
+                return [meta + ["assembler": "flye", "assembler_version": params.flye_version], reads]
+            } else {
+                error "Invalid quality ${meta.quality} for ${meta.id}"
+            }
         }
     }
 
