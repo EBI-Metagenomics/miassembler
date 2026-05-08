@@ -94,7 +94,7 @@
                     },
                     "metamdbg/asm": {
                         "branch": "master",
-                        "git_sha": "d98a40aa72dcab8e7aebb9a3873c5e1ada286779",
+                        "git_sha": "fd67bc24ff4bd097b749dfcf4deb207d88f55fd3",
                         "installed_by": ["modules"]
                     },
                     "minimap2/align": {
