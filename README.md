@@ -44,7 +44,7 @@ Input metadata options
   --flye_version                          [string]  [default: 2.9]
   --spades_version                        [string]  [default: 3.15.5]
   --megahit_version                       [string]  [default: 1.2.9]
-  --metamdbg_version                      [string]  [default: 1.3.1]
+  --metamdbg_version                      [string]  [default: 1.4]
   --assembly_memory                       [number]  Default memory allocated for the assembly process. [default: 100]
   --spades_only_assembler                 [boolean] Run SPAdes/metaSPAdes without the error correction step. [default: true]
 
