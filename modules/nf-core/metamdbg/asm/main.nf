@@ -32,8 +32,6 @@ process METAMDBG_ASM {
         ${args} \\
         --in-${input_type} ${reads}
 
-    rm -r tmp/
-
     mv contigs.fasta.gz ${prefix}.contigs.fasta.gz
     mv metaMDBG.log ${prefix}.metaMDBG.log
     """
