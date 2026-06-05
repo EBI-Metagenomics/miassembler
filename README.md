@@ -24,9 +24,6 @@ Typical pipeline command:
 
 Input/output options
   --samplesheet                           [string]  Path to comma-separated file containing information about the raw reads with the prefix (read accession) to be used.
-  --study_accession                       [string]  The ENA Study secondary accession
-  --reads_accession                       [string]  The ENA Run primary accession
-  --private_study                         [boolean] To use if the ENA study is private, *this feature ony works on EBI infrastructure at the moment*
   --use_fire_download                     [boolean] Download reads and assemblies from s3 fire
   --reference_genomes_folder              [string]  The folder containing the reference genomes. It must follow a specific structure — see docs/README for details.
   --contaminant_reference                 [string]  Name of the subfolder with the reference genome located in <reference_genomes_folder> to be used for host decontamination
@@ -66,7 +63,7 @@ Generic options
   --multiqc_methods_description           [string] Custom MultiQC yaml file containing HTML including a methods description.
 ```
 
-You can run this pipeline with two options:
+You can run this pipeline with a samplesheet:
 
 ### Command-line parameters
 
@@ -79,15 +76,6 @@ nextflow run ebi-metagenomics/miassembler \
   --reference_genome human.fasta \
   --reference_genomes_folder references/
   --outdir testing_results \
-  --study_accession SRP002480 \
-  --reads_accession SRR1631361
-```
-
-### Samplesheet
-
-```bash
-nextflow run ebi-metagenomics/miassembler \
-  -profile codon_slurm \
   --samplesheet tests/samplesheet/test.csv
 ```
 
@@ -143,8 +131,6 @@ If you have **private data to assemble**, you must provide the full path to the 
 The pipeline includes support for downloading raw-reads files directly from the EBI FIRE system. This feature is only available when running on the EBI network and is disabled by default (`--use_fire_download false`).
 
 To process private data, the pipeline should be launched with the `--use_fire_download` flag, and the samplesheet must include the private FTP (transfer services) paths. The `download_from_fire` module will be utilized to download the files.
-
-If you are **not using samplesheet** as input you need to add `--private_study` flag to activate a private mode in fetchtool.
 
 This module uses [Nextflow secrets](https://www.nextflow.io/docs/latest/secrets.html#how-it-works). Specifically, it requires the `FIRE_ACCESS_KEY` and `FIRE_SECRET_KEY` secrets to authenticate and download the files.
 
@@ -292,6 +278,18 @@ It's also possible to run the [nf-test](https://www.nf-test.com/) suite with
 
 ```bash
 nf-test test
+```
+
+The default samplesheet CI coverage is kept intentionally small:
+
+```bash
+nf-test test --tag samplesheet
+```
+
+Additional expensive samplesheet coverage, such as retry and read-type matrix tests, can be run explicitly:
+
+```bash
+nf-test test --tag slow
 ```
 
 ### End to end tests

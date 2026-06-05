@@ -2,7 +2,7 @@
     "name": "ebi-metagenomics/miassembler",
     "homePage": "https://github.com/ebi-metagenomics/miassembler",
     "repos": {
-        "https://github.com/ebi-metagenomics/nf-modules": {
+        "https://github.com/EBI-Metagenomics/nf-modules": {
             "modules": {
                 "ebi-metagenomics": {
                     "bwamem2/mem": {
@@ -14,8 +14,7 @@
                     "bwamem2decontnobams": {
                         "branch": "main",
                         "git_sha": "32049180387cf2406254acf57882fc55915cb52e",
-                        "installed_by": ["modules"],
-                        "patch": "modules/ebi-metagenomics/bwamem2decontnobams/bwamem2decontnobams.diff"
+                        "installed_by": ["modules"]
                     },
                     "downloadfromfire": {
                         "branch": "main",
@@ -35,9 +34,8 @@
                 "nf-core": {
                     "bwamem2/index": {
                         "branch": "master",
-                        "git_sha": "3f5420aa22e00bd030a2556dfdffc9e164ec0ec5",
-                        "installed_by": ["modules"],
-                        "patch": "modules/nf-core/bwamem2/index/bwamem2-index.diff"
+                        "git_sha": "6d46786420b4d7bc88eba026eb389c0c5535d120",
+                        "installed_by": ["modules"]
                     },
                     "chopper": {
                         "branch": "master",
@@ -47,11 +45,6 @@
                     "custom/dumpsoftwareversions": {
                         "branch": "master",
                         "git_sha": "82024cf6325d2ee194e7f056d841ecad2f6856e9",
-                        "installed_by": ["modules"]
-                    },
-                    "diamond/blastp": {
-                        "branch": "master",
-                        "git_sha": "666652151335353eef2fcd58880bcef5bc2928e1",
                         "installed_by": ["modules"]
                     },
                     "diamond/makedb": {

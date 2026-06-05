@@ -11,7 +11,7 @@ workflow LONG_READS_QC {
     input_reads        // [ val(meta), path(reads) ]
 
     main:
-    ch_versions = Channel.empty()
+    ch_versions = channel.empty()
 
     FASTPLONG(
         input_reads,

@@ -6,7 +6,7 @@ workflow ONT_HQ {
 
     main:
 
-    def ch_versions = Channel.empty()
+    def ch_versions = channel.empty()
 
     FLYE(
         qc_reads,

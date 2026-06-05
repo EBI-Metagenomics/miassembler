@@ -6,7 +6,7 @@ workflow FRAMESHIFT_CORRECTION {
     contigs                   // [ val(meta), path(contigs) ]
 
     main:
-    def ch_versions = Channel.empty()
+    def ch_versions = channel.empty()
 
     PROOVFRAME_MAP(
         contigs,
@@ -17,8 +17,8 @@ workflow FRAMESHIFT_CORRECTION {
 
     pf_fix_input = contigs
         .join(PROOVFRAME_MAP.out.tsv)
-        .multiMap { meta, contigs, tsv ->
-            contigs:    [meta, contigs]
+        .multiMap { meta, assembly_contigs, tsv ->
+            contigs:    [meta, assembly_contigs]
             pf_map_out: [meta, tsv]
     }
 

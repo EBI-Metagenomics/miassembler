@@ -10,7 +10,7 @@
             "type": "object",
             "fa_icon": "fas fa-terminal",
             "description": "Define where the pipeline should find input data and save output data.",
-            "required": ["outdir"],
+            "required": ["samplesheet", "outdir"],
             "properties": {
                 "samplesheet": {
                     "type": "string",
@@ -21,22 +21,6 @@
                     "description": "Path to comma-separated file containing information about the raw reads with the prefix (read accession) to be used.",
                     "help_text": "You will need to create a design file with information about the raw reads running the pipeline. Use this parameter to specify its location. It has to be a comma-separated file with a minimum of 3 columns (study_accession, reads_accession, fastq_1), and a header row. The following fields are optional or depend on the data type: fastq_2, library_layout, library_strategy, assembler.",
                     "fa_icon": "fas fa-file-csv"
-                },
-                "study_accession": {
-                    "type": "string",
-                    "fa_icon": "fas fa-address-card",
-                    "description": "The ENA Study secondary accession",
-                    "minLength": 3
-                },
-                "reads_accession": {
-                    "type": "string",
-                    "description": "The ENA Run primary accession",
-                    "fa_icon": "far fa-address-card",
-                    "minLength": 3
-                },
-                "private_study": {
-                    "type": "boolean",
-                    "description": "To use if the ENA study is private, *this feature ony works on EBI infrastructure at the moment*"
                 },
                 "use_fire_download": {
                     "type": "boolean",
@@ -136,9 +120,9 @@
                 },
                 "long_reads_assembler_config": {
                     "type": "string",
-                    "enum": ["nano-raw", "nano-corr", "nano-hq", "pacbio-raw", "pacbio-corr", "pacbio-hifi"],
+                    "enum": ["", "nano-raw", "nano-corr", "nano-hq", "pacbio-raw", "pacbio-corr", "pacbio-hifi"],
                     "description": "Configuration to use flye with.",
-                    "default": null
+                    "default": ""
                 },
                 "flye_version": {
                     "type": "string",
@@ -278,12 +262,6 @@
             "description": "Less common options for the pipeline, typically set in a config file.",
             "help_text": "These options are common to all nf-core pipelines and allow you to customise some of the core preferences for how the pipeline runs.\n\nTypically these options would be set in a Nextflow config file loaded for all pipeline runs, such as `~/.nextflow/config`.",
             "properties": {
-                "help": {
-                    "type": "boolean",
-                    "description": "Display help text.",
-                    "fa_icon": "fas fa-question-circle",
-                    "hidden": true
-                },
                 "version": {
                     "type": "boolean",
                     "description": "Display version and exit.",
@@ -351,6 +329,20 @@
                     "type": "string",
                     "description": "Custom MultiQC yaml file containing HTML including a methods description.",
                     "fa_icon": "fas fa-cog"
+                },
+                "help": {
+                    "type": ["boolean", "string"],
+                    "description": "Display the help message."
+                },
+                "show_hidden": {
+                    "type": "boolean",
+                    "description": "Display hidden parameters in the help message (only works when --help is provided)."
+                },
+                "trace_report_suffix": {
+                    "description": "Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss.",
+                    "fa_icon": "far calendar",
+                    "hidden": true,
+                    "type": "string"
                 }
             }
         }
