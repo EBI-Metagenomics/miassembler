@@ -234,6 +234,11 @@ workflow MIASSEMBLER {
         [meta.subMap("study_accession"), result_artifact]
     }
 
+    def flatten_files_by_meta = { meta, result_artifact ->
+        def files = result_artifact instanceof List ? result_artifact.flatten() : [result_artifact]
+        files.collect { file -> [meta, file] }
+    }
+
     // Helper method for the MultiQC aggregation by study and runs //
     def combineFiles = { meta, fastqc_before, fastqc_after, assembly_coverage, quast ->
         // Flatten the fastqc_before and fastqc_after lists
@@ -265,12 +270,12 @@ workflow MIASSEMBLER {
     def quast_results = SHORT_READS_ASSEMBLER.out.quast_results
         .mix(LONG_READS_ASSEMBLER.out.quast_results)
 
-    def study_multiqc_files = fastqc_before_zip.map(meta_by_study)
-        .join(fastqc_after_zip.map(meta_by_study))
-        .join(assembly_coverage_samtools_idxstats.map(meta_by_study), remainder: true) // the assembly step could fail
-        .join(quast_results.map(meta_by_study), remainder: true)                       // the assembly step could fail
-
-    ch_multiqc_study_tools_files = study_multiqc_files.flatMap(combineFiles).groupTuple()
+    ch_multiqc_study_tools_files = fastqc_before_zip.map(meta_by_study)
+        .mix(fastqc_after_zip.map(meta_by_study))
+        .mix(assembly_coverage_samtools_idxstats.map(meta_by_study))
+        .mix(quast_results.map(meta_by_study))
+        .flatMap(flatten_files_by_meta)
+        .groupTuple()
 
     MULTIQC_STUDY(
         ch_multiqc_base_files.collect(),
