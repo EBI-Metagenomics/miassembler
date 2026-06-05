@@ -297,8 +297,8 @@ workflow MIASSEMBLER {
 
     def run_multiqc_files = SHORT_READS_ASSEMBLER.out.fastqc_before_zip.map(meta_by_run)
         .join(SHORT_READS_ASSEMBLER.out.fastqc_after_zip.map(meta_by_run))
-        .join(SHORT_READS_ASSEMBLER.out.assembly_coverage_samtools_idxstats.map(meta_by_run), remainder: true) // the assembly step could fail
-        .join(SHORT_READS_ASSEMBLER.out.quast_results.map(meta_by_run), remainder: true)                       // the assembly step could fail
+        .join(SHORT_READS_ASSEMBLER.out.assembly_coverage_samtools_idxstats.map(meta_by_run), remainder: true, failOnMismatch: false) // the assembly step could fail
+        .join(SHORT_READS_ASSEMBLER.out.quast_results.map(meta_by_run), remainder: true, failOnMismatch: false)                       // the assembly step could fail
 
     // Filter out the non-assembled runs //
     def ch_multiqc_run_tools_files = run_multiqc_files.filter { _meta, _fastqc_before, _fastqc_after, assembly_coverage, quast -> {

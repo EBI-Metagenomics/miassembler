@@ -132,7 +132,7 @@ workflow SHORT_READS_ASSEMBLER {
 
     // Coverage //
     SHORT_READS_ASSEMBLY_COVERAGE(
-        SHORT_READS_ASSEMBLY_QC.out.passed_cleaned_contigs.join(SHORT_READS_QC.out.qc_reads),
+        SHORT_READS_ASSEMBLY_QC.out.passed_cleaned_contigs.join(SHORT_READS_QC.out.qc_reads, failOnMismatch: false),
         SHORT_READS_QC.out.fastp_json
     )
 
@@ -162,4 +162,3 @@ workflow SHORT_READS_ASSEMBLER {
     quast_results                        = QUAST.out.results                                    // tuple(meta)
     versions                             = ch_versions
 }
-
