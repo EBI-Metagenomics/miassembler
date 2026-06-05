@@ -39,7 +39,7 @@ workflow SHORT_READS_ASSEMBLER {
 
     main:
 
-    def ch_versions = Channel.empty()
+    def ch_versions = channel.empty()
 
     /***************************/
     /* Selecting the assembler */

@@ -23,7 +23,7 @@ workflow SHORT_READS_ASSEMBLY_QC {
     assembly               // [ val(meta), path(assembly_fasta) ]
 
     main:
-    ch_versions = Channel.empty()
+    ch_versions = channel.empty()
 
     /* Len filter using the parameter "short_reads_min_contig_length" */
     SEQKIT_SEQ(assembly)

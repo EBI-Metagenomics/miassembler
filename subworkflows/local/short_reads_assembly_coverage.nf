@@ -10,7 +10,7 @@ workflow SHORT_READS_ASSEMBLY_COVERAGE {
 
     main:
 
-    ch_versions = Channel.empty()
+    ch_versions = channel.empty()
 
     def reads = assembly_reads.map { meta, __, reads -> [meta, reads] }
     def assembly = assembly_reads.map { meta, assembly, __ -> [meta, assembly] }
