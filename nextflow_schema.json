@@ -121,8 +121,7 @@
                 "long_reads_assembler_config": {
                     "type": "string",
                     "enum": ["", "nano-raw", "nano-corr", "nano-hq", "pacbio-raw", "pacbio-corr", "pacbio-hifi"],
-                    "description": "Configuration to use flye with.",
-                    "default": ""
+                    "description": "Configuration to use flye with."
                 },
                 "flye_version": {
                     "type": "string",
