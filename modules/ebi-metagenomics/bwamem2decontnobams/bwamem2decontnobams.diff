@@ -1,0 +1,22 @@
+Changes in component 'ebi-metagenomics/bwamem2decontnobams'
+'modules/ebi-metagenomics/bwamem2decontnobams/environment.yml' is unchanged
+'modules/ebi-metagenomics/bwamem2decontnobams/meta.yml' is unchanged
+Changes in 'bwamem2decontnobams/main.nf':
+--- modules/ebi-metagenomics/bwamem2decontnobams/main.nf
++++ modules/ebi-metagenomics/bwamem2decontnobams/main.nf
+@@ -4,9 +4,8 @@
+ 
+     conda "${moduleDir}/environment.yml"
+     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+-        'https://depot.galaxyproject.org/singularity/mulled-v2-e5d375990341c5aef3c9aff74f96f66f65375ef6:2d15960ccea84e249a150b7f5d4db3a42fc2d6c3-0' :
+-        'biocontainers/mulled-v2-e5d375990341c5aef3c9aff74f96f66f65375ef6:2d15960ccea84e249a150b7f5d4db3a42fc2d6c3-0' }"
+-
++        'oras://community.wave.seqera.io/library/bwa-mem2_samtools:0d13d0f418bae5da' :
++        'community.wave.seqera.io/library/bwa-mem2_samtools:df7fb96cc09814fa' }"
+ 
+     input:
+     tuple val(meta), path(reads)
+
+'modules/ebi-metagenomics/bwamem2decontnobams/tests/tags.yml' is unchanged
+'modules/ebi-metagenomics/bwamem2decontnobams/tests/main.nf.test' is unchanged
+************************************************************

@@ -5,8 +5,8 @@ process SHORT_READS_INDEX_FASTA {
     tag "${meta.id}"
 
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/8b/8b4b8bec7b2111885ca511c09bbf753e5229ce78f93f9c281819a527c37854af/data':
-        'community.wave.seqera.io/library/bwa-mem2:2.2.1--1842774b9b0b4729' }"
+        'https://depot.galaxyproject.org/singularity/bwa-mem2:2.3--he70b90d_0' :
+        'biocontainers/bwa-mem2:2.3--he70b90d_0' }"
 
     input:
     tuple val(meta), path(fasta)
@@ -38,7 +38,7 @@ process SHORT_READS_COVERAGE {
 
     tag "${meta.id}"
 
-    container 'quay.io/microbiome-informatics/bwa_metabat_concoct:2.2.1_2.16_1.1.0'
+    container 'microbiome-informatics/bwa_metabat_concoct:2.3_2.16_1.1.0'
 
     input:
     tuple val(meta), path(reads), path(ref_fasta), path(ref_fasta_index)

@@ -1,10 +1,17 @@
-Changes in module 'ebi-metagenomics/bwamem2/mem'
+Changes in component 'ebi-metagenomics/bwamem2/mem'
 'modules/ebi-metagenomics/bwamem2/mem/environment.yml' is unchanged
+'modules/ebi-metagenomics/bwamem2/mem/meta.yml' is unchanged
 Changes in 'bwamem2/mem/main.nf':
 --- modules/ebi-metagenomics/bwamem2/mem/main.nf
 +++ modules/ebi-metagenomics/bwamem2/mem/main.nf
-@@ -7,8 +7,7 @@
-         'biocontainers/mulled-v2-e5d375990341c5aef3c9aff74f96f66f65375ef6:2d15960ccea84e249a150b7f5d4db3a42fc2d6c3-0' }"
+@@ -3,12 +3,11 @@
+ 
+     conda "${moduleDir}/environment.yml"
+     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+-        'https://depot.galaxyproject.org/singularity/mulled-v2-e5d375990341c5aef3c9aff74f96f66f65375ef6:2d15960ccea84e249a150b7f5d4db3a42fc2d6c3-0' :
+-        'biocontainers/mulled-v2-e5d375990341c5aef3c9aff74f96f66f65375ef6:2d15960ccea84e249a150b7f5d4db3a42fc2d6c3-0' }"
++        'oras://community.wave.seqera.io/library/bwa-mem2_samtools:0d13d0f418bae5da' :
++        'community.wave.seqera.io/library/bwa-mem2_samtools:df7fb96cc09814fa' }"
  
      input:
 -    tuple val(meta), path(reads)
@@ -22,8 +29,7 @@ Changes in 'bwamem2/mem/main.nf':
      INDEX=`find -L ./ -name "*.amb" | sed 's/\\.amb\$//'`
  
 
-'modules/ebi-metagenomics/bwamem2/mem/meta.yml' is unchanged
-'modules/ebi-metagenomics/bwamem2/mem/tests/tags.yml' is unchanged
 'modules/ebi-metagenomics/bwamem2/mem/tests/main.nf.test.snap' is unchanged
+'modules/ebi-metagenomics/bwamem2/mem/tests/tags.yml' is unchanged
 'modules/ebi-metagenomics/bwamem2/mem/tests/main.nf.test' is unchanged
 ************************************************************
