@@ -105,9 +105,8 @@ workflow SHORT_READS_ASSEMBLY_QC {
     /*  - Less than params.short_reads_contig_threshold (default is 2) contigs */
     /***************************************************************************/
 
-    cleaned_contigs.map { meta, assembly_fasta -> {
+    cleaned_contigs.map { meta, assembly_fasta ->
             [meta , ["contigs_count": assembly_fasta.countFasta()], assembly_fasta]
-            }
         }
         .branch { _meta, meta2, _assembly_fasta ->
             qc_failed: meta2.contigs_count < params.short_reads_contig_threshold

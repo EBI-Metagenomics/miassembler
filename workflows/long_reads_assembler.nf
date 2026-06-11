@@ -153,8 +153,22 @@ workflow LONG_READS_ASSEMBLER {
     final_contigs = FRAMESHIFT_CORRECTION.out.corrected_contigs.mix(
                         low_high_quality_contigs.hq)
 
+    def final_contigs_by_run = final_contigs.map { meta, contigs ->
+        [meta.subMap("study_accession", "id", "platform", "assembler_config"), meta, contigs]
+    }
+
+    def reads_assembler_config_by_run = reads_assembler_config.map { meta, reads ->
+        [meta.subMap("study_accession", "id", "platform", "assembler_config"), reads]
+    }
+
+    def final_contigs_reads = final_contigs_by_run
+        .join(reads_assembler_config_by_run)
+        .map { _run_meta, meta, contigs, reads ->
+            [meta, contigs, reads]
+        }
+
     LONG_READS_ASSEMBLY_COVERAGE(
-        final_contigs.join( reads_assembler_config ),
+        final_contigs_reads,
         LONG_READS_QC.out.fastp_json
     )
     ch_versions = ch_versions.mix(LONG_READS_ASSEMBLY_COVERAGE.out.versions)
