@@ -4,8 +4,8 @@ process BWAMEM2_INDEX {
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/bwa-mem2:2.2.1--he513fc3_0' :
-        'biocontainers/bwa-mem2:2.2.1--he513fc3_0' }"
+        'https://depot.galaxyproject.org/singularity/bwa-mem2:2.3--he70b90d_0' :
+        'biocontainers/bwa-mem2:2.3--he70b90d_0' }"
 
     input:
     tuple val(meta), path(fasta)

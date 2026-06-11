@@ -1,0 +1,19 @@
+Changes in component 'nf-core/bwamem2/index'
+'modules/nf-core/bwamem2/index/environment.yml' is unchanged
+'modules/nf-core/bwamem2/index/meta.yml' is unchanged
+Changes in 'bwamem2/index/main.nf':
+--- modules/nf-core/bwamem2/index/main.nf
++++ modules/nf-core/bwamem2/index/main.nf
+@@ -4,8 +4,8 @@
+ 
+     conda "${moduleDir}/environment.yml"
+     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+-        'https://depot.galaxyproject.org/singularity/bwa-mem2:2.2.1--he513fc3_0' :
+-        'biocontainers/bwa-mem2:2.2.1--he513fc3_0' }"
++        'https://depot.galaxyproject.org/singularity/bwa-mem2:2.3--he70b90d_0' :
++        'biocontainers/bwa-mem2:2.3--he70b90d_0' }"
+ 
+     input:
+     tuple val(meta), path(fasta)
+
+************************************************************
