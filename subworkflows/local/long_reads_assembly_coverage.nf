@@ -30,9 +30,11 @@ workflow LONG_READS_ASSEMBLY_COVERAGE {
         return [key, key2, depth_file]
     }
 
-    def depth_fastp_json = depth.join(fastp).map{ meta, meta2, json_file, depth_file ->
-        return [meta + meta2, json_file, depth_file]
-    }
+    def depth_fastp_json = depth
+        .join(fastp, failOnMismatch: false)
+        .map { meta, meta2, depth_file, json_file ->
+            [meta + meta2, depth_file, json_file]
+        }
 
     // This process calculates a single coverage and coverage depth value for the whole assembly //
     CALCULATE_ASSEMBLY_COVERAGE(

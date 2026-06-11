@@ -301,9 +301,8 @@ workflow MIASSEMBLER {
         .join(SHORT_READS_ASSEMBLER.out.quast_results.map(meta_by_run), remainder: true, failOnMismatch: false)                       // the assembly step could fail
 
     // Filter out the non-assembled runs //
-    def ch_multiqc_run_tools_files = run_multiqc_files.filter { _meta, _fastqc_before, _fastqc_after, assembly_coverage, quast -> {
-            return assembly_coverage != null && quast != null
-        }
+    def ch_multiqc_run_tools_files = run_multiqc_files.filter { _meta, _fastqc_before, _fastqc_after, assembly_coverage, quast ->
+        assembly_coverage != null && quast != null
     }.flatMap(combineFiles).groupTuple()
 
     MULTIQC_RUN(
@@ -325,16 +324,14 @@ workflow MIASSEMBLER {
     // Short reads asssembled runs //
     SHORT_READS_ASSEMBLER.out.assembly_coverage_samtools_idxstats
         .map { meta, __ ->
-            {
-                return "${meta.id},${meta.assembler},${meta.assembler_version}"
-            }
+            "${meta.id},${meta.assembler},${meta.assembler_version}"
         }
         .collectFile(name: "assembled_runs.csv", storeDir: "${params.outdir}", newLine: true, cache: false)
 
     // Short reads and assembly QC failed //
 
     def short_reads_qc_failed_entries = SHORT_READS_ASSEMBLER.out.qc_failed_all.map {
-        meta, __ -> {
+        meta, __ ->
             if (meta.low_reads_count) {
                 return "${meta.id},low_reads_count"
             }
@@ -345,7 +342,6 @@ workflow MIASSEMBLER {
                 return "${meta.id},too_few_contigs"
             }
             error("Unexpected. meta: ${meta}")
-        }
     }
 
     short_reads_qc_failed_entries.collectFile(name: "qc_failed_runs.csv", storeDir: "${params.outdir}", newLine: true, cache: false)

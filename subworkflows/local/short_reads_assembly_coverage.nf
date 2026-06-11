@@ -28,9 +28,25 @@ workflow SHORT_READS_ASSEMBLY_COVERAGE {
     ch_versions = ch_versions.mix( SHORT_READS_INDEX_FASTA.out.versions.first() )
     ch_versions = ch_versions.mix( SHORT_READS_COVERAGE.out.versions.first() )
 
+    def fastp = fastp_json.map { meta, json_file ->
+        def key = meta.subMap('id', 'study_accession', 'assembler', 'assembler_version')
+        return [key, json_file]
+    }
+
+    def depth = SHORT_READS_COVERAGE.out.depth.map { meta, depth_file ->
+        def key = meta.subMap('id', 'study_accession', 'assembler', 'assembler_version')
+        return [key, meta, depth_file]
+    }
+
+    def depth_fastp_json = depth
+        .join(fastp, failOnMismatch: false)
+        .map { _run_meta, meta, depth_file, json_file ->
+            [meta, depth_file, json_file]
+        }
+
     // This process calculates a single coverage and coverage depth value for the whole assembly //
     CALCULATE_ASSEMBLY_COVERAGE(
-        SHORT_READS_COVERAGE.out.depth.join ( fastp_json )
+        depth_fastp_json
     )
 
     ch_versions = ch_versions.mix(CALCULATE_ASSEMBLY_COVERAGE.out.versions)

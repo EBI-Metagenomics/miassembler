@@ -86,19 +86,31 @@ workflow SHORT_READS_ASSEMBLER {
     /*  - Less than 1k reads                  */
     /******************************************/
     def extended_qc = SHORT_READS_QC.out.fastp_json.map { meta, json ->
-        {
-            def json_txt = new groovy.json.JsonSlurper().parseText(json.text)
-            def bf_total_reads = json_txt.summary.before_filtering.total_reads ?: 0
-            def af_total_reads = json_txt.summary.after_filtering.total_reads ?: 0
-            def reads_qc_meta = [
-                "low_reads_count": af_total_reads <= params.short_reads_low_reads_count_threshold,
-                "filter_ratio_threshold_exceeded": af_total_reads == 0 || ((af_total_reads / bf_total_reads) <= params.short_reads_filter_ratio_threshold)
-            ]
-            return [meta, reads_qc_meta]
-        }
+        def json_txt = json.text.trim() ? new groovy.json.JsonSlurper().parseText(json.text) : [:]
+        def bf_total_reads = json_txt?.summary?.before_filtering?.total_reads ?: 0
+        def af_total_reads = json_txt?.summary?.after_filtering?.total_reads ?: 0
+        def low_reads_count_threshold = params.short_reads_low_reads_count_threshold as Integer
+        def filter_ratio_threshold = params.short_reads_filter_ratio_threshold as BigDecimal
+        def reads_qc_meta = [
+            "low_reads_count": af_total_reads <= low_reads_count_threshold,
+            "filter_ratio_threshold_exceeded": af_total_reads == 0 || ((af_total_reads / bf_total_reads) <= filter_ratio_threshold)
+        ]
+        return [meta, reads_qc_meta]
     }
 
-    def extended_reads_qc = SHORT_READS_QC.out.qc_reads.join(extended_qc)
+    def qc_reads_by_run = SHORT_READS_QC.out.qc_reads.map { meta, reads ->
+        [meta.subMap("study_accession", "id"), meta, reads]
+    }
+
+    def extended_qc_by_run = extended_qc.map { meta, reads_qc_meta ->
+        [meta.subMap("study_accession", "id"), reads_qc_meta]
+    }
+
+    def extended_reads_qc = qc_reads_by_run
+        .join(extended_qc_by_run)
+        .map { _run_meta, meta, reads, reads_qc_meta ->
+            [meta, reads, reads_qc_meta]
+        }
 
     extended_reads_qc
         .branch { meta, _reads, reads_qc_meta ->
@@ -131,8 +143,22 @@ workflow SHORT_READS_ASSEMBLER {
     ch_versions = ch_versions.mix(SHORT_READS_ASSEMBLY_QC.out.versions)
 
     // Coverage //
+    def passed_cleaned_contigs_by_run = SHORT_READS_ASSEMBLY_QC.out.passed_cleaned_contigs.map { meta, contigs ->
+        [meta.subMap("study_accession", "id", "assembler", "assembler_version"), meta, contigs]
+    }
+
+    def qc_reads_for_coverage_by_run = SHORT_READS_QC.out.qc_reads.map { meta, reads ->
+        [meta.subMap("study_accession", "id", "assembler", "assembler_version"), reads]
+    }
+
+    def assembly_reads = passed_cleaned_contigs_by_run
+        .join(qc_reads_for_coverage_by_run, failOnMismatch: false)
+        .map { _run_meta, meta, contigs, reads ->
+            [meta, contigs, reads]
+        }
+
     SHORT_READS_ASSEMBLY_COVERAGE(
-        SHORT_READS_ASSEMBLY_QC.out.passed_cleaned_contigs.join(SHORT_READS_QC.out.qc_reads, failOnMismatch: false),
+        assembly_reads,
         SHORT_READS_QC.out.fastp_json
     )
 
