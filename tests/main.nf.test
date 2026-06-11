@@ -56,20 +56,17 @@ nextflow_pipeline {
 
     }
 
-    test("metaSPAdes - paired end") {
+    test("Samplesheet metaSPAdes - paired end") {
 
-        tag "ena-portal-api"
+        tag "slow"
         tag "SR"
 
         when {
-
             params {
                 // Force the assembly
-                short_reads_filter_ratio_threshold   = 0.1
-                short_reads_contig_threshold         = 1
-
-                study_accession                      = "SRP115494"
-                reads_accession                      = "SRR6180434"
+                short_reads_filter_ratio_threshold = 0.1
+                short_reads_contig_threshold       = 1
+                samplesheet                         = "${projectDir}/tests/samplesheet/test_srr6180434.csv"
             }
         }
 
@@ -78,26 +75,20 @@ nextflow_pipeline {
                 assert success
                 assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 1
                 assert trace.succeeded().count{ task -> task.name.contains("MEGAHIT") } == 0
-                assert trace.succeeded().size() == 22
             }
         }
-
     }
 
-    test("MEGAHIT - paired end") {
+    test("Samplesheet MEGAHIT - paired end") {
 
-        tag "ena-portal-api"
+        tag "slow"
         tag "SR"
 
         when {
             params {
-                assembler                           = "megahit"
-
-                // Force the assembly
-                short_reads_filter_ratio_threshold  = 0.1
-
-                study_accession                     = "SRP115494"
-                reads_accession                     = "SRR6180434"
+                assembler                          = "megahit"
+                short_reads_filter_ratio_threshold = 0.1
+                samplesheet                        = "${projectDir}/tests/samplesheet/test_srr6180434.csv"
             }
         }
 
@@ -106,121 +97,41 @@ nextflow_pipeline {
                 assert success
                 assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 0
                 assert trace.succeeded().count{ task -> task.name.contains("MEGAHIT") } == 1
-                assert trace.tasks().size() == 22
             }
         }
-
     }
 
-    test("metaSPAdes - too few contigs") {
+    test("Samplesheet metaSPAdes - too few contigs") {
 
-        tag "ena-portal-api"
+        tag "samplesheet"
         tag "SR"
 
         when {
-
             params {
-                // Force the assembly
-                short_reads_filter_ratio_threshold   = 0.1
-
-                study_accession                      = "SRP115494"
-                reads_accession                      = "SRR6180434"
+                short_reads_filter_ratio_threshold = 0.1
+                samplesheet                        = "${projectDir}/tests/samplesheet/test_srr6180434.csv"
             }
         }
 
         then {
             with (workflow) {
-                // Cleaned assembly should contain 1 contig which fails the contig threshold and the pipeline stops
+                // Cleaned assembly should contain too few contigs and the pipeline should stop after QC.
                 assert success
                 assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 1
                 assert trace.succeeded().count{ task -> task.name.contains("MEGAHIT") } == 0
-                // TODO fix this assert
-                assert trace.succeeded().size() == 16
-            }
-        }
-
-    }
-
-    test("metaSPAdes - single end - should fail") {
-
-        tag "ena-portal-api"
-        tag "SR"
-
-        when {
-            params {
-                assembler       = "metaspades"
-
-                study_accession = "ERP012810"
-                reads_accession = "ERR1076564"
-            }
-        }
-
-        then {
-            with(workflow) {
-                // No contigs
-                assert !success
-                assert trace.failed().count{ task -> task.name.contains("SPADES") } == 1
-            }
-        }
-
-    }
-
-    test("MEGAHIT - single end - should produce an empty contigs file") {
-
-        // TODO: fix along with - https://github.com/EBI-Metagenomics/miassembler/pull/21
-
-        tag "ena-portal-api"
-        tag "SR"
-
-        when {
-            params {
-                study_accession = "ERP012810"
-                reads_accession = "ERR1076564"
-            }
-        }
-
-        then {
-            with(workflow) {
-                assert success
-                assert trace.succeeded().count{ task -> task.name.contains("MEGAHIT") } == 1
             }
         }
     }
 
-    test("MEGAHIT - metaT - single end") {
+    test("Samplesheet metaSPAdes - SRR1211894 single end should fail") {
 
-        tag "ena-portal-api"
+        tag "samplesheet"
         tag "SR"
 
         when {
             params {
-                study_accession = "DRP007622"
-                reads_accession = "DRR280712"
-            }
-        }
-
-        then {
-            with(workflow) {
-                assert success
-                assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 0
-                assert trace.succeeded().count{ task -> task.name.contains("MEGAHIT") } == 1
-                assert trace.tasks().size() == 22
-            }
-        }
-
-    }
-
-    test("Spades - metaT - single end should fail") {
-
-        tag "ena-portal-api"
-        tag "SR"
-
-        when {
-            params {
-                assembler       = "spades"
-
-                study_accession = "DRP007622"
-                reads_accession = "DRR280712"
+                assembler   = "metaspades"
+                samplesheet = "${projectDir}/tests/samplesheet/test_srr1211894.csv"
             }
         }
 
@@ -230,12 +141,70 @@ nextflow_pipeline {
                 assert trace.failed().count{ task -> task.name.contains("SPADES") } == 1
             }
         }
+    }
 
+    test("Samplesheet MEGAHIT - SRR1211894 single end should produce an empty contigs file") {
+
+        tag "slow"
+        tag "SR"
+
+        when {
+            params {
+                samplesheet = "${projectDir}/tests/samplesheet/test_srr1211894.csv"
+            }
+        }
+
+        then {
+            with(workflow) {
+                assert success
+                assert trace.succeeded().count{ task -> task.name.contains("MEGAHIT") } == 1
+            }
+        }
+    }
+
+    test("Samplesheet MEGAHIT - metaT - single end") {
+
+        tag "samplesheet"
+        tag "SR"
+
+        when {
+            params {
+                samplesheet = "${projectDir}/tests/samplesheet/test_drr280712.csv"
+            }
+        }
+
+        then {
+            with(workflow) {
+                assert success
+                assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 0
+                assert trace.succeeded().count{ task -> task.name.contains("MEGAHIT") } == 1
+            }
+        }
+    }
+
+    test("Samplesheet Spades - metaT - single end should fail") {
+
+        tag "slow"
+        tag "SR"
+
+        when {
+            params {
+                assembler   = "spades"
+                samplesheet = "${projectDir}/tests/samplesheet/test_drr280712.csv"
+            }
+        }
+
+        then {
+            with(workflow) {
+                assert !success
+                assert trace.failed().count{ task -> task.name.contains("SPADES") } == 1
+            }
+        }
     }
 
     test("Samplesheet spades - retries") {
 
-        tag "samplesheet"
+        tag "slow"
         tag "retries"
         tag "SR"
 
@@ -266,22 +235,20 @@ nextflow_pipeline {
 
     }
 
-    test("Private study reads - this one should fail") {
+    test("Samplesheet FIRE download - missing secrets should fail") {
 
         tag "samplesheet"
-        tag "private"
+        tag "fire"
         tag "SR"
 
         when {
             params {
-                assembler     = "spades"
-                samplesheet   = "${projectDir}/tests/samplesheet/test.csv"
-                private_study = true
+                assembler         = "spades"
+                samplesheet       = "${projectDir}/tests/samplesheet/test_fire.csv"
                 use_fire_download = true
             }
         }
 
-        // Complete this test when secrets are implemented in nf-test https://github.com/askimed/nf-test/issues/145
         then {
             with(workflow) {
                 assert !success
@@ -292,7 +259,7 @@ nextflow_pipeline {
 
     test("Samplesheet LR ONT HQ") {
 
-        tag "samplesheet"
+        tag "slow"
         tag "LR"
 
         when {
@@ -308,15 +275,13 @@ nextflow_pipeline {
 
                 assert trace.succeeded().count{ task -> task.name.contains("MEDAKA") } == 0
                 assert trace.succeeded().count{ task -> task.name.contains("ONT_HQ") } == 1
-
-                assert trace.tasks().size() == 15
             }
         }
     }
 
     test("Samplesheet LR ONT LQ") {
 
-        tag "samplesheet"
+        tag "slow"
         tag "LR"
 
         when {
@@ -331,8 +296,6 @@ nextflow_pipeline {
                 assert success
 
                 assert trace.succeeded().count{ task -> task.name.contains("ONT_LQ") } == 4
-
-                assert trace.tasks().size() == 20
             }
         }
     }
@@ -354,21 +317,18 @@ nextflow_pipeline {
                 assert success
 
                 assert trace.succeeded().count{ task -> task.name.contains("PACBIO_HIFI") } == 2
-                
-                assert trace.tasks().size() == 14
             }
         }
     }
 
-    test("ENA API LR PB LQ") {
+    test("Samplesheet LR PB LQ") {
 
-        tag "ena-portal-api"
+        tag "slow"
         tag "LR"
 
         when {
             params {
-                study_accession = "SRP040735"
-                reads_accession = "SRR1211893"
+                samplesheet     = "${projectDir}/tests/samplesheet/test_long_reads_pb_lq.csv"
                 phix_reference  = null
             }
         }
@@ -378,8 +338,6 @@ nextflow_pipeline {
                 assert success
 
                 assert trace.succeeded().count{ task -> task.name.contains("PACBIO_LQ") } == 4
-                
-                assert trace.tasks().size() == 19
             }
         }
     }

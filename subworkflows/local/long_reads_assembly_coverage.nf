@@ -9,36 +9,38 @@ workflow LONG_READS_ASSEMBLY_COVERAGE {
 
     main:
 
-    ch_versions = Channel.empty()
+    ch_versions = channel.empty()
 
     LONG_READS_COVERAGE(
         assembly_reads
     )
     ch_versions = ch_versions.mix(LONG_READS_COVERAGE.out.versions)
 
-    // This snippet allows to only use relevant meta values from the two, 
+    // This snippet allows to only use relevant meta values from the two,
     // since meta of the depth file contains way more fields than the
     // previous one, preventing a direct join from working
     def fastp = fastp_json.map { meta, json_file ->
-        key = meta.subMap('id', 'study_accession', 'platform')
+        def key = meta.subMap('id', 'study_accession', 'platform')
         return [key, json_file]
     }
 
     def depth = LONG_READS_COVERAGE.out.depth.map { meta, depth_file ->
-        key = meta.subMap('id', 'study_accession', 'platform')
-        key2 = meta.subMap('assembler', 'assembler_version')
+        def key = meta.subMap('id', 'study_accession', 'platform')
+        def key2 = meta.subMap('assembler', 'assembler_version')
         return [key, key2, depth_file]
     }
 
-    def depth_fastp_json = depth.join(fastp).map{ meta, meta2, json_file, depth_file ->
-        return [meta + meta2, json_file, depth_file]
-    }
+    def depth_fastp_json = depth
+        .join(fastp, failOnMismatch: false)
+        .map { meta, meta2, depth_file, json_file ->
+            [meta + meta2, depth_file, json_file]
+        }
 
     // This process calculates a single coverage and coverage depth value for the whole assembly //
     CALCULATE_ASSEMBLY_COVERAGE(
         depth_fastp_json
     )
-    
+
     ch_versions = ch_versions.mix(CALCULATE_ASSEMBLY_COVERAGE.out.versions)
 
     emit:

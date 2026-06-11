@@ -7,15 +7,7 @@
 ----------------------------------------------------------------------------------------
 */
 
-nextflow.enable.dsl = 2
-
-/*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    VALIDATE & PRINT PARAMETER SUMMARY
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*/
-
-include { validateParameters } from 'plugin/nf-schema'
+include { validateParameters; paramsHelp } from 'plugin/nf-schema'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -29,6 +21,17 @@ include { MIASSEMBLER } from './workflows/miassembler'
 // WORKFLOW: Run main ebi-metagenomics/miassembler analysis pipeline
 //
 workflow EBIMETAGENOMICS_MIASSEMBLER {
+
+    if (params.help) {
+        log.info paramsHelp(
+            command: "nextflow run ebi-metagenomics/miassembler --help",
+            showHidden: params.show_hidden,
+        )
+        exit 0
+    }
+
+    validateParameters()
+
     MIASSEMBLER ()
 }
 
@@ -43,15 +46,6 @@ workflow EBIMETAGENOMICS_MIASSEMBLER {
 // See: https://github.com/nf-core/rnaseq/issues/619
 //
 workflow {
-
-    validateParameters()
-
-    // Custom validation //
-    // The conditional validation doesn't work yet -> https://github.com/nf-core/tools/issues/2619
-    if ( !params.samplesheet && ( !params.study_accession || !params.reads_accession ) ) {
-        error "Either --samplesheet or both --study_accession and --reads_accession are required."
-        exit 1
-    }
 
     EBIMETAGENOMICS_MIASSEMBLER ()
 }

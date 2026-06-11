@@ -8,7 +8,7 @@ workflow LONG_READS_ONT_QC {
     ont_reads
 
     main:
-    ch_versions = Channel.empty()
+    ch_versions = channel.empty()
 
     PORECHOP_ABI(
         ont_reads
@@ -29,7 +29,7 @@ workflow LONG_READS_ONT_QC {
     lambdaphage_subdivided_reads.run_decontamination
         .multiMap { meta, reads ->
             reads: [meta, reads]
-            reference: file("${params.reference_genomes_folder}/${meta.lambdaphage_reference}.*")
+            reference: files("${params.reference_genomes_folder}/${meta.lambdaphage_reference}.*")
         }
         .set { ch_lambda_decontamination_input }
 

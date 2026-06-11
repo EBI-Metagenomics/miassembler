@@ -4,7 +4,7 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { validateParameters; paramsSummaryLog; paramsSummaryMap; samplesheetToList; paramsHelp } from 'plugin/nf-schema'
+include { paramsSummaryLog; paramsSummaryMap; samplesheetToList } from 'plugin/nf-schema'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -39,7 +39,6 @@ include { LONG_READS_ASSEMBLER        } from '../workflows/long_reads_assembler'
 */
 include { DOWNLOAD_FROM_FIRE as DOWNLOAD_FROM_FIRE_SHORT_READS } from '../modules/ebi-metagenomics/downloadfromfire/main'
 include { DOWNLOAD_FROM_FIRE as DOWNLOAD_FROM_FIRE_LONG_READS  } from '../modules/ebi-metagenomics/downloadfromfire/main'
-include { FETCHTOOL_READS                                      } from '../modules/local/fetchtool_reads'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -61,13 +60,6 @@ workflow MIASSEMBLER {
     // Print parameter summary log to screen
     log.info logo + paramsSummaryLog(workflow) + citation
 
-    validateParameters()
-
-    if (params.help) {
-        log.info paramsHelp("nextflow run ebi-metagenomics/miassembler --help")
-        exit 0
-    }
-
     /*
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         CONFIG FILES
@@ -79,12 +71,8 @@ workflow MIASSEMBLER {
     def ch_multiqc_logo            = params.multiqc_logo   ? file( params.multiqc_logo, checkIfExists: true ) : file("$projectDir/assets/mgnify_logo.png", checkIfExists: true)
     def ch_multiqc_custom_methods_description = params.multiqc_methods_description ? file(params.multiqc_methods_description, checkIfExists: true) : file("$projectDir/assets/methods_description_template.yml", checkIfExists: true)
 
-    def ch_versions = Channel.empty()
-    def fetch_tool_metadata = Channel.empty()
-    def fetch_reads_transformed = Channel.empty()
-
-    // Print parameter summary log to screen
-    log.info(logo + paramsSummaryLog(workflow) + citation)
+    def ch_versions = channel.empty()
+    def fetch_reads_transformed = channel.empty()
 
     // ***************************************************************************** //
     // Custom validation for human decontamination of reads and assembled contigs   //
@@ -98,111 +86,58 @@ workflow MIASSEMBLER {
         }
     }
 
-    if (params.samplesheet) {
-        def groupReads = { study_accession, reads_accession, fq1, fq2, library_layout, library_strategy, platform, assembler, assembly_memory, assembler_config, contaminant_reference, human_reference, phix_reference, lambdaphage_reference ->
+    def groupReads = { study_accession, reads_accession, fq1, fq2, library_layout, library_strategy, platform, assembler, assembly_memory, assembler_config, contaminant_reference, human_reference, phix_reference, lambdaphage_reference ->
 
-            def human_reference_path = human_reference ?: params.human_reference
-            if (!params.skip_human_decontamination && human_reference_path == null) {
-                error "Invalid row, skip_human_decontamination is false but there is no human reference on row: ${study_accession}, ${reads_accession}."
-            }
-
-            if (fq2 == []) {
-                return tuple(
-                    [
-                        "id": reads_accession,
-                        "study_accession": study_accession,
-                        "single_end": true,
-                        "library_layout": library_layout,
-                        "library_strategy": library_strategy,
-                        "platform": params.platform ?: platform,
-                        "assembler": assembler ?: params.assembler,
-                        "assembly_memory": assembly_memory ?: params.assembly_memory,
-                        "assembler_config": assembler_config ?: params.long_reads_assembler_config,
-                        "contaminant_reference": contaminant_reference ?: params.contaminant_reference,
-                        "human_reference": human_reference_path, // -> if this value is null (which is not the same as an empty string) the decontamination won't be executed
-                        "phix_reference": phix_reference ?: params.phix_reference,
-                        "lambdaphage_reference": lambdaphage_reference ?: params.lambdaphage_reference
-                    ],
-                    [fq1]
-                )
-            } else {
-                return tuple(
-                    [
-                        "id": reads_accession,
-                        "study_accession": study_accession,
-                        "single_end": false,
-                        "library_layout": library_layout,
-                        "library_strategy": library_strategy,
-                        "platform": params.platform ?: platform,
-                        "assembler": assembler ?: params.assembler,
-                        "assembly_memory": assembly_memory ?: params.assembly_memory,
-                        "assembler_config": assembler_config ?: params.long_reads_assembler_config,
-                        "contaminant_reference": contaminant_reference ?: params.contaminant_reference,
-                        "human_reference": human_reference_path, // -> if this value is null (which is not the same as an empty string) the decontamination won't be executed
-                        "phix_reference": phix_reference ?: params.phix_reference,
-                        "lambdaphage_reference": lambdaphage_reference ?: params.lambdaphage_reference
-                    ],
-                    [fq1, fq2]
-                )
-            }
+        def human_reference_path = human_reference ?: params.human_reference
+        if (!params.skip_human_decontamination && human_reference_path == null) {
+            error "Invalid row, skip_human_decontamination is false but there is no human reference on row: ${study_accession}, ${reads_accession}."
         }
 
-        def samplesheet = Channel.fromList(samplesheetToList(params.samplesheet, "./assets/schema_input.json"))
-
-        // [ study, sample, read1, [read2], library_layout, library_strategy, platform, assembly_memory]
-        fetch_reads_transformed = samplesheet.map(groupReads)
-    }
-    else {
-        // TODO: remove when the fetch tools get's published on bioconda
-        def fetch_tool_config = file("${projectDir}/assets/fetch_tool_anonymous.json", checkIfExists: true)
-
-        if (params.private_study) {
-            fetch_tool_config = file("${projectDir}/assets/fetch_tool_credentials.json", checkIfExists: true)
-        }
-
-        FETCHTOOL_READS(
-            [[id: params.reads_accession], params.study_accession, params.reads_accession],
-            fetch_tool_config
-        )
-
-        ch_versions = ch_versions.mix(FETCHTOOL_READS.out.versions)
-
-        if (!params.skip_human_decontamination && params.human_reference == null) {
-                error "Human decontamination is enabled but no human reference is provided. Please specify 'human_reference' parameter or set 'skip_human_decontamination = true'."
-            }
-
-        // Push the library strategy into the meta of the reads, this is to make it easier to handle downstream
-        fetch_reads_transformed = FETCHTOOL_READS.out.reads.map { meta, reads, library_strategy, library_layout, platform ->
-            {
+        if (fq2 == []) {
+            return tuple(
                 [
-                    meta + [
-                        "assembler": params.assembler,
-                        "assembler_config": params.long_reads_assembler_config,
-                        "assembly_memory": params.assembly_memory,
-                        "library_strategy": params.library_strategy ?: library_strategy,
-                        "library_layout": params.library_layout ?: library_layout,
-                        "single_end": params.single_end ?: library_layout == "single",
-                        "platform": params.platform ?: platform,
-                        "contaminant_reference": params.contaminant_reference,
-                        "human_reference": params.skip_human_decontamination ? null : params.human_reference,
-                        "phix_reference": params.phix_reference,
-                        "lambdaphage_reference": params.lambdaphage_reference
-                    ],
-                    reads
-                ]
-            }
-        }
-
-        // Metadata for MultiQC
-        fetch_tool_metadata = FETCHTOOL_READS.out.metadata_tsv
-            .map { it[1] }
-            .collectFile(
-                name: 'fetch_tool_mqc.tsv',
-                newLine: true,
-                keepHeader: true,
-                skip: 1
+                    "id": reads_accession,
+                    "study_accession": study_accession,
+                    "single_end": true,
+                    "library_layout": library_layout,
+                    "library_strategy": library_strategy,
+                    "platform": params.platform ?: platform,
+                    "assembler": assembler ?: params.assembler,
+                    "assembly_memory": assembly_memory ?: params.assembly_memory,
+                    "assembler_config": assembler_config ?: params.long_reads_assembler_config,
+                    "contaminant_reference": contaminant_reference ?: params.contaminant_reference,
+                    "human_reference": human_reference_path, // -> if this value is null (which is not the same as an empty string) the decontamination won't be executed
+                    "phix_reference": phix_reference ?: params.phix_reference,
+                    "lambdaphage_reference": lambdaphage_reference ?: params.lambdaphage_reference
+                ],
+                [fq1]
             )
+        } else {
+            return tuple(
+                [
+                    "id": reads_accession,
+                    "study_accession": study_accession,
+                    "single_end": false,
+                    "library_layout": library_layout,
+                    "library_strategy": library_strategy,
+                    "platform": params.platform ?: platform,
+                    "assembler": assembler ?: params.assembler,
+                    "assembly_memory": assembly_memory ?: params.assembly_memory,
+                    "assembler_config": assembler_config ?: params.long_reads_assembler_config,
+                    "contaminant_reference": contaminant_reference ?: params.contaminant_reference,
+                    "human_reference": human_reference_path, // -> if this value is null (which is not the same as an empty string) the decontamination won't be executed
+                    "phix_reference": phix_reference ?: params.phix_reference,
+                    "lambdaphage_reference": lambdaphage_reference ?: params.lambdaphage_reference
+                ],
+                [fq1, fq2]
+            )
+        }
     }
+
+    def samplesheet = channel.fromList(samplesheetToList(params.samplesheet, "./assets/schema_input.json"))
+
+    // [ study, sample, read1, [read2], library_layout, library_strategy, platform, assembly_memory]
+    fetch_reads_transformed = samplesheet.map(groupReads)
 
     /*******************************************/
     /* Selecting the assembly pipeline flavour */
@@ -232,8 +167,8 @@ workflow MIASSEMBLER {
     def short_reads = reads_to_assemble.short_reads
     def long_reads = reads_to_assemble.long_reads
 
-    // If running on EBI infrastructure, and on samplehseets otherwise the fetch tool will kick in //
-    if (params.samplesheet && params.use_fire_download) {
+    // If running on EBI infrastructure, download samplesheet reads via FIRE.
+    if (params.use_fire_download) {
         /*
          * For private studies we need to bypass Nextflow S3 integration until https://github.com/nextflow-io/nextflow/issues/4873 is fixed
          * The EBI parameter is needed as this only works on EBI network, FIRE is not accessible otherwise
@@ -277,12 +212,12 @@ workflow MIASSEMBLER {
     // MODULE: MultiQC
     //
     def workflow_summary    = WorkflowMiassembler.paramsSummaryMultiqc(workflow, summary_params)
-    def ch_workflow_summary = Channel.value(workflow_summary)
+    def ch_workflow_summary = channel.value(workflow_summary)
 
     def methods_description    = WorkflowMiassembler.methodsDescriptionText(workflow, ch_multiqc_custom_methods_description, params)
-    def ch_methods_description = Channel.value(methods_description)
+    def ch_methods_description = channel.value(methods_description)
 
-    def ch_multiqc_base_files = Channel.empty()
+    def ch_multiqc_base_files = channel.empty()
     ch_multiqc_base_files = ch_multiqc_base_files.mix( CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect() )
     ch_multiqc_base_files = ch_multiqc_base_files.mix( ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml') )
     ch_multiqc_base_files = ch_multiqc_base_files.mix( ch_methods_description.collectFile(name: 'methods_description_mqc.yaml') )
@@ -297,6 +232,11 @@ workflow MIASSEMBLER {
 
     def meta_by_study = { meta, result_artifact ->
         [meta.subMap("study_accession"), result_artifact]
+    }
+
+    def flatten_files_by_meta = { meta, result_artifact ->
+        def files = result_artifact instanceof List ? result_artifact.flatten() : [result_artifact]
+        files.collect { file -> [meta, file] }
     }
 
     // Helper method for the MultiQC aggregation by study and runs //
@@ -319,7 +259,7 @@ workflow MIASSEMBLER {
         }
     }
 
-    def ch_multiqc_study_tools_files = Channel.empty()
+    def ch_multiqc_study_tools_files = channel.empty()
 
     def fastqc_before_zip = SHORT_READS_ASSEMBLER.out.fastqc_before_zip
         .mix(LONG_READS_ASSEMBLER.out.fastqc_before_zip)
@@ -330,14 +270,12 @@ workflow MIASSEMBLER {
     def quast_results = SHORT_READS_ASSEMBLER.out.quast_results
         .mix(LONG_READS_ASSEMBLER.out.quast_results)
 
-    def study_multiqc_files = fastqc_before_zip.map(meta_by_study)
-        .join(fastqc_after_zip.map(meta_by_study))
-        .join(assembly_coverage_samtools_idxstats.map(meta_by_study), remainder: true) // the assembly step could fail
-        .join(quast_results.map(meta_by_study), remainder: true)                       // the assembly step could fail
-
-    ch_multiqc_study_tools_files = study_multiqc_files.flatMap(combineFiles).groupTuple()
-
-    // TODO: add the fetch tool log file
+    ch_multiqc_study_tools_files = fastqc_before_zip.map(meta_by_study)
+        .mix(fastqc_after_zip.map(meta_by_study))
+        .mix(assembly_coverage_samtools_idxstats.map(meta_by_study))
+        .mix(quast_results.map(meta_by_study))
+        .flatMap(flatten_files_by_meta)
+        .groupTuple()
 
     MULTIQC_STUDY(
         ch_multiqc_base_files.collect(),
@@ -359,16 +297,14 @@ workflow MIASSEMBLER {
 
     def run_multiqc_files = SHORT_READS_ASSEMBLER.out.fastqc_before_zip.map(meta_by_run)
         .join(SHORT_READS_ASSEMBLER.out.fastqc_after_zip.map(meta_by_run))
-        .join(SHORT_READS_ASSEMBLER.out.assembly_coverage_samtools_idxstats.map(meta_by_run), remainder: true) // the assembly step could fail
-        .join(SHORT_READS_ASSEMBLER.out.quast_results.map(meta_by_run), remainder: true)                       // the assembly step could fail
+        .join(SHORT_READS_ASSEMBLER.out.assembly_coverage_samtools_idxstats.map(meta_by_run), remainder: true, failOnMismatch: false) // the assembly step could fail
+        .join(SHORT_READS_ASSEMBLER.out.quast_results.map(meta_by_run), remainder: true, failOnMismatch: false)                       // the assembly step could fail
 
     // Filter out the non-assembled runs //
-    def ch_multiqc_run_tools_files = run_multiqc_files.filter { _meta, _fastqc_before, _fastqc_after, assembly_coverage, quast -> {
-            return assembly_coverage != null && quast != null
-        }
+    def ch_multiqc_run_tools_files = run_multiqc_files.filter { _meta, _fastqc_before, _fastqc_after, assembly_coverage, quast ->
+        assembly_coverage != null && quast != null
     }.flatMap(combineFiles).groupTuple()
 
-    // TODO: add the fetch tool log file
     MULTIQC_RUN(
         ch_multiqc_base_files.collect(),
         ch_multiqc_run_tools_files,
@@ -388,16 +324,14 @@ workflow MIASSEMBLER {
     // Short reads asssembled runs //
     SHORT_READS_ASSEMBLER.out.assembly_coverage_samtools_idxstats
         .map { meta, __ ->
-            {
-                return "${meta.id},${meta.assembler},${meta.assembler_version}"
-            }
+            "${meta.id},${meta.assembler},${meta.assembler_version}"
         }
         .collectFile(name: "assembled_runs.csv", storeDir: "${params.outdir}", newLine: true, cache: false)
 
     // Short reads and assembly QC failed //
 
     def short_reads_qc_failed_entries = SHORT_READS_ASSEMBLER.out.qc_failed_all.map {
-        meta, __ -> {
+        meta, __ ->
             if (meta.low_reads_count) {
                 return "${meta.id},low_reads_count"
             }
@@ -408,7 +342,6 @@ workflow MIASSEMBLER {
                 return "${meta.id},too_few_contigs"
             }
             error("Unexpected. meta: ${meta}")
-        }
     }
 
     short_reads_qc_failed_entries.collectFile(name: "qc_failed_runs.csv", storeDir: "${params.outdir}", newLine: true, cache: false)
