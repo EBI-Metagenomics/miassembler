@@ -120,8 +120,6 @@ process FASTP {
     $touch_reads
     $touch_fail_fastq
     $touch_merged
-    # a valid summary, SHORT_READS_ASSEMBLER parses this json to apply its QC thresholds
-    # and an empty file makes -stub-run impossible
     cat <<-END_JSON > "${prefix}.fastp.json"
     {"summary": {"before_filtering": {"total_reads": 2000}, "after_filtering": {"total_reads": 1900}}}
     END_JSON
