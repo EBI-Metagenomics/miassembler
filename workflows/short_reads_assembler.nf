@@ -155,6 +155,7 @@ workflow SHORT_READS_ASSEMBLER {
     ch_versions = ch_versions.mix(QUAST.out.versions)
 
     emit:
+    cleaned_contigs                      = SHORT_READS_ASSEMBLY_QC.out.passed_cleaned_contigs   // tuple(meta), path(assembly_fasta)
     fastqc_before_zip                    = FASTQC_BEFORE.out.zip                                // tuple(meta)
     qc_failed_all                        = qc_failed_all                                        // tuple(meta)
     fastqc_after_zip                     = FASTQC_AFTER.out.zip                                 // tuple(meta)
