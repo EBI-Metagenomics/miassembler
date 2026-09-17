@@ -1,4 +1,7 @@
-Changes in module 'nf-core/fastp'
+Changes in component 'nf-core/fastp'
+'modules/nf-core/fastp/environment.yml' is unchanged
+'modules/nf-core/fastp/meta.yml' is unchanged
+Changes in 'fastp/main.nf':
 --- modules/nf-core/fastp/main.nf
 +++ modules/nf-core/fastp/main.nf
 @@ -2,7 +2,7 @@
@@ -10,8 +13,8 @@ Changes in module 'nf-core/fastp'
      container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
          'https://depot.galaxyproject.org/singularity/fastp:0.23.4--h5f740d0_0' :
          'biocontainers/fastp:0.23.4--h5f740d0_0' }"
-@@ -12,26 +12,28 @@
-     path  adapter_fasta
+@@ -13,12 +13,13 @@
+     val   discard_trimmed_pass
      val   save_trimmed_fail
      val   save_merged
 +    val   trim_polyA
@@ -21,14 +24,11 @@ Changes in module 'nf-core/fastp'
      tuple val(meta), path('*.json')           , emit: json
      tuple val(meta), path('*.html')           , emit: html
      tuple val(meta), path('*.log')            , emit: log
--    path "versions.yml"                       , emit: versions
 +    tuple val(meta), path('*.fastp.fastq.gz') , optional:true, emit: reads
      tuple val(meta), path('*.fail.fastq.gz')  , optional:true, emit: reads_fail
      tuple val(meta), path('*.merged.fastq.gz'), optional:true, emit: reads_merged
-+    path "versions.yml"                       , emit: versions
- 
-     when:
-     task.ext.when == null || task.ext.when
+     path "versions.yml"                       , emit: versions
+@@ -28,6 +29,8 @@
  
      script:
      def args = task.ext.args ?: ''
@@ -36,14 +36,8 @@ Changes in module 'nf-core/fastp'
 +    def polyA = ( trim_polyA || meta.library_strategy == "metatranscriptomic" ) ? "--trim_poly_x" : ''
      def prefix = task.ext.prefix ?: "${meta.id}"
      def adapter_list = adapter_fasta ? "--adapter_fasta ${adapter_fasta}" : ""
--    def fail_fastq = save_trimmed_fail && meta.single_end ? "--failed_out ${prefix}.fail.fastq.gz" : save_trimmed_fail && !meta.single_end ? "--failed_out ${prefix}.paired.fail.fastq.gz --unpaired1 ${prefix}_1.fail.fastq.gz --unpaired2 ${prefix}_2.fail.fastq.gz" : ''
-+    def fail_fastq = save_trimmed_fail && meta.single_end ? "--failed_out ${prefix}.fail.fastq.gz" : save_trimmed_fail && !meta.single_end ? "--unpaired1 ${prefix}_1.fail.fastq.gz --unpaired2 ${prefix}_2.fail.fastq.gz" : ''
-     // Added soft-links to original fastqs for consistent naming in MultiQC
--    // Use single ended for interleaved. Add --interleaved_in in config.
-     if ( task.ext.args?.contains('--interleaved_in') ) {
-         """
-         [ ! -f  ${prefix}.fastq.gz ] && ln -sf $reads ${prefix}.fastq.gz
-@@ -44,6 +46,7 @@
+     def fail_fastq = save_trimmed_fail && meta.single_end ? "--failed_out ${prefix}.fail.fastq.gz" : save_trimmed_fail && !meta.single_end ? "--failed_out ${prefix}.paired.fail.fastq.gz --unpaired1 ${prefix}_1.fail.fastq.gz --unpaired2 ${prefix}_2.fail.fastq.gz" : ''
+@@ -47,6 +50,7 @@
              --html ${prefix}.fastp.html \\
              $adapter_list \\
              $fail_fastq \\
@@ -51,7 +45,13 @@ Changes in module 'nf-core/fastp'
              $args \\
              2> >(tee ${prefix}.fastp.log >&2) \\
          | gzip -c > ${prefix}.fastp.fastq.gz
-@@ -65,6 +68,7 @@
+@@ -63,11 +67,13 @@
+         fastp \\
+             --in1 ${prefix}.fastq.gz \\
+             $out_fq1 \\
++            --out1  ${prefix}.fastp.fastq.gz \\
+             --thread $task.cpus \\
+             --json ${prefix}.fastp.json \\
              --html ${prefix}.fastp.html \\
              $adapter_list \\
              $fail_fastq \\
@@ -59,7 +59,7 @@ Changes in module 'nf-core/fastp'
              $args \\
              2> >(tee ${prefix}.fastp.log >&2)
  
-@@ -87,11 +91,12 @@
+@@ -90,6 +96,7 @@
              --html ${prefix}.fastp.html \\
              $adapter_list \\
              $fail_fastq \\
@@ -67,32 +67,2851 @@ Changes in module 'nf-core/fastp'
              $merge_fastq \\
              --thread $task.cpus \\
              --detect_adapter_for_pe \\
-             $args \\
--            2> >(tee ${prefix}.fastp.log >&2)
-+            2> ${prefix}.fastp.log
- 
-         cat <<-END_VERSIONS > versions.yml
-         "${task.process}":
-@@ -103,14 +108,16 @@
-     stub:
-     def prefix              = task.ext.prefix ?: "${meta.id}"
-     def is_single_output    = task.ext.args?.contains('--interleaved_in') || meta.single_end
--    def touch_reads         = is_single_output ? "${prefix}.fastp.fastq.gz" : "${prefix}_1.fastp.fastq.gz ${prefix}_2.fastp.fastq.gz"
--    def touch_merged        = (!is_single_output && save_merged) ? "touch ${prefix}.merged.fastq.gz" : ""
-+    def touch_reads         = (discard_trimmed_pass) ? "" : (is_single_output) ? "echo '' | gzip > ${prefix}.fastp.fastq.gz" : "echo '' | gzip > ${prefix}_1.fastp.fastq.gz ; echo '' | gzip > ${prefix}_2.fastp.fastq.gz"
-+    def touch_merged        = (!is_single_output && save_merged) ? "echo '' | gzip >  ${prefix}.merged.fastq.gz" : ""
-+    def touch_fail_fastq    = (!save_trimmed_fail) ? "" : meta.single_end ? "echo '' | gzip > ${prefix}.fail.fastq.gz" : "echo '' | gzip > ${prefix}.paired.fail.fastq.gz ; echo '' | gzip > ${prefix}_1.fail.fastq.gz ; echo '' | gzip > ${prefix}_2.fail.fastq.gz"
-     """
--    touch $touch_reads
-+    $touch_reads
-+    $touch_fail_fastq
-+    $touch_merged
-     touch "${prefix}.fastp.json"
+@@ -113,7 +120,9 @@
+     $touch_reads
+     $touch_fail_fastq
+     $touch_merged
+-    touch "${prefix}.fastp.json"
++    cat <<-END_JSON > "${prefix}.fastp.json"
++    {"summary": {"before_filtering": {"total_reads": 2000}, "after_filtering": {"total_reads": 1900}}}
++    END_JSON
      touch "${prefix}.fastp.html"
      touch "${prefix}.fastp.log"
--    $touch_merged
  
-     cat <<-END_VERSIONS > versions.yml
-     "${task.process}":
 
+Changes in 'fastp/tests/main.nf.test.snap':
+--- modules/nf-core/fastp/tests/main.nf.test.snap
++++ modules/nf-core/fastp/tests/main.nf.test.snap
+@@ -1,178 +1,5 @@
+ {
+-    "test_fastp_single_end_qc_only - stub": {
+-        "content": [
+-            {
+-                "0": [
+-                    
+-                ],
+-                "1": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": true
+-                        },
+-                        "test.fastp.json:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "2": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": true
+-                        },
+-                        "test.fastp.html:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "3": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": true
+-                        },
+-                        "test.fastp.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "4": [
+-                    
+-                ],
+-                "5": [
+-                    
+-                ],
+-                "6": [
+-                    "versions.yml:md5,48ffc994212fb1fc9f83a74fa69c9f02"
+-                ],
+-                "html": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": true
+-                        },
+-                        "test.fastp.html:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "json": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": true
+-                        },
+-                        "test.fastp.json:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "log": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": true
+-                        },
+-                        "test.fastp.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "reads": [
+-                    
+-                ],
+-                "reads_fail": [
+-                    
+-                ],
+-                "reads_merged": [
+-                    
+-                ],
+-                "versions": [
+-                    "versions.yml:md5,48ffc994212fb1fc9f83a74fa69c9f02"
+-                ]
+-            }
+-        ],
+-        "meta": {
+-            "nf-test": "0.8.4",
+-            "nextflow": "24.04.2"
+-        },
+-        "timestamp": "2024-07-05T14:31:10.841098"
+-    },
+-    "test_fastp_paired_end": {
+-        "content": [
+-            [
+-                [
+-                    {
+-                        "id": "test",
+-                        "single_end": false
+-                    },
+-                    "test.fastp.json:md5,1e0f8e27e71728e2b63fc64086be95cd"
+-                ]
+-            ],
+-            [
+-                [
+-                    {
+-                        "id": "test",
+-                        "single_end": false
+-                    },
+-                    [
+-                        "test_1.fastp.fastq.gz:md5,67b2bbae47f073e05a97a9c2edce23c7",
+-                        "test_2.fastp.fastq.gz:md5,25cbdca08e2083dbd4f0502de6b62f39"
+-                    ]
+-                ]
+-            ],
+-            [
+-                
+-            ],
+-            [
+-                
+-            ],
+-            [
+-                "versions.yml:md5,48ffc994212fb1fc9f83a74fa69c9f02"
+-            ]
+-        ],
+-        "meta": {
+-            "nf-test": "0.8.4",
+-            "nextflow": "24.04.2"
+-        },
+-        "timestamp": "2024-07-05T13:43:28.665779"
+-    },
+-    "test_fastp_paired_end_merged_adapterlist": {
+-        "content": [
+-            [
+-                [
+-                    {
+-                        "id": "test",
+-                        "single_end": false
+-                    },
+-                    "test.fastp.json:md5,5914ca3f21ce162123a824e33e8564f6"
+-                ]
+-            ],
+-            [
+-                [
+-                    {
+-                        "id": "test",
+-                        "single_end": false
+-                    },
+-                    [
+-                        "test_1.fastp.fastq.gz:md5,54b726a55e992a869fd3fa778afe1672",
+-                        "test_2.fastp.fastq.gz:md5,29d3b33b869f7b63417b8ff07bb128ba"
+-                    ]
+-                ]
+-            ],
+-            [
+-                
+-            ],
+-            [
+-                [
+-                    {
+-                        "id": "test",
+-                        "single_end": false
+-                    },
+-                    "test.merged.fastq.gz:md5,c873bb1ab3fa859dcc47306465e749d5"
+-                ]
+-            ],
+-            [
+-                "versions.yml:md5,48ffc994212fb1fc9f83a74fa69c9f02"
+-            ]
+-        ],
+-        "meta": {
+-            "nf-test": "0.8.4",
+-            "nextflow": "24.04.2"
+-        },
+-        "timestamp": "2024-07-05T13:44:18.210375"
+-    },
+-    "test_fastp_single_end_qc_only": {
++    "fastp test_fastp_interleaved_json": {
+         "content": [
+             [
+                 [
+@@ -180,679 +7,49 @@
+                         "id": "test",
+                         "single_end": true
+                     },
+-                    "test.fastp.json:md5,5cc5f01e449309e0e689ed6f51a2294a"
++                    "test.fastp.json:md5,b24e0624df5cc0b11cd5ba21b726fb22"
+                 ]
+-            ],
+-            [
+-                
+-            ],
+-            [
+-                
+-            ],
+-            [
+-                
+-            ],
+-            [
+-                
+-            ],
+-            [
+-                
+-            ],
+-            [
+-                
+-            ],
+-            [
+-                "versions.yml:md5,48ffc994212fb1fc9f83a74fa69c9f02"
+-            ]
+-        ],
+-        "meta": {
+-            "nf-test": "0.8.4",
+-            "nextflow": "24.04.2"
+-        },
+-        "timestamp": "2024-07-05T13:44:27.380974"
+-    },
+-    "test_fastp_paired_end_trim_fail": {
+-        "content": [
+-            [
+-                [
+-                    {
+-                        "id": "test",
+-                        "single_end": false
+-                    },
+-                    [
+-                        "test_1.fastp.fastq.gz:md5,6ff32a64c5188b9a9192be1398c262c7",
+-                        "test_2.fastp.fastq.gz:md5,db0cb7c9977e94ac2b4b446ebd017a8a"
+-                    ]
+-                ]
+-            ],
+-            [
+-                [
+-                    {
+-                        "id": "test",
+-                        "single_end": false
+-                    },
+-                    [
+-                        "test.paired.fail.fastq.gz:md5,409b687c734cedd7a1fec14d316e1366",
+-                        "test_1.fail.fastq.gz:md5,4f273cf3159c13f79e8ffae12f5661f6",
+-                        "test_2.fail.fastq.gz:md5,f97b9edefb5649aab661fbc9e71fc995"
+-                    ]
+-                ]
+-            ],
+-            [
+-                
+-            ],
+-            [
+-                [
+-                    {
+-                        "id": "test",
+-                        "single_end": false
+-                    },
+-                    "test.fastp.json:md5,4c3268ddb50ea5b33125984776aa3519"
+-                ]
+-            ],
+-            [
+-                "versions.yml:md5,48ffc994212fb1fc9f83a74fa69c9f02"
+-            ]
+-        ],
+-        "meta": {
+-            "nf-test": "0.8.4",
+-            "nextflow": "24.04.2"
+-        },
+-        "timestamp": "2024-07-05T13:43:58.749589"
+-    },
+-    "fastp - stub test_fastp_interleaved": {
+-        "content": [
+-            {
+-                "0": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": true
+-                        },
+-                        "test.fastp.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+-                    ]
++            ]
++        ],
++        "meta": {
++            "nf-test": "0.8.4",
++            "nextflow": "23.10.1"
++        },
++        "timestamp": "2024-03-18T16:19:15.063001"
++    },
++    "test_fastp_paired_end_merged-for_stub_match": {
++        "content": [
++            [
++                [
++                    "test_1.fastp.fastq.gz",
++                    "test_2.fastp.fastq.gz"
+                 ],
+-                "1": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": true
+-                        },
+-                        "test.fastp.json:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "2": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": true
+-                        },
+-                        "test.fastp.html:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "3": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": true
+-                        },
+-                        "test.fastp.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "4": [
+-                    
+-                ],
+-                "5": [
+-                    
+-                ],
+-                "6": [
+-                    "versions.yml:md5,48ffc994212fb1fc9f83a74fa69c9f02"
+-                ],
+-                "html": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": true
+-                        },
+-                        "test.fastp.html:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "json": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": true
+-                        },
+-                        "test.fastp.json:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "log": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": true
+-                        },
+-                        "test.fastp.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "reads": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": true
+-                        },
+-                        "test.fastp.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+-                    ]
+-                ],
+-                "reads_fail": [
+-                    
+-                ],
+-                "reads_merged": [
+-                    
+-                ],
+-                "versions": [
+-                    "versions.yml:md5,48ffc994212fb1fc9f83a74fa69c9f02"
+-                ]
+-            }
+-        ],
+-        "meta": {
+-            "nf-test": "0.8.4",
+-            "nextflow": "24.04.2"
+-        },
+-        "timestamp": "2024-07-05T13:50:00.270029"
+-    },
+-    "test_fastp_single_end - stub": {
+-        "content": [
+-            {
+-                "0": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": true
+-                        },
+-                        "test.fastp.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+-                    ]
+-                ],
+-                "1": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": true
+-                        },
+-                        "test.fastp.json:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "2": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": true
+-                        },
+-                        "test.fastp.html:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "3": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": true
+-                        },
+-                        "test.fastp.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "4": [
+-                    
+-                ],
+-                "5": [
+-                    
+-                ],
+-                "6": [
+-                    "versions.yml:md5,48ffc994212fb1fc9f83a74fa69c9f02"
+-                ],
+-                "html": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": true
+-                        },
+-                        "test.fastp.html:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "json": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": true
+-                        },
+-                        "test.fastp.json:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "log": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": true
+-                        },
+-                        "test.fastp.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "reads": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": true
+-                        },
+-                        "test.fastp.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+-                    ]
+-                ],
+-                "reads_fail": [
+-                    
+-                ],
+-                "reads_merged": [
+-                    
+-                ],
+-                "versions": [
+-                    "versions.yml:md5,48ffc994212fb1fc9f83a74fa69c9f02"
+-                ]
+-            }
+-        ],
+-        "meta": {
+-            "nf-test": "0.8.4",
+-            "nextflow": "24.04.2"
+-        },
+-        "timestamp": "2024-07-05T13:49:42.502789"
+-    },
+-    "test_fastp_paired_end_merged_adapterlist - stub": {
+-        "content": [
+-            {
+-                "0": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": false
+-                        },
+-                        [
+-                            "test_1.fastp.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940",
+-                            "test_2.fastp.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+-                        ]
+-                    ]
+-                ],
+-                "1": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": false
+-                        },
+-                        "test.fastp.json:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "2": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": false
+-                        },
+-                        "test.fastp.html:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "3": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": false
+-                        },
+-                        "test.fastp.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "4": [
+-                    
+-                ],
+-                "5": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": false
+-                        },
+-                        "test.merged.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+-                    ]
+-                ],
+-                "6": [
+-                    "versions.yml:md5,48ffc994212fb1fc9f83a74fa69c9f02"
+-                ],
+-                "html": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": false
+-                        },
+-                        "test.fastp.html:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "json": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": false
+-                        },
+-                        "test.fastp.json:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "log": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": false
+-                        },
+-                        "test.fastp.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "reads": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": false
+-                        },
+-                        [
+-                            "test_1.fastp.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940",
+-                            "test_2.fastp.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+-                        ]
+-                    ]
+-                ],
+-                "reads_fail": [
+-                    
+-                ],
+-                "reads_merged": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": false
+-                        },
+-                        "test.merged.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+-                    ]
+-                ],
+-                "versions": [
+-                    "versions.yml:md5,48ffc994212fb1fc9f83a74fa69c9f02"
+-                ]
+-            }
+-        ],
+-        "meta": {
+-            "nf-test": "0.8.4",
+-            "nextflow": "24.04.2"
+-        },
+-        "timestamp": "2024-07-05T13:54:53.458252"
+-    },
+-    "test_fastp_paired_end_merged - stub": {
+-        "content": [
+-            {
+-                "0": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": false
+-                        },
+-                        [
+-                            "test_1.fastp.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940",
+-                            "test_2.fastp.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+-                        ]
+-                    ]
+-                ],
+-                "1": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": false
+-                        },
+-                        "test.fastp.json:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "2": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": false
+-                        },
+-                        "test.fastp.html:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "3": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": false
+-                        },
+-                        "test.fastp.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "4": [
+-                    
+-                ],
+-                "5": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": false
+-                        },
+-                        "test.merged.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+-                    ]
+-                ],
+-                "6": [
+-                    "versions.yml:md5,48ffc994212fb1fc9f83a74fa69c9f02"
+-                ],
+-                "html": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": false
+-                        },
+-                        "test.fastp.html:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "json": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": false
+-                        },
+-                        "test.fastp.json:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "log": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": false
+-                        },
+-                        "test.fastp.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "reads": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": false
+-                        },
+-                        [
+-                            "test_1.fastp.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940",
+-                            "test_2.fastp.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+-                        ]
+-                    ]
+-                ],
+-                "reads_fail": [
+-                    
+-                ],
+-                "reads_merged": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": false
+-                        },
+-                        "test.merged.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+-                    ]
+-                ],
+-                "versions": [
+-                    "versions.yml:md5,48ffc994212fb1fc9f83a74fa69c9f02"
+-                ]
+-            }
+-        ],
+-        "meta": {
+-            "nf-test": "0.8.4",
+-            "nextflow": "24.04.2"
+-        },
+-        "timestamp": "2024-07-05T13:50:27.689379"
+-    },
+-    "test_fastp_paired_end_merged": {
+-        "content": [
+-            [
+-                [
+-                    {
+-                        "id": "test",
+-                        "single_end": false
+-                    },
+-                    "test.fastp.json:md5,b712fd68ed0322f4bec49ff2a5237fcc"
+-                ]
+-            ],
+-            [
+-                [
+-                    {
+-                        "id": "test",
+-                        "single_end": false
+-                    },
+-                    [
+-                        "test_1.fastp.fastq.gz:md5,54b726a55e992a869fd3fa778afe1672",
+-                        "test_2.fastp.fastq.gz:md5,29d3b33b869f7b63417b8ff07bb128ba"
+-                    ]
+-                ]
+-            ],
+-            [
+-                
+-            ],
+-            [
+-                [
+-                    {
+-                        "id": "test",
+-                        "single_end": false
+-                    },
+-                    "test.merged.fastq.gz:md5,c873bb1ab3fa859dcc47306465e749d5"
+-                ]
+-            ],
+-            [
+-                "versions.yml:md5,48ffc994212fb1fc9f83a74fa69c9f02"
+-            ]
+-        ],
+-        "meta": {
+-            "nf-test": "0.8.4",
+-            "nextflow": "24.04.2"
+-        },
+-        "timestamp": "2024-07-05T13:44:08.68476"
+-    },
+-    "test_fastp_paired_end - stub": {
+-        "content": [
+-            {
+-                "0": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": false
+-                        },
+-                        [
+-                            "test_1.fastp.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940",
+-                            "test_2.fastp.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+-                        ]
+-                    ]
+-                ],
+-                "1": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": false
+-                        },
+-                        "test.fastp.json:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "2": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": false
+-                        },
+-                        "test.fastp.html:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "3": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": false
+-                        },
+-                        "test.fastp.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "4": [
+-                    
+-                ],
+-                "5": [
+-                    
+-                ],
+-                "6": [
+-                    "versions.yml:md5,48ffc994212fb1fc9f83a74fa69c9f02"
+-                ],
+-                "html": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": false
+-                        },
+-                        "test.fastp.html:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "json": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": false
+-                        },
+-                        "test.fastp.json:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "log": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": false
+-                        },
+-                        "test.fastp.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "reads": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": false
+-                        },
+-                        [
+-                            "test_1.fastp.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940",
+-                            "test_2.fastp.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+-                        ]
+-                    ]
+-                ],
+-                "reads_fail": [
+-                    
+-                ],
+-                "reads_merged": [
+-                    
+-                ],
+-                "versions": [
+-                    "versions.yml:md5,48ffc994212fb1fc9f83a74fa69c9f02"
+-                ]
+-            }
+-        ],
+-        "meta": {
+-            "nf-test": "0.8.4",
+-            "nextflow": "24.04.2"
+-        },
+-        "timestamp": "2024-07-05T13:49:51.679221"
+-    },
+-    "test_fastp_single_end": {
++                "test.fastp.html",
++                "test.fastp.json",
++                "test.fastp.log",
++                "test.merged.fastq.gz",
++                "{id=test, single_end=false}"
++            ]
++        ],
++        "meta": {
++            "nf-test": "0.8.4",
++            "nextflow": "23.10.1"
++        },
++        "timestamp": "2024-01-17T18:10:13.467574"
++    },
++    "versions_interleaved": {
++        "content": [
++            [
++                "versions.yml:md5,48ffc994212fb1fc9f83a74fa69c9f02"
++            ]
++        ],
++        "meta": {
++            "nf-test": "0.8.4",
++            "nextflow": "23.10.1"
++        },
++        "timestamp": "2024-02-01T11:56:24.615634793"
++    },
++    "test_fastp_single_end_json": {
+         "content": [
+             [
+                 [
+@@ -862,303 +59,257 @@
+                     },
+                     "test.fastp.json:md5,c852d7a6dba5819e4ac8d9673bedcacc"
+                 ]
+-            ],
+-            [
+-                [
+-                    {
+-                        "id": "test",
+-                        "single_end": true
+-                    },
+-                    "test.fastp.fastq.gz:md5,67b2bbae47f073e05a97a9c2edce23c7"
+-                ]
+-            ],
+-            [
+-                
+-            ],
+-            [
+-                
+-            ],
+-            [
+-                "versions.yml:md5,48ffc994212fb1fc9f83a74fa69c9f02"
+-            ]
+-        ],
+-        "meta": {
+-            "nf-test": "0.8.4",
+-            "nextflow": "24.04.2"
+-        },
+-        "timestamp": "2024-07-05T13:43:18.834322"
+-    },
+-    "test_fastp_single_end_trim_fail - stub": {
+-        "content": [
+-            {
+-                "0": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": true
+-                        },
+-                        "test.fastp.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+-                    ]
++            ]
++        ],
++        "meta": {
++            "nf-test": "0.8.4",
++            "nextflow": "23.10.1"
++        },
++        "timestamp": "2024-03-18T16:18:43.526412"
++    },
++    "versions_paired_end": {
++        "content": [
++            [
++                "versions.yml:md5,48ffc994212fb1fc9f83a74fa69c9f02"
++            ]
++        ],
++        "meta": {
++            "nf-test": "0.8.4",
++            "nextflow": "23.10.1"
++        },
++        "timestamp": "2024-02-01T11:55:42.333545689"
++    },
++    "test_fastp_paired_end_match": {
++        "content": [
++            [
++                [
++                    "test_1.fastp.fastq.gz",
++                    "test_2.fastp.fastq.gz"
+                 ],
+-                "1": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": true
+-                        },
+-                        "test.fastp.json:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
++                "test.fastp.html",
++                "test.fastp.json",
++                "test.fastp.log",
++                "{id=test, single_end=false}"
++            ]
++        ],
++        "meta": {
++            "nf-test": "0.8.4",
++            "nextflow": "23.10.1"
++        },
++        "timestamp": "2024-02-01T12:03:06.431833729"
++    },
++    "test_fastp_interleaved-_match": {
++        "content": [
++            [
++                "test.fastp.fastq.gz",
++                "test.fastp.html",
++                "test.fastp.json",
++                "test.fastp.log",
++                "{id=test, single_end=true}"
++            ]
++        ],
++        "meta": {
++            "nf-test": "0.8.4",
++            "nextflow": "23.10.1"
++        },
++        "timestamp": "2024-03-18T16:19:15.111894"
++    },
++    "test_fastp_paired_end_merged_match": {
++        "content": [
++            [
++                [
++                    "test_1.fastp.fastq.gz",
++                    "test_2.fastp.fastq.gz"
+                 ],
+-                "2": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": true
+-                        },
+-                        "test.fastp.html:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
++                "test.fastp.html",
++                "test.fastp.json",
++                "test.fastp.log",
++                "test.merged.fastq.gz",
++                "{id=test, single_end=false}"
++            ]
++        ],
++        "meta": {
++            "nf-test": "0.8.4",
++            "nextflow": "23.10.1"
++        },
++        "timestamp": "2024-02-01T12:08:44.496251446"
++    },
++    "versions_single_end_stub": {
++        "content": [
++            [
++                "versions.yml:md5,48ffc994212fb1fc9f83a74fa69c9f02"
++            ]
++        ],
++        "meta": {
++            "nf-test": "0.8.4",
++            "nextflow": "23.10.1"
++        },
++        "timestamp": "2024-02-01T11:55:27.354051299"
++    },
++    "versions_interleaved-stub": {
++        "content": [
++            [
++                "versions.yml:md5,48ffc994212fb1fc9f83a74fa69c9f02"
++            ]
++        ],
++        "meta": {
++            "nf-test": "0.8.4",
++            "nextflow": "23.10.1"
++        },
++        "timestamp": "2024-02-01T11:56:46.535528418"
++    },
++    "versions_single_end_trim_fail": {
++        "content": [
++            [
++                "versions.yml:md5,48ffc994212fb1fc9f83a74fa69c9f02"
++            ]
++        ],
++        "meta": {
++            "nf-test": "0.8.4",
++            "nextflow": "23.10.1"
++        },
++        "timestamp": "2024-02-01T11:59:03.724591407"
++    },
++    "test_fastp_paired_end-for_stub_match": {
++        "content": [
++            [
++                [
++                    "test_1.fastp.fastq.gz",
++                    "test_2.fastp.fastq.gz"
+                 ],
+-                "3": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": true
+-                        },
+-                        "test.fastp.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "4": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": true
+-                        },
+-                        "test.fail.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+-                    ]
+-                ],
+-                "5": [
+-                    
+-                ],
+-                "6": [
+-                    "versions.yml:md5,48ffc994212fb1fc9f83a74fa69c9f02"
+-                ],
+-                "html": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": true
+-                        },
+-                        "test.fastp.html:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "json": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": true
+-                        },
+-                        "test.fastp.json:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "log": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": true
+-                        },
+-                        "test.fastp.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "reads": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": true
+-                        },
+-                        "test.fastp.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+-                    ]
+-                ],
+-                "reads_fail": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": true
+-                        },
+-                        "test.fail.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+-                    ]
+-                ],
+-                "reads_merged": [
+-                    
+-                ],
+-                "versions": [
+-                    "versions.yml:md5,48ffc994212fb1fc9f83a74fa69c9f02"
+-                ]
+-            }
+-        ],
+-        "meta": {
+-            "nf-test": "0.8.4",
+-            "nextflow": "24.04.2"
+-        },
+-        "timestamp": "2024-07-05T14:05:36.898142"
+-    },
+-    "test_fastp_paired_end_trim_fail - stub": {
+-        "content": [
+-            {
+-                "0": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": false
+-                        },
+-                        [
+-                            "test_1.fastp.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940",
+-                            "test_2.fastp.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+-                        ]
+-                    ]
+-                ],
+-                "1": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": false
+-                        },
+-                        "test.fastp.json:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "2": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": false
+-                        },
+-                        "test.fastp.html:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "3": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": false
+-                        },
+-                        "test.fastp.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "4": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": false
+-                        },
+-                        [
+-                            "test.paired.fail.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940",
+-                            "test_1.fail.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940",
+-                            "test_2.fail.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+-                        ]
+-                    ]
+-                ],
+-                "5": [
+-                    
+-                ],
+-                "6": [
+-                    "versions.yml:md5,48ffc994212fb1fc9f83a74fa69c9f02"
+-                ],
+-                "html": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": false
+-                        },
+-                        "test.fastp.html:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "json": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": false
+-                        },
+-                        "test.fastp.json:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "log": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": false
+-                        },
+-                        "test.fastp.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "reads": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": false
+-                        },
+-                        [
+-                            "test_1.fastp.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940",
+-                            "test_2.fastp.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+-                        ]
+-                    ]
+-                ],
+-                "reads_fail": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": false
+-                        },
+-                        [
+-                            "test.paired.fail.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940",
+-                            "test_1.fail.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940",
+-                            "test_2.fail.fastq.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+-                        ]
+-                    ]
+-                ],
+-                "reads_merged": [
+-                    
+-                ],
+-                "versions": [
+-                    "versions.yml:md5,48ffc994212fb1fc9f83a74fa69c9f02"
+-                ]
+-            }
+-        ],
+-        "meta": {
+-            "nf-test": "0.8.4",
+-            "nextflow": "24.04.2"
+-        },
+-        "timestamp": "2024-07-05T14:05:49.212847"
+-    },
+-    "fastp test_fastp_interleaved": {
+-        "content": [
+-            [
+-                [
+-                    {
+-                        "id": "test",
+-                        "single_end": true
+-                    },
+-                    "test.fastp.fastq.gz:md5,217d62dc13a23e92513a1bd8e1bcea39"
+-                ]
+-            ],
+-            [
+-                [
+-                    {
+-                        "id": "test",
+-                        "single_end": true
+-                    },
+-                    "test.fastp.json:md5,b24e0624df5cc0b11cd5ba21b726fb22"
+-                ]
+-            ],
+-            [
+-                "versions.yml:md5,48ffc994212fb1fc9f83a74fa69c9f02"
+-            ]
+-        ],
+-        "meta": {
+-            "nf-test": "0.8.4",
+-            "nextflow": "24.04.2"
+-        },
+-        "timestamp": "2024-07-05T13:43:38.910832"
+-    },
+-    "test_fastp_single_end_trim_fail": {
++                "test.fastp.html",
++                "test.fastp.json",
++                "test.fastp.log",
++                "{id=test, single_end=false}"
++            ]
++        ],
++        "meta": {
++            "nf-test": "0.8.4",
++            "nextflow": "23.10.1"
++        },
++        "timestamp": "2024-01-17T18:07:15.398827"
++    },
++    "versions_paired_end-stub": {
++        "content": [
++            [
++                "versions.yml:md5,48ffc994212fb1fc9f83a74fa69c9f02"
++            ]
++        ],
++        "meta": {
++            "nf-test": "0.8.4",
++            "nextflow": "23.10.1"
++        },
++        "timestamp": "2024-02-01T11:56:06.50017282"
++    },
++    "versions_single_end": {
++        "content": [
++            [
++                "versions.yml:md5,48ffc994212fb1fc9f83a74fa69c9f02"
++            ]
++        ],
++        "meta": {
++            "nf-test": "0.8.4",
++            "nextflow": "23.10.1"
++        },
++        "timestamp": "2024-02-01T11:55:07.67921647"
++    },
++    "versions_paired_end_merged_stub": {
++        "content": [
++            [
++                "versions.yml:md5,48ffc994212fb1fc9f83a74fa69c9f02"
++            ]
++        ],
++        "meta": {
++            "nf-test": "0.8.4",
++            "nextflow": "23.10.1"
++        },
++        "timestamp": "2024-02-01T11:59:47.350653154"
++    },
++    "test_fastp_interleaved-for_stub_match": {
++        "content": [
++            [
++                "test.fastp.fastq.gz",
++                "test.fastp.html",
++                "test.fastp.json",
++                "test.fastp.log",
++                "{id=test, single_end=true}"
++            ]
++        ],
++        "meta": {
++            "nf-test": "0.8.4",
++            "nextflow": "23.10.1"
++        },
++        "timestamp": "2024-01-17T18:08:06.127974"
++    },
++    "versions_paired_end_trim_fail": {
++        "content": [
++            [
++                "versions.yml:md5,48ffc994212fb1fc9f83a74fa69c9f02"
++            ]
++        ],
++        "meta": {
++            "nf-test": "0.8.4",
++            "nextflow": "23.10.1"
++        },
++        "timestamp": "2024-02-01T11:59:18.140484878"
++    },
++    "test_fastp_single_end-for_stub_match": {
++        "content": [
++            [
++                "test.fastp.fastq.gz",
++                "test.fastp.html",
++                "test.fastp.json",
++                "test.fastp.log",
++                "{id=test, single_end=true}"
++            ]
++        ],
++        "meta": {
++            "nf-test": "0.8.4",
++            "nextflow": "23.10.1"
++        },
++        "timestamp": "2024-01-17T18:06:00.244202"
++    },
++    "test_fastp_single_end-_match": {
++        "content": [
++            [
++                "test.fastp.fastq.gz",
++                "test.fastp.html",
++                "test.fastp.json",
++                "test.fastp.log",
++                "{id=test, single_end=true}"
++            ]
++        ],
++        "meta": {
++            "nf-test": "0.8.4",
++            "nextflow": "23.10.1"
++        },
++        "timestamp": "2024-03-18T16:18:43.580336"
++    },
++    "versions_paired_end_merged_adapterlist": {
++        "content": [
++            [
++                "versions.yml:md5,48ffc994212fb1fc9f83a74fa69c9f02"
++            ]
++        ],
++        "meta": {
++            "nf-test": "0.8.4",
++            "nextflow": "23.10.1"
++        },
++        "timestamp": "2024-02-01T12:05:37.845370554"
++    },
++    "versions_paired_end_merged": {
++        "content": [
++            [
++                "versions.yml:md5,48ffc994212fb1fc9f83a74fa69c9f02"
++            ]
++        ],
++        "meta": {
++            "nf-test": "0.8.4",
++            "nextflow": "23.10.1"
++        },
++        "timestamp": "2024-02-01T11:59:32.860543858"
++    },
++    "test_fastp_single_end_trim_fail_json": {
+         "content": [
+             [
+                 [
+@@ -1168,164 +319,12 @@
+                     },
+                     "test.fastp.json:md5,9a7ee180f000e8d00c7fb67f06293eb5"
+                 ]
+-            ],
+-            [
+-                [
+-                    {
+-                        "id": "test",
+-                        "single_end": true
+-                    },
+-                    "test.fastp.fastq.gz:md5,67b2bbae47f073e05a97a9c2edce23c7"
+-                ]
+-            ],
+-            [
+-                [
+-                    {
+-                        "id": "test",
+-                        "single_end": true
+-                    },
+-                    "test.fail.fastq.gz:md5,3e4aaadb66a5b8fc9b881bf39c227abd"
+-                ]
+-            ],
+-            [
+-                
+-            ],
+-            [
+-                "versions.yml:md5,48ffc994212fb1fc9f83a74fa69c9f02"
+-            ]
+-        ],
+-        "meta": {
+-            "nf-test": "0.8.4",
+-            "nextflow": "24.04.2"
+-        },
+-        "timestamp": "2024-07-05T13:43:48.22378"
+-    },
+-    "test_fastp_paired_end_qc_only": {
+-        "content": [
+-            [
+-                [
+-                    {
+-                        "id": "test",
+-                        "single_end": false
+-                    },
+-                    "test.fastp.json:md5,623064a45912dac6f2b64e3f2e9901df"
+-                ]
+-            ],
+-            [
+-                
+-            ],
+-            [
+-                
+-            ],
+-            [
+-                
+-            ],
+-            [
+-                
+-            ],
+-            [
+-                
+-            ],
+-            [
+-                
+-            ],
+-            [
+-                "versions.yml:md5,48ffc994212fb1fc9f83a74fa69c9f02"
+-            ]
+-        ],
+-        "meta": {
+-            "nf-test": "0.8.4",
+-            "nextflow": "24.04.2"
+-        },
+-        "timestamp": "2024-07-05T13:44:36.334938"
+-    },
+-    "test_fastp_paired_end_qc_only - stub": {
+-        "content": [
+-            {
+-                "0": [
+-                    
+-                ],
+-                "1": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": false
+-                        },
+-                        "test.fastp.json:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "2": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": false
+-                        },
+-                        "test.fastp.html:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "3": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": false
+-                        },
+-                        "test.fastp.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "4": [
+-                    
+-                ],
+-                "5": [
+-                    
+-                ],
+-                "6": [
+-                    "versions.yml:md5,48ffc994212fb1fc9f83a74fa69c9f02"
+-                ],
+-                "html": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": false
+-                        },
+-                        "test.fastp.html:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "json": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": false
+-                        },
+-                        "test.fastp.json:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "log": [
+-                    [
+-                        {
+-                            "id": "test",
+-                            "single_end": false
+-                        },
+-                        "test.fastp.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "reads": [
+-                    
+-                ],
+-                "reads_fail": [
+-                    
+-                ],
+-                "reads_merged": [
+-                    
+-                ],
+-                "versions": [
+-                    "versions.yml:md5,48ffc994212fb1fc9f83a74fa69c9f02"
+-                ]
+-            }
+-        ],
+-        "meta": {
+-            "nf-test": "0.8.4",
+-            "nextflow": "24.04.2"
+-        },
+-        "timestamp": "2024-07-05T14:31:27.096468"
++            ]
++        ],
++        "meta": {
++            "nf-test": "0.8.4",
++            "nextflow": "23.10.1"
++        },
++        "timestamp": "2024-01-17T18:08:41.942317"
+     }
+ }
+'modules/nf-core/fastp/tests/tags.yml' is unchanged
+Changes in 'fastp/tests/main.nf.test':
+--- modules/nf-core/fastp/tests/main.nf.test
++++ modules/nf-core/fastp/tests/main.nf.test
+@@ -10,32 +10,113 @@
+     test("test_fastp_single_end") {
+ 
+         when {
+-
+-            process {
+-                """
++            params {
++                outdir   = "$outputDir"
++            }
++            process {
++                """
++                adapter_fasta     = []
++                save_trimmed_fail = false
++                save_merged       = false
++
+                 input[0] = Channel.of([
+                     [ id:'test', single_end:true ],
+                     [ file(params.modules_testdata_base_path + 'genomics/sarscov2/illumina/fastq/test_1.fastq.gz', checkIfExists: true) ]
+                 ])
+-                input[1] = []
+-                input[2] = false
+-                input[3] = false
+-                input[4] = false
+-                """
+-            }
+-        }
+-
+-        then {
+-            assertAll(
+-                { assert process.success },
+-                { assert path(process.out.html.get(0).get(1)).getText().contains("single end (151 cycles)") },
+-                { assert path(process.out.log.get(0).get(1)).getText().contains("reads passed filter: 99") },
+-                { assert snapshot(
+-                    process.out.json,
+-                    process.out.reads,
+-                    process.out.reads_fail,
+-                    process.out.reads_merged,
+-                    process.out.versions).match() }
++                input[1] = adapter_fasta
++                input[2] = save_trimmed_fail
++                input[3] = save_merged
++                """
++            }
++        }
++
++        then {
++            def html_text  = [ "Q20 bases:</td><td class='col2'>12.922000 K (92.984097%)",
++                                "single end (151 cycles)" ]
++            def log_text   = [ "Q20 bases: 12922(92.9841%)",
++								"reads passed filter: 99" ]
++            def read_lines = ["@ERR5069949.2151832 NS500628:121:HK3MMAFX2:2:21208:10793:15304/1",
++								"TCATAAACCAAAGCACTCACAGTGTCAACAATTTCAGCAGGACAACGCCGACAAGTTCCGAGGAACATGTCTGGACCTATAGTTTTCATAAGTCTACACACTGAATTGAAATATTCTGGTTCTAGTGTGCCCTTAGTTAGCAATGTGCGT",
++								"AAAAAAEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEAAEEEEAEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEAAEEEEE<EEAAAEEEEEEEEEAAAAEAEEEAEEEEEE<AAAA",
++								"@ERR5069949.576388 NS500628:121:HK3MMAFX2:4:11501:11167:14939/1",
++								"ACTGTTTTCTTTGTAGAAAACATCCGTAATAGGACCTTTGTATTCTGAGGACTTTGTAAGTAAAGCACCGTCTATGC",
++								"AAA6AEEEEEEEEEAEEE/6EEAEEEAEEEEEAEEEEEEEEEEEEEEEEEEEEE<AAEEEEEEEEEEE</EEEA/AE"]
++            assertAll(
++                { assert process.success },
++                { read_lines.each { read_line ->
++                    { assert path(process.out.reads.get(0).get(1)).linesGzip.contains(read_line) }
++                    }
++                },
++                { html_text.each { html_part ->
++                    { assert path(process.out.html.get(0).get(1)).getText().contains(html_part) }
++                    }
++                },
++                { assert snapshot(process.out.json).match("test_fastp_single_end_json") },
++                { log_text.each { log_part ->
++                    { assert path(process.out.log.get(0).get(1)).getText().contains(log_part) }
++                    }
++                },
++                {
++                    assert snapshot(
++                        (
++                            [process.out.reads[0][0].toString()] + // meta
++                            process.out.reads.collect { file(it[1]).getName() } +
++                            process.out.json.collect { file(it[1]).getName() } +
++                            process.out.html.collect { file(it[1]).getName() } +
++                            process.out.log.collect { file(it[1]).getName() } +
++                            process.out.reads_fail.collect { file(it[1]).getName() } +
++                            process.out.reads_merged.collect { file(it[1]).getName() }
++                        ).sort()
++                    ).match("test_fastp_single_end-_match")
++                },
++                { assert snapshot(process.out.versions).match("versions_single_end") }
++            )
++        }
++    }
++
++    test("test_fastp_single_end-stub") {
++
++        options '-stub'
++
++        when {
++            params {
++                outdir   = "$outputDir"
++            }
++            process {
++                """
++                adapter_fasta     = []
++                save_trimmed_fail = false
++                save_merged       = false
++
++                input[0] = Channel.of([
++                    [ id:'test', single_end:true ],
++                    [ file(params.modules_testdata_base_path + 'genomics/sarscov2/illumina/fastq/test_1.fastq.gz', checkIfExists: true) ]
++                ])
++                input[1] = adapter_fasta
++                input[2] = save_trimmed_fail
++                input[3] = save_merged
++                """
++            }
++        }
++
++        then {
++
++            assertAll(
++                { assert process.success },
++                {
++                    assert snapshot(
++                        (
++                            [process.out.reads[0][0].toString()] + // meta
++                            process.out.reads.collect { file(it[1]).getName() } +
++                            process.out.json.collect { file(it[1]).getName() } +
++                            process.out.html.collect { file(it[1]).getName() } +
++                            process.out.log.collect { file(it[1]).getName() } +
++                            process.out.reads_fail.collect { file(it[1]).getName() } +
++                            process.out.reads_merged.collect { file(it[1]).getName() }
++                        ).sort()
++                    ).match("test_fastp_single_end-for_stub_match")
++                },
++                { assert snapshot(process.out.versions).match("versions_single_end_stub") }
+             )
+         }
+     }
+@@ -43,11 +124,12 @@
+     test("test_fastp_paired_end") {
+ 
+         when {
+-
+-            process {
+-                """
+-                adapter_fasta     = []
+-                save_trimmed_pass = true
++            params {
++                outdir   = "$outputDir"
++            }
++            process {
++                """
++                adapter_fasta     = []
+                 save_trimmed_fail = false
+                 save_merged       = false
+ 
+@@ -56,25 +138,114 @@
+                     [ file(params.modules_testdata_base_path + 'genomics/sarscov2/illumina/fastq/test_1.fastq.gz', checkIfExists: true),
+                     file(params.modules_testdata_base_path + 'genomics/sarscov2/illumina/fastq/test_2.fastq.gz', checkIfExists: true) ]
+                 ])
+-                input[1] = []
+-                input[2] = false
+-                input[3] = false
+-                input[4] = false
+-                """
+-            }
+-        }
+-
+-        then {
+-            assertAll(
+-                { assert process.success },
+-                { assert path(process.out.html.get(0).get(1)).getText().contains("The input has little adapter percentage (~0.000000%), probably it's trimmed before.") },
+-                { assert path(process.out.log.get(0).get(1)).getText().contains("Q30 bases: 12281(88.3716%)") },
+-                { assert snapshot(
+-                    process.out.json,
+-                    process.out.reads,
+-                    process.out.reads_fail,
+-                    process.out.reads_merged,
+-                    process.out.versions).match() }
++                input[1] = adapter_fasta
++                input[2] = save_trimmed_fail
++                input[3] = save_merged
++                """
++            }
++        }
++
++        then {
++            def html_text   = [ "Q20 bases:</td><td class='col2'>25.719000 K (93.033098%)",
++									"The input has little adapter percentage (~0.000000%), probably it's trimmed before."]
++            def log_text    = [ "No adapter detected for read1",
++									"Q30 bases: 12281(88.3716%)"]
++            def json_text   = ['"passed_filter_reads": 198']
++            def read1_lines = ["@ERR5069949.2151832 NS500628:121:HK3MMAFX2:2:21208:10793:15304/1",
++									"TCATAAACCAAAGCACTCACAGTGTCAACAATTTCAGCAGGACAACGCCGACAAGTTCCGAGGAACATGTCTGGACCTATAGTTTTCATAAGTCTACACACTGAATTGAAATATTCTGGTTCTAGTGTGCCCTTAGTTAGCAATGTGCGT",
++									"AAAAAAEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEAAEEEEAEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEAAEEEEE<EEAAAEEEEEEEEEAAAAEAEEEAEEEEEE<AAAA",
++									"@ERR5069949.576388 NS500628:121:HK3MMAFX2:4:11501:11167:14939/1",
++									"ACTGTTTTCTTTGTAGAAAACATCCGTAATAGGACCTTTGTATTCTGAGGACTTTGTAAGTAAAGCACCGTCTATGC",
++									"AAA6AEEEEEEEEEAEEE/6EEAEEEAEEEEEAEEEEEEEEEEEEEEEEEEEEE<AAEEEEEEEEEEE</EEEA/AE"]
++            def read2_lines = ["@ERR5069949.2151832 NS500628:121:HK3MMAFX2:2:21208:10793:15304/2",
++									"ATGTGTACATTGGCGACCCTGCTCAATTACCTGCACCACGCACATTGCTAACTAAGGGCACACTAGAACCAGAATATTTCAATTCAGTGTGTAGACTTATGAAAACTATAGGTCCAGACATGTTCCTCGGAACTTGTCGGCGTTGTCCTG",
++									"AAAAAEEEEEEEEEE/EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEAEEEEEEEEEE/EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEAAEEEEEEEAEEEEEAAEEEEEEEEEAAEAAA<<EAAEEEEEEEAAA<<<AE",
++									"@ERR5069949.576388 NS500628:121:HK3MMAFX2:4:11501:11167:14939/2",
++									"GCATAGACGGTGCTTTACTTACAAAGTCCTCAGAATACAAAGGTCCTATTACGGATGTTTTCTACAAAGAAAACAGT",
++									"AAAAA6EEAEEEEEAEEAEEAEEEEEEA6EEEEAEEAEEEEE6EEEEEEAEEEEA///A<<EEEEEEEEEAEEEEEE"]
++            assertAll(
++                { assert process.success },
++                { read1_lines.each { read1_line ->
++                    { assert path(process.out.reads.get(0).get(1).get(0)).linesGzip.contains(read1_line) }
++                    }
++                },
++                { read2_lines.each { read2_line ->
++                    { assert path(process.out.reads.get(0).get(1).get(1)).linesGzip.contains(read2_line) }
++                    }
++                },
++                { html_text.each { html_part ->
++                    { assert path(process.out.html.get(0).get(1)).getText().contains(html_part) }
++                    }
++                },
++                { json_text.each { json_part ->
++                    { assert path(process.out.json.get(0).get(1)).getText().contains(json_part) }
++                    }
++                },
++                { log_text.each { log_part ->
++                    { assert path(process.out.log.get(0).get(1)).getText().contains(log_part) }
++                    }
++                },
++                {
++                    assert snapshot(
++                        (
++                            [process.out.reads[0][0].toString()] + // meta
++                            process.out.reads.collect { it[1].collect { item -> file(item).getName() } } +
++                            process.out.json.collect { file(it[1]).getName() } +
++                            process.out.html.collect { file(it[1]).getName() } +
++                            process.out.log.collect { file(it[1]).getName() } +
++                            process.out.reads_fail.collect { file(it[1]).getName() } +
++                            process.out.reads_merged.collect { file(it[1]).getName() }
++                        ).sort()
++                    ).match("test_fastp_paired_end_match")
++                },
++                { assert snapshot(process.out.versions).match("versions_paired_end") }
++            )
++        }
++    }
++
++    test("test_fastp_paired_end-stub") {
++
++        options '-stub'
++
++        when {
++            params {
++                outdir   = "$outputDir"
++            }
++            process {
++                """
++                adapter_fasta     = []
++                save_trimmed_fail = false
++                save_merged       = false
++
++                input[0] = Channel.of([
++                    [ id:'test', single_end:false ], // meta map
++                    [ file(params.modules_testdata_base_path + 'genomics/sarscov2/illumina/fastq/test_1.fastq.gz', checkIfExists: true),
++                    file(params.modules_testdata_base_path + 'genomics/sarscov2/illumina/fastq/test_2.fastq.gz', checkIfExists: true) ]
++                ])
++                input[1] = adapter_fasta
++                input[2] = save_trimmed_fail
++                input[3] = save_merged
++                """
++            }
++        }
++
++        then {
++            assertAll(
++                { assert process.success },
++                {
++                    assert snapshot(
++                        (
++                            [process.out.reads[0][0].toString()] + // meta
++                            process.out.reads.collect { it[1].collect { item -> file(item).getName() } } +
++                            process.out.json.collect { file(it[1]).getName() } +
++                            process.out.html.collect { file(it[1]).getName() } +
++                            process.out.log.collect { file(it[1]).getName() } +
++                            process.out.reads_fail.collect { file(it[1]).getName() } +
++                            process.out.reads_merged.collect { file(it[1]).getName() }
++                        ).sort()
++                    ).match("test_fastp_paired_end-for_stub_match")
++                },
++                { assert snapshot(process.out.versions).match("versions_paired_end-stub") }
+             )
+         }
+     }
+@@ -83,31 +254,113 @@
+ 
+         config './nextflow.interleaved.config'
+         when {
+-            process {
+-                """
++            params {
++                outdir   = "$outputDir"
++            }
++            process {
++                """
++                adapter_fasta     = []
++                save_trimmed_fail = false
++                save_merged       = false
++
+                 input[0] = Channel.of([
+                     [ id:'test', single_end:true ], // meta map
+                     [ file(params.modules_testdata_base_path + 'genomics/sarscov2/illumina/fastq/test_interleaved.fastq.gz', checkIfExists: true) ]
+                 ])
+-                input[1] = []
+-                input[2] = false
+-                input[3] = false
+-                input[4] = false
+-                """
+-            }
+-        }
+-
+-        then {
+-            assertAll(
+-                { assert process.success },
+-                { assert path(process.out.html.get(0).get(1)).getText().contains("paired end (151 cycles + 151 cycles)") },
+-                { assert path(process.out.log.get(0).get(1)).getText().contains("reads passed filter: 162") },
+-                { assert process.out.reads_fail == [] },
+-                { assert process.out.reads_merged == [] },
+-                { assert snapshot(
+-                    process.out.reads,
+-                    process.out.json,
+-                    process.out.versions).match() }
++                input[1] = adapter_fasta
++                input[2] = save_trimmed_fail
++                input[3] = save_merged
++                """
++            }
++        }
++
++        then {
++            def html_text  = [ "Q20 bases:</td><td class='col2'>25.719000 K (93.033098%)",
++									"paired end (151 cycles + 151 cycles)"]
++            def log_text   = [ "Q20 bases: 12922(92.9841%)",
++									"reads passed filter: 162"]
++            def read_lines = [ "@ERR5069949.2151832 NS500628:121:HK3MMAFX2:2:21208:10793:15304/1",
++									"TCATAAACCAAAGCACTCACAGTGTCAACAATTTCAGCAGGACAACGCCGACAAGTTCCGAGGAACATGTCTGGACCTATAGTTTTCATAAGTCTACACACTGAATTGAAATATTCTGGTTCTAGTGTGCCCTTAGTTAGCAATGTGCGT",
++									"AAAAAAEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEAAEEEEAEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEAAEEEEE<EEAAAEEEEEEEEEAAAAEAEEEAEEEEEE<AAAA",
++									"@ERR5069949.2151832 NS500628:121:HK3MMAFX2:2:21208:10793:15304/2",
++									"ATGTGTACATTGGCGACCCTGCTCAATTACCTGCACCACGCACATTGCTAACTAAGGGCACACTAGAACCAGAATATTTCAATTCAGTGTGTAGACTTATGAAAACTATAGGTCCAGACATGTTCCTCGGAACTTGTCGGCGTTGTCCTG",
++									"AAAAAEEEEEEEEEE/EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEAEEEEEEEEEE/EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEAAEEEEEEEAEEEEEAAEEEEEEEEEAAEAAA<<EAAEEEEEEEAAA<<<AE"]
++            assertAll(
++                { assert process.success },
++                { read_lines.each { read_line ->
++                    { assert path(process.out.reads.get(0).get(1)).linesGzip.contains(read_line) }
++                    }
++                },
++                { html_text.each { html_part ->
++                    { assert path(process.out.html.get(0).get(1)).getText().contains(html_part) }
++                    }
++                },
++                { assert snapshot(process.out.json).match("fastp test_fastp_interleaved_json") },
++                { log_text.each { log_part ->
++                    { assert path(process.out.log.get(0).get(1)).getText().contains(log_part) }
++                    }
++                },
++                {
++                    assert snapshot(
++                        (
++                            [process.out.reads[0][0].toString()] + // meta
++                            process.out.reads.collect { file(it[1]).getName() } +
++                            process.out.json.collect { file(it[1]).getName() } +
++                            process.out.html.collect { file(it[1]).getName() } +
++                            process.out.log.collect { file(it[1]).getName() } +
++                            process.out.reads_fail.collect { file(it[1]).getName() } +
++                            process.out.reads_merged.collect { file(it[1]).getName() }
++                        ).sort()
++                    ).match("test_fastp_interleaved-_match")
++                },
++                { assert snapshot(process.out.versions).match("versions_interleaved") }
++            )
++        }
++    }
++
++    test("fastp test_fastp_interleaved-stub") {
++
++        options '-stub'
++
++        config './nextflow.interleaved.config'
++        when {
++            params {
++                outdir   = "$outputDir"
++            }
++            process {
++                """
++                adapter_fasta     = []
++                save_trimmed_fail = false
++                save_merged       = false
++
++                input[0] = Channel.of([
++                    [ id:'test', single_end:true ], // meta map
++                    [ file(params.modules_testdata_base_path + 'genomics/sarscov2/illumina/fastq/test_interleaved.fastq.gz', checkIfExists: true) ]
++                ])
++                input[1] = adapter_fasta
++                input[2] = save_trimmed_fail
++                input[3] = save_merged
++                """
++            }
++        }
++
++        then {
++            assertAll(
++                { assert process.success },
++                {
++                    assert snapshot(
++                        (
++                            [process.out.reads[0][0].toString()] + // meta
++                            process.out.reads.collect { file(it[1]).getName() } +
++                            process.out.json.collect { file(it[1]).getName() } +
++                            process.out.html.collect { file(it[1]).getName() } +
++                            process.out.log.collect { file(it[1]).getName() } +
++                            process.out.reads_fail.collect { file(it[1]).getName() } +
++                            process.out.reads_merged.collect { file(it[1]).getName() }
++                        ).sort()
++                    ).match("test_fastp_interleaved-for_stub_match")
++                },
++                { assert snapshot(process.out.versions).match("versions_interleaved-stub") }
+             )
+         }
+     }
+@@ -115,32 +368,60 @@
+     test("test_fastp_single_end_trim_fail") {
+ 
+         when {
+-
+-            process {
+-                """
++            params {
++                outdir   = "$outputDir"
++            }
++            process {
++                """
++                adapter_fasta     = []
++                save_trimmed_fail = true
++                save_merged       = false
++
+                 input[0] = Channel.of([
+                     [ id:'test', single_end:true ], // meta map
+                     [ file(params.modules_testdata_base_path + 'genomics/sarscov2/illumina/fastq/test_1.fastq.gz', checkIfExists: true) ]
+                 ])
+-                input[1] = []
+-                input[2] = false
+-                input[3] = true
+-                input[4] = false
+-                """
+-            }
+-        }
+-
+-        then {
+-            assertAll(
+-                { assert process.success },
+-                { assert path(process.out.html.get(0).get(1)).getText().contains("single end (151 cycles)") },
+-                { assert path(process.out.log.get(0).get(1)).getText().contains("reads passed filter: 99") },
+-                { assert snapshot(
+-                    process.out.json,
+-                    process.out.reads,
+-                    process.out.reads_fail,
+-                    process.out.reads_merged,
+-                    process.out.versions).match() }
++                input[1] = adapter_fasta
++                input[2] = save_trimmed_fail
++                input[3] = save_merged
++                """
++            }
++        }
++
++        then {
++            def html_text         = [ "Q20 bases:</td><td class='col2'>12.922000 K (92.984097%)",
++									"single end (151 cycles)"]
++            def log_text          = [ "Q20 bases: 12922(92.9841%)",
++									"reads passed filter: 99" ]
++            def read_lines        = [ "@ERR5069949.2151832 NS500628:121:HK3MMAFX2:2:21208:10793:15304/1",
++									"TCATAAACCAAAGCACTCACAGTGTCAACAATTTCAGCAGGACAACGCCGACAAGTTCCGAGGAACATGTCTGGACCTATAGTTTTCATAAGTCTACACACTGAATTGAAATATTCTGGTTCTAGTGTGCCCTTAGTTAGCAATGTGCGT",
++									"AAAAAAEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEAAEEEEAEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEAAEEEEE<EEAAAEEEEEEEEEAAAAEAEEEAEEEEEE<AAAA",
++									"@ERR5069949.576388 NS500628:121:HK3MMAFX2:4:11501:11167:14939/1",
++									"ACTGTTTTCTTTGTAGAAAACATCCGTAATAGGACCTTTGTATTCTGAGGACTTTGTAAGTAAAGCACCGTCTATGC",
++									"AAA6AEEEEEEEEEAEEE/6EEAEEEAEEEEEAEEEEEEEEEEEEEEEEEEEEE<AAEEEEEEEEEEE</EEEA/AE"]
++            def failed_read_lines = [ "@ERR5069949.885966 NS500628:121:HK3MMAFX2:4:11610:19682:20132/1 failed_quality_filter",
++									"GTCTAATCATAATTTCTTGGTACAGGCTGGTATTGTTCATCTCAGGGTTATTGGACATTCTATGCAAAATTGTGTACTT",
++									"AAA//E/EAA/E//E//E//E/E//AE/A/E//EAEA///AE//E///E/EEE6EEEAEEA///E/AEE/EAEE/E//E"]
++            assertAll(
++                { assert process.success },
++                { read_lines.each { read_line ->
++                    { assert path(process.out.reads.get(0).get(1)).linesGzip.contains(read_line) }
++                    }
++                },
++                { failed_read_lines.each { failed_read_line ->
++                    { assert path(process.out.reads_fail.get(0).get(1)).linesGzip.contains(failed_read_line) }
++                    }
++                },
++                { html_text.each { html_part ->
++                    { assert path(process.out.html.get(0).get(1)).getText().contains(html_part) }
++                    }
++                },
++                { assert snapshot(process.out.json).match("test_fastp_single_end_trim_fail_json") },
++                { log_text.each { log_part ->
++                    { assert path(process.out.log.get(0).get(1)).getText().contains(log_part) }
++                    }
++                },
++                { assert snapshot(process.out.versions).match("versions_single_end_trim_fail") }
+             )
+         }
+     }
+@@ -149,32 +430,77 @@
+ 
+         config './nextflow.save_failed.config'
+         when {
+-            process {
+-                """
++            params {
++                outdir   = "$outputDir"
++            }
++            process {
++                """
++                adapter_fasta     = []
++                save_trimmed_fail = true
++                save_merged       = false
++
+                 input[0] = Channel.of([
+                     [ id:'test', single_end:false ], // meta map
+                     [ file(params.modules_testdata_base_path + 'genomics/sarscov2/illumina/fastq/test_1.fastq.gz', checkIfExists: true),
+                     file(params.modules_testdata_base_path + 'genomics/sarscov2/illumina/fastq/test_2.fastq.gz', checkIfExists: true)]
+                 ])
+-                input[1] = []
+-                input[2] = false
+-                input[3] = true
+-                input[4] = false
+-                """
+-            }
+-        }
+-
+-        then {
+-            assertAll(
+-                { assert process.success },
+-                { assert path(process.out.html.get(0).get(1)).getText().contains("The input has little adapter percentage (~0.000000%), probably it's trimmed before.") },
+-                { assert path(process.out.log.get(0).get(1)).getText().contains("reads passed filter: 162") },
+-                { assert snapshot(
+-                    process.out.reads,
+-                    process.out.reads_fail,
+-                    process.out.reads_merged,
+-                    process.out.json,
+-                    process.out.versions).match() }
++                input[1] = adapter_fasta
++                input[2] = save_trimmed_fail
++                input[3] = save_merged
++                """
++            }
++        }
++
++        then {
++            def html_text           = [ "Q20 bases:</td><td class='col2'>25.719000 K (93.033098%)",
++									"The input has little adapter percentage (~0.000000%), probably it's trimmed before."]
++            def log_text            = [ "No adapter detected for read1",
++									"Q30 bases: 12281(88.3716%)"]
++            def json_text           = ['"passed_filter_reads": 162']
++            def read1_lines         = ["@ERR5069949.2151832 NS500628:121:HK3MMAFX2:2:21208:10793:15304/1",
++									"TCATAAACCAAAGCACTCACAGTGTCAACAATTTCAGCAGGACAACGCCGACAAGTTCCGAGGAACATGTCTGGACCTATAGTTTTCATAAGTCTACACACTGAATTGAAATATTCTGGTTCTAGTGTGCCCTTAGTTAGCAATGTGCGT",
++									"AAAAAAEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEAAEEEEAEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEAAEEEEE<EEAAAEEEEEEEEEAAAAEAEEEAEEEEEE<AAAA",
++									"@ERR5069949.576388 NS500628:121:HK3MMAFX2:4:11501:11167:14939/1",
++									"ACTGTTTTCTTTGTAGAAAACATCCGTAATAGGACCTTTGTATTCTGAGGACTTTGTAAGTAAAGCACCGTCTATGC",
++									"AAA6AEEEEEEEEEAEEE/6EEAEEEAEEEEEAEEEEEEEEEEEEEEEEEEEEE<AAEEEEEEEEEEE</EEEA/AE"]
++            def read2_lines         = ["@ERR5069949.2151832 NS500628:121:HK3MMAFX2:2:21208:10793:15304/2",
++									"ATGTGTACATTGGCGACCCTGCTCAATTACCTGCACCACGCACATTGCTAACTAAGGGCACACTAGAACCAGAATATTTCAATTCAGTGTGTAGACTTATGAAAACTATAGGTCCAGACATGTTCCTCGGAACTTGTCGGCGTTGTCCTG",
++									"AAAAAEEEEEEEEEE/EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEAEEEEEEEEEE/EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEAAEEEEEEEAEEEEEAAEEEEEEEEEAAEAAA<<EAAEEEEEEEAAA<<<AE",
++									"@ERR5069949.576388 NS500628:121:HK3MMAFX2:4:11501:11167:14939/2",
++									"GCATAGACGGTGCTTTACTTACAAAGTCCTCAGAATACAAAGGTCCTATTACGGATGTTTTCTACAAAGAAAACAGT",
++									"AAAAA6EEAEEEEEAEEAEEAEEEEEEA6EEEEAEEAEEEEE6EEEEEEAEEEEA///A<<EEEEEEEEEAEEEEEE"]
++            def failed_read2_lines  = ["@ERR5069949.973930 NS500628:121:HK3MMAFX2:2:21105:5548:5659/2",
++									"CCTTTTGATGTTGTTAGACAATGCTCAGGTGTTACTTTCCAAAGTGCAGTGAAAAGAACAATCAAGGGTACACACCACTGGTTGTTACTCACAATTTTGACTTCACTTTTAG",
++									"AAAAAEEAEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE/EEEEEEEEEEEEEEEEEEEEEEEAE<EAEEEEEEAEEAEE"]
++            // def failed_read1_lines = path(process.out.reads_fail.get(0).get(1).get(0)).linesGzip is empty file
++            assertAll(
++                { assert process.success },
++                { assert path(process.out.reads_fail.get(0).get(1).get(0)).exists() },
++                { read1_lines.each { read1_line ->
++                    { assert path(process.out.reads.get(0).get(1).get(0)).linesGzip.contains(read1_line) }
++                    }
++                },
++                { read2_lines.each { read2_line ->
++                    { assert path(process.out.reads.get(0).get(1).get(1)).linesGzip.contains(read2_line) }
++                    }
++                },
++                { failed_read2_lines.each { failed_read2_line ->
++                    { assert path(process.out.reads_fail.get(0).get(1).get(2)).linesGzip.contains(failed_read2_line) }
++                    }
++                },
++                { html_text.each { html_part ->
++                    { assert path(process.out.html.get(0).get(1)).getText().contains(html_part) }
++                    }
++                },
++                { json_text.each { json_part ->
++                    { assert path(process.out.json.get(0).get(1)).getText().contains(json_part) }
++                    }
++                },
++                { log_text.each { log_part ->
++                    { assert path(process.out.log.get(0).get(1)).getText().contains(log_part) }
++                    }
++                },
++                { assert snapshot(process.out.versions).match("versions_paired_end_trim_fail") }
+             )
+         }
+     }
+@@ -182,395 +508,218 @@
+     test("test_fastp_paired_end_merged") {
+ 
+         when {
+-            process {
+-                """
++            params {
++                outdir   = "$outputDir"
++            }
++            process {
++                """
++                adapter_fasta     = []
++                save_trimmed_fail = false
++                save_merged       = true
+                 input[0] = Channel.of([
+                     [ id:'test', single_end:false ], // meta map
+                     [ file(params.modules_testdata_base_path + 'genomics/sarscov2/illumina/fastq/test_1.fastq.gz', checkIfExists: true),
+                     file(params.modules_testdata_base_path + 'genomics/sarscov2/illumina/fastq/test_2.fastq.gz', checkIfExists: true) ]
+                 ])
+-                input[1] = []
+-                input[2] = false
+-                input[3] = false
+-                input[4] = true
+-                """
+-            }
+-        }
+-
+-        then {
+-            assertAll(
+-                { assert process.success },
+-                { assert path(process.out.html.get(0).get(1)).getText().contains("The input has little adapter percentage (~0.000000%), probably it's trimmed before.") },
+-                { assert path(process.out.log.get(0).get(1)).getText().contains("total reads: 75") },
+-                { assert snapshot(
+-                    process.out.json,
+-                    process.out.reads,
+-                    process.out.reads_fail,
+-                    process.out.reads_merged,
+-                    process.out.versions).match() },
+-            )
+-        }
+-    }
+-
+-    test("test_fastp_paired_end_merged_adapterlist") {
+-
+-        when {
+-            process {
+-                """
++                input[1] = adapter_fasta
++                input[2] = save_trimmed_fail
++                input[3] = save_merged
++                """
++            }
++        }
++
++        then {
++            def html_text         = [ "<div id='After_filtering__merged__quality'>"]
++            def log_text          = [ "Merged and filtered:",
++									"total reads: 75",
++									"total bases: 13683"]
++            def json_text         = ['"merged_and_filtered": {', '"total_reads": 75', '"total_bases": 13683']
++            def read1_lines       = [ "@ERR5069949.1066259 NS500628:121:HK3MMAFX2:1:11312:18369:8333/1",
++									"CCTTATGACAGCAAGAACTGTGTATGATGATGGTGCTAGGAGAGTGTGGACACTTATGAATGTCTTGACACTCGTTTATAAAGTTTATTATGGTAATGCTTTAGATCAAGCCATTTCCATGTGGGCTCTTATAATCTCTGTTACTTC",
++									"AAAAAEAEEAEEEEEEEEEEEEEEEEAEEEEAEEEEEEEEAEEEEEEEEEEEEEEEEE/EAEEEEEE/6EEEEEEEEEEAEEAEEE/EE/AEEAEEEEEAEEEA/EEAAEAE<AEEAEEEAEAEEEAEAEEAE/AEEEEAEEEEAEA",
++									"@ERR5069949.324865 NS500628:121:HK3MMAFX2:1:11102:17526:14721/1",
++									"CACAAACTCTAAAAGAATGTATAGGGTCAGCACCAAAAATACCAGCAGATAATAATGTTGCAAGTAGAACTTCGTGCAGATTAAAATTTTCATAAGCACTCTAAAGAAGTTGAATGTCTTCAAATTTCTTAACATTAGGGCCCACAACAAG",
++									"AAAAAEA/A<EAA/AE/EE/EE//////EA/EEE/E/EEEE//E/6//EA//<AA/A/EEEAA/EEEE/EEEA/E/</AEE////AEEEE//<E//EAE/A///<EEE//<E<<EEE<///A//E/E/EEEAA/<A////<A/AEAAA//E"]
++            def read2_lines       = ["@ERR5069949.1066259 NS500628:121:HK3MMAFX2:1:11312:18369:8333/2",
++									"GTACAAAAATAGCCTAAGAAACAATAAACTAGCATTATACACTGAAGTGTATTACCAGTTATGAAGAAAATAGGGCAATACTCAACACACATAAAAACAATACCTCTGGCCAAAAACATGACAGTTGTAACTACACCTGAGTAGTTAGAAG",
++									"AAAAAEEEEEEEEAEEEEEEEEEEEEEEEEEEEEEEEEAEAEEEEEEEEEEEEEEEEEEEEEEEEEEEEAEEEEEEEEA/EAA</EEEEEEEEEE/AE//A/E<AE<AA<AEEE/AAEAAAEEAEEA<A6AEEA<EEAEEEEEEEAA//EE",
++									"@ERR5069949.324865 NS500628:121:HK3MMAFX2:1:11102:17526:14721/2",
++									"ATGAATCTGATGAATACATAGCTACTAATGGACCTCTTAAAGTGCGTGGTAGTTGTGATTAAAGCGGACACATACTTGCTAAACACTCTCTTCATGATGTC",
++									"A/AAAEEEEA6AA6EE//EEA/EEEAE/EA/A////E</EEAA//EEA////EAE<///E/AEA</AAE/EA//E<EAAAE/AA//AEE//A/AE//</EE"]
++            def read_merged_lines = ["@ERR5069949.2151832 NS500628:121:HK3MMAFX2:2:21208:10793:15304/1 merged_150_37",
++									"TCATAAACCAAAGCACTCACAGTGTCAACAATTTCAGCAGGACAACGCCGACAAGTTCCGAGGAACATGTCTGGACCTATAGTTTTCATAAGTCTACACACTGAATTGAAATATTCTGGTTCTAGTGTGCCCTTAGTTAGCAATGTGCGTGGTGCAGGTAATTGAGCAGGGTCGCCAATGTACACAT",
++									"AAAAAAEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEAAEEEEAEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEAAEEEEE<EEAAAEEEEEEEEEAAAAEAEEEAEEEEEE<AAAAEEEEEEEEEEEEEEEEEEEEE/EEEEEEEEEEAAAAA",
++									"@ERR5069949.576388 NS500628:121:HK3MMAFX2:4:11501:11167:14939/1 merged_77_0",
++									"ACTGTTTTCTTTGTAGAAAACATCCGTAATAGGACCTTTGTATTCTGAGGACTTTGTAAGTAAAGCACCGTCTATGC",
++									"AAA6AEEEEEEEEEAEEE/6EEAEEEAEEEEEAEEEEEEEEEEEEEEEEEEEEE<AAEEEEEEEEEEE</EEEA/AE"]
++            assertAll(
++                { assert process.success },
++                { read1_lines.each { read1_line ->
++                    { assert path(process.out.reads.get(0).get(1).get(0)).linesGzip.contains(read1_line) }
++                    }
++                },
++                { read2_lines.each { read2_line ->
++                    { assert path(process.out.reads.get(0).get(1).get(1)).linesGzip.contains(read2_line) }
++                    }
++                },
++                { read_merged_lines.each { read_merged_line ->
++                    { assert path(process.out.reads_merged.get(0).get(1)).linesGzip.contains(read_merged_line) }
++                    }
++                },
++                { html_text.each { html_part ->
++                    { assert path(process.out.html.get(0).get(1)).getText().contains(html_part) }
++                    }
++                },
++                { json_text.each { json_part ->
++                    { assert path(process.out.json.get(0).get(1)).getText().contains(json_part) }
++                    }
++                },
++                { log_text.each { log_part ->
++                    { assert path(process.out.log.get(0).get(1)).getText().contains(log_part) }
++                    }
++                },
++                {
++                    assert snapshot(
++                        (
++                            [process.out.reads[0][0].toString()] + // meta
++                            process.out.reads.collect { it[1].collect { item -> file(item).getName() } } +
++                            process.out.json.collect { file(it[1]).getName() } +
++                            process.out.html.collect { file(it[1]).getName() } +
++                            process.out.log.collect { file(it[1]).getName() } +
++                            process.out.reads_fail.collect { file(it[1]).getName() } +
++                            process.out.reads_merged.collect { file(it[1]).getName() }
++                        ).sort()
++                    ).match("test_fastp_paired_end_merged_match")
++                },
++                { assert snapshot(process.out.versions).match("versions_paired_end_merged") }
++            )
++        }
++    }
++
++    test("test_fastp_paired_end_merged-stub") {
++
++        options '-stub'
++
++        when {
++            params {
++                outdir   = "$outputDir"
++            }
++            process {
++                """
++                adapter_fasta     = []
++                save_trimmed_fail = false
++                save_merged       = true
++
+                 input[0] = Channel.of([
+                     [ id:'test', single_end:false ], // meta map
+                     [ file(params.modules_testdata_base_path + 'genomics/sarscov2/illumina/fastq/test_1.fastq.gz', checkIfExists: true),
+                     file(params.modules_testdata_base_path + 'genomics/sarscov2/illumina/fastq/test_2.fastq.gz', checkIfExists: true) ]
+                 ])
+-                input[1] =  Channel.of([ file(params.modules_testdata_base_path + 'delete_me/fastp/adapters.fasta', checkIfExists: true) ])
+-                input[2] = false
+-                input[3] = false
+-                input[4] = true
+-                """
+-            }
+-        }
+-
+-        then {
+-            assertAll(
+-                { assert process.success },
+-                { assert path(process.out.html.get(0).get(1)).getText().contains("<div id='After_filtering__merged__quality'>") },
+-                { assert path(process.out.log.get(0).get(1)).getText().contains("total bases: 13683") },
+-                { assert snapshot(
+-                    process.out.json,
+-                    process.out.reads,
+-                    process.out.reads_fail,
+-                    process.out.reads_merged,
+-                    process.out.versions).match() }
+-            )
+-        }
+-    }
+-
+-    test("test_fastp_single_end_qc_only") {
+-
+-        when {
+-            process {
+-                """
+-                input[0] = Channel.of([
+-                    [ id:'test', single_end:true ],
+-                    [ file(params.modules_testdata_base_path + 'genomics/sarscov2/illumina/fastq/test_1.fastq.gz', checkIfExists: true) ]
+-                ])
+-                input[1] = []
+-                input[2] = true
+-                input[3] = false
+-                input[4] = false
+-                """
+-            }
+-        }
+-
+-        then {
+-            assertAll(
+-                { assert process.success },
+-                { assert path(process.out.html.get(0).get(1)).getText().contains("single end (151 cycles)") },
+-                { assert path(process.out.log.get(0).get(1)).getText().contains("reads passed filter: 99") },
+-                { assert snapshot(
+-                    process.out.json,
+-                    process.out.reads,
+-                    process.out.reads,
+-                    process.out.reads_fail,
+-                    process.out.reads_fail,
+-                    process.out.reads_merged,
+-                    process.out.reads_merged,
+-                    process.out.versions).match() }
+-            )
+-        }
+-    }
+-
+-    test("test_fastp_paired_end_qc_only") {
+-
+-        when {
+-            process {
+-                """
++                input[1] = adapter_fasta
++                input[2] = save_trimmed_fail
++                input[3] = save_merged
++                """
++            }
++        }
++
++        then {
++            assertAll(
++                { assert process.success },
++                {
++                    assert snapshot(
++                        (
++                            [process.out.reads[0][0].toString()] + // meta
++                            process.out.reads.collect { it[1].collect { item -> file(item).getName() } } +
++                            process.out.json.collect { file(it[1]).getName() } +
++                            process.out.html.collect { file(it[1]).getName() } +
++                            process.out.log.collect { file(it[1]).getName() } +
++                            process.out.reads_fail.collect { file(it[1]).getName() } +
++                            process.out.reads_merged.collect { file(it[1]).getName() }
++                        ).sort()
++                    ).match("test_fastp_paired_end_merged-for_stub_match")
++                },
++                { assert snapshot(process.out.versions).match("versions_paired_end_merged_stub") }
++            )
++        }
++    }
++
++    test("test_fastp_paired_end_merged_adapterlist") {
++
++        when {
++            params {
++                outdir   = "$outputDir"
++            }
++            process {
++                """
++                adapter_fasta     = Channel.of([ file(params.modules_testdata_base_path + 'delete_me/fastp/adapters.fasta', checkIfExists: true) ])
++                save_trimmed_fail = false
++                save_merged       = true
++
+                 input[0] = Channel.of([
+                     [ id:'test', single_end:false ], // meta map
+                     [ file(params.modules_testdata_base_path + 'genomics/sarscov2/illumina/fastq/test_1.fastq.gz', checkIfExists: true),
+                     file(params.modules_testdata_base_path + 'genomics/sarscov2/illumina/fastq/test_2.fastq.gz', checkIfExists: true) ]
+                 ])
+-                input[1] = []
+-                input[2] = true
+-                input[3] = false
+-                input[4] = false
+-                """
+-            }
+-        }
+-
+-        then {
+-            assertAll(
+-                { assert process.success },
+-                { assert path(process.out.html.get(0).get(1)).getText().contains("The input has little adapter percentage (~0.000000%), probably it's trimmed before.") },
+-                { assert path(process.out.log.get(0).get(1)).getText().contains("Q30 bases: 12281(88.3716%)") },
+-                { assert snapshot(
+-                    process.out.json,
+-                    process.out.reads,
+-                    process.out.reads,
+-                    process.out.reads_fail,
+-                    process.out.reads_fail,
+-                    process.out.reads_merged,
+-                    process.out.reads_merged,
+-                    process.out.versions).match() }
+-            )
+-        }
+-    }
+-
+-    test("test_fastp_single_end - stub") {
+-
+-        options "-stub"
+-
+-        when {
+-
+-            process {
+-                """
+-                input[0] = Channel.of([
+-                    [ id:'test', single_end:true ],
+-                    [ file(params.modules_testdata_base_path + 'genomics/sarscov2/illumina/fastq/test_1.fastq.gz', checkIfExists: true) ]
+-                ])
+-                input[1] = []
+-                input[2] = false
+-                input[3] = false
+-                input[4] = false
+-                """
+-            }
+-        }
+-
+-        then {
+-            assertAll(
+-                { assert process.success },
+-                { assert snapshot(process.out).match() }
+-            )
+-        }
+-    }
+-
+-    test("test_fastp_paired_end - stub") {
+-
+-        options "-stub"
+-
+-        when {
+-
+-            process {
+-                """
+-                adapter_fasta     = []
+-                save_trimmed_pass = true
+-                save_trimmed_fail = false
+-                save_merged       = false
+-
+-                input[0] = Channel.of([
+-                    [ id:'test', single_end:false ], // meta map
+-                    [ file(params.modules_testdata_base_path + 'genomics/sarscov2/illumina/fastq/test_1.fastq.gz', checkIfExists: true),
+-                    file(params.modules_testdata_base_path + 'genomics/sarscov2/illumina/fastq/test_2.fastq.gz', checkIfExists: true) ]
+-                ])
+-                input[1] = []
+-                input[2] = false
+-                input[3] = false
+-                input[4] = false
+-                """
+-            }
+-        }
+-
+-        then {
+-            assertAll(
+-                { assert process.success },
+-                { assert snapshot(process.out).match() }
+-            )
+-        }
+-    }
+-
+-    test("fastp - stub test_fastp_interleaved") {
+-
+-        options "-stub"
+-
+-        config './nextflow.interleaved.config'
+-        when {
+-            process {
+-                """
+-                input[0] = Channel.of([
+-                    [ id:'test', single_end:true ], // meta map
+-                    [ file(params.modules_testdata_base_path + 'genomics/sarscov2/illumina/fastq/test_interleaved.fastq.gz', checkIfExists: true) ]
+-                ])
+-                input[1] = []
+-                input[2] = false
+-                input[3] = false
+-                input[4] = false
+-                """
+-            }
+-        }
+-
+-        then {
+-            assertAll(
+-                { assert process.success },
+-                { assert snapshot(process.out).match() }
+-            )
+-        }
+-    }
+-
+-    test("test_fastp_single_end_trim_fail - stub") {
+-
+-        options "-stub"
+-
+-        when {
+-
+-            process {
+-                """
+-                input[0] = Channel.of([
+-                    [ id:'test', single_end:true ], // meta map
+-                    [ file(params.modules_testdata_base_path + 'genomics/sarscov2/illumina/fastq/test_1.fastq.gz', checkIfExists: true) ]
+-                ])
+-                input[1] = []
+-                input[2] = false
+-                input[3] = true
+-                input[4] = false
+-                """
+-            }
+-        }
+-
+-        then {
+-            assertAll(
+-                { assert process.success },
+-                { assert snapshot(process.out).match() }
+-            )
+-        }
+-    }
+-
+-    test("test_fastp_paired_end_trim_fail - stub") {
+-
+-        options "-stub"
+-
+-        config './nextflow.save_failed.config'
+-        when {
+-            process {
+-                """
+-                input[0] = Channel.of([
+-                    [ id:'test', single_end:false ], // meta map
+-                    [ file(params.modules_testdata_base_path + 'genomics/sarscov2/illumina/fastq/test_1.fastq.gz', checkIfExists: true),
+-                    file(params.modules_testdata_base_path + 'genomics/sarscov2/illumina/fastq/test_2.fastq.gz', checkIfExists: true)]
+-                ])
+-                input[1] = []
+-                input[2] = false
+-                input[3] = true
+-                input[4] = false
+-                """
+-            }
+-        }
+-
+-        then {
+-            assertAll(
+-                { assert process.success },
+-                { assert snapshot(process.out).match() }
+-            )
+-        }
+-    }
+-
+-    test("test_fastp_paired_end_merged - stub") {
+-
+-        options "-stub"
+-
+-        when {
+-            process {
+-                """
+-                input[0] = Channel.of([
+-                    [ id:'test', single_end:false ], // meta map
+-                    [ file(params.modules_testdata_base_path + 'genomics/sarscov2/illumina/fastq/test_1.fastq.gz', checkIfExists: true),
+-                    file(params.modules_testdata_base_path + 'genomics/sarscov2/illumina/fastq/test_2.fastq.gz', checkIfExists: true) ]
+-                ])
+-                input[1] = []
+-                input[2] = false
+-                input[3] = false
+-                input[4] = true
+-                """
+-            }
+-        }
+-
+-        then {
+-            assertAll(
+-                { assert process.success },
+-                { assert snapshot(process.out).match() }
+-            )
+-        }
+-    }
+-
+-    test("test_fastp_paired_end_merged_adapterlist - stub") {
+-
+-        options "-stub"
+-
+-        when {
+-            process {
+-                """
+-                input[0] = Channel.of([
+-                    [ id:'test', single_end:false ], // meta map
+-                    [ file(params.modules_testdata_base_path + 'genomics/sarscov2/illumina/fastq/test_1.fastq.gz', checkIfExists: true),
+-                    file(params.modules_testdata_base_path + 'genomics/sarscov2/illumina/fastq/test_2.fastq.gz', checkIfExists: true) ]
+-                ])
+-                input[1] =  Channel.of([ file(params.modules_testdata_base_path + 'delete_me/fastp/adapters.fasta', checkIfExists: true) ])
+-                input[2] = false
+-                input[3] = false
+-                input[4] = true
+-                """
+-            }
+-        }
+-
+-        then {
+-            assertAll(
+-                { assert process.success },
+-                { assert snapshot(process.out).match() }
+-            )
+-        }
+-    }
+-
+-    test("test_fastp_single_end_qc_only - stub") {
+-
+-        options "-stub"
+-
+-        when {
+-            process {
+-                """
+-                input[0] = Channel.of([
+-                    [ id:'test', single_end:true ],
+-                    [ file(params.modules_testdata_base_path + 'genomics/sarscov2/illumina/fastq/test_1.fastq.gz', checkIfExists: true) ]
+-                ])
+-                input[1] = []
+-                input[2] = true
+-                input[3] = false
+-                input[4] = false
+-                """
+-            }
+-        }
+-
+-        then {
+-            assertAll(
+-                { assert process.success },
+-                { assert snapshot(process.out).match() }
+-            )
+-        }
+-    }
+-
+-    test("test_fastp_paired_end_qc_only - stub") {
+-
+-        options "-stub"
+-
+-        when {
+-            process {
+-                """
+-                input[0] = Channel.of([
+-                    [ id:'test', single_end:false ], // meta map
+-                    [ file(params.modules_testdata_base_path + 'genomics/sarscov2/illumina/fastq/test_1.fastq.gz', checkIfExists: true),
+-                    file(params.modules_testdata_base_path + 'genomics/sarscov2/illumina/fastq/test_2.fastq.gz', checkIfExists: true) ]
+-                ])
+-                input[1] = []
+-                input[2] = true
+-                input[3] = false
+-                input[4] = false
+-                """
+-            }
+-        }
+-
+-        then {
+-            assertAll(
+-                { assert process.success },
+-                { assert snapshot(process.out).match() }
+-            )
+-        }
+-    }
+-}+                input[1] = adapter_fasta
++                input[2] = save_trimmed_fail
++                input[3] = save_merged
++                """
++            }
++        }
++
++        then {
++            def html_text         = [ "<div id='After_filtering__merged__quality'>"]
++            def log_text          = [ "Merged and filtered:",
++									"total reads: 75",
++									"total bases: 13683"]
++            def json_text         = ['"merged_and_filtered": {', '"total_reads": 75', '"total_bases": 13683',"--adapter_fasta"]
++            def read1_lines       = ["@ERR5069949.1066259 NS500628:121:HK3MMAFX2:1:11312:18369:8333/1",
++									"CCTTATGACAGCAAGAACTGTGTATGATGATGGTGCTAGGAGAGTGTGGACACTTATGAATGTCTTGACACTCGTTTATAAAGTTTATTATGGTAATGCTTTAGATCAAGCCATTTCCATGTGGGCTCTTATAATCTCTGTTACTTC",
++									"AAAAAEAEEAEEEEEEEEEEEEEEEEAEEEEAEEEEEEEEAEEEEEEEEEEEEEEEEE/EAEEEEEE/6EEEEEEEEEEAEEAEEE/EE/AEEAEEEEEAEEEA/EEAAEAE<AEEAEEEAEAEEEAEAEEAE/AEEEEAEEEEAEA",
++									"@ERR5069949.324865 NS500628:121:HK3MMAFX2:1:11102:17526:14721/1",
++									"CACAAACTCTAAAAGAATGTATAGGGTCAGCACCAAAAATACCAGCAGATAATAATGTTGCAAGTAGAACTTCGTGCAGATTAAAATTTTCATAAGCACTCTAAAGAAGTTGAATGTCTTCAAATTTCTTAACATTAGGGCCCACAACAAG",
++									"AAAAAEA/A<EAA/AE/EE/EE//////EA/EEE/E/EEEE//E/6//EA//<AA/A/EEEAA/EEEE/EEEA/E/</AEE////AEEEE//<E//EAE/A///<EEE//<E<<EEE<///A//E/E/EEEAA/<A////<A/AEAAA//E"]
++            def read2_lines       = ["@ERR5069949.1066259 NS500628:121:HK3MMAFX2:1:11312:18369:8333/2",
++									"GTACAAAAATAGCCTAAGAAACAATAAACTAGCATTATACACTGAAGTGTATTACCAGTTATGAAGAAAATAGGGCAATACTCAACACACATAAAAACAATACCTCTGGCCAAAAACATGACAGTTGTAACTACACCTGAGTAGTTAGAAG",
++									"AAAAAEEEEEEEEAEEEEEEEEEEEEEEEEEEEEEEEEAEAEEEEEEEEEEEEEEEEEEEEEEEEEEEEAEEEEEEEEA/EAA</EEEEEEEEEE/AE//A/E<AE<AA<AEEE/AAEAAAEEAEEA<A6AEEA<EEAEEEEEEEAA//EE",
++									"@ERR5069949.324865 NS500628:121:HK3MMAFX2:1:11102:17526:14721/2",
++									"ATGAATCTGATGAATACATAGCTACTAATGGACCTCTTAAAGTGCGTGGTAGTTGTGATTAAAGCGGACACATACTTGCTAAACACTCTCTTCATGATGTC",
++									"A/AAAEEEEA6AA6EE//EEA/EEEAE/EA/A////E</EEAA//EEA////EAE<///E/AEA</AAE/EA//E<EAAAE/AA//AEE//A/AE//</EE"]
++            def read_merged_lines = ["@ERR5069949.2151832 NS500628:121:HK3MMAFX2:2:21208:10793:15304/1 merged_150_37",
++									"TCATAAACCAAAGCACTCACAGTGTCAACAATTTCAGCAGGACAACGCCGACAAGTTCCGAGGAACATGTCTGGACCTATAGTTTTCATAAGTCTACACACTGAATTGAAATATTCTGGTTCTAGTGTGCCCTTAGTTAGCAATGTGCGTGGTGCAGGTAATTGAGCAGGGTCGCCAATGTACACAT",
++									"AAAAAAEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEAAEEEEAEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEAAEEEEE<EEAAAEEEEEEEEEAAAAEAEEEAEEEEEE<AAAAEEEEEEEEEEEEEEEEEEEEE/EEEEEEEEEEAAAAA",
++									"@ERR5069949.576388 NS500628:121:HK3MMAFX2:4:11501:11167:14939/1 merged_77_0",
++									"ACTGTTTTCTTTGTAGAAAACATCCGTAATAGGACCTTTGTATTCTGAGGACTTTGTAAGTAAAGCACCGTCTATGC",
++									"AAA6AEEEEEEEEEAEEE/6EEAEEEAEEEEEAEEEEEEEEEEEEEEEEEEEEE<AAEEEEEEEEEEE</EEEA/AE"]
++
++            assertAll(
++                { assert process.success },
++                { read1_lines.each { read1_line ->
++                    { assert path(process.out.reads.get(0).get(1).get(0)).linesGzip.contains(read1_line) }
++                    }
++                },
++                { read2_lines.each { read2_line ->
++                    { assert path(process.out.reads.get(0).get(1).get(1)).linesGzip.contains(read2_line) }
++                    }
++                },
++                { read_merged_lines.each { read_merged_line ->
++                    { assert path(process.out.reads_merged.get(0).get(1)).linesGzip.contains(read_merged_line) }
++                    }
++                },
++                { html_text.each { html_part ->
++                    { assert path(process.out.html.get(0).get(1)).getText().contains(html_part) }
++                    }
++                },
++                { json_text.each { json_part ->
++                    { assert path(process.out.json.get(0).get(1)).getText().contains(json_part) }
++                    }
++                },
++                { log_text.each { log_part ->
++                    { assert path(process.out.log.get(0).get(1)).getText().contains(log_part) }
++                    }
++                },
++                { assert snapshot(process.out.versions).match("versions_paired_end_merged_adapterlist") }
++            )
++        }
++    }
++}
+
+'modules/nf-core/fastp/tests/nextflow.save_failed.config' is unchanged
+'modules/nf-core/fastp/tests/nextflow.interleaved.config' is unchanged
 ************************************************************
