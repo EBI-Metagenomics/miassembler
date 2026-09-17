@@ -3,6 +3,16 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v3.1.16 - 2026-09-17
+
+### Fixed
+
+- Fixed fastp stub, include a valid summary, SHORT_READS_ASSEMBLER parses this json to apply its QC thresholds and an empty file makes -stub-run impossible ([#86](https://github.com/EBI-Metagenomics/miassembler/pull/86))
+
+### Changed
+
+- Emit cleaned contigs from SHORT_READS_ASSEMBLER, allowing this output to be used in other workflows ([#86](https://github.com/EBI-Metagenomics/miassembler/pull/86))
+
 ## v3.1.15 - 2026-09-01
 
 ### Fixed
