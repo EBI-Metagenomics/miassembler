@@ -120,7 +120,9 @@ process FASTP {
     $touch_reads
     $touch_fail_fastq
     $touch_merged
-    touch "${prefix}.fastp.json"
+    cat <<-END_JSON > "${prefix}.fastp.json"
+    {"summary": {"before_filtering": {"total_reads": 2000}, "after_filtering": {"total_reads": 1900}}}
+    END_JSON
     touch "${prefix}.fastp.html"
     touch "${prefix}.fastp.log"
 
