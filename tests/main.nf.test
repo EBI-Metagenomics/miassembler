@@ -75,6 +75,8 @@ nextflow_pipeline {
                 assert success
                 assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 1
                 assert trace.succeeded().count{ task -> task.name.contains("MEGAHIT") } == 0
+
+                assert trace.succeeded().size() == 21
             }
         }
     }
@@ -97,6 +99,8 @@ nextflow_pipeline {
                 assert success
                 assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 0
                 assert trace.succeeded().count{ task -> task.name.contains("MEGAHIT") } == 1
+
+                assert trace.tasks().size() == 21
             }
         }
     }
@@ -119,6 +123,8 @@ nextflow_pipeline {
                 assert success
                 assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 1
                 assert trace.succeeded().count{ task -> task.name.contains("MEGAHIT") } == 0
+
+                assert trace.succeeded().size() == 15
             }
         }
     }
@@ -178,6 +184,8 @@ nextflow_pipeline {
                 assert success
                 assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 0
                 assert trace.succeeded().count{ task -> task.name.contains("MEGAHIT") } == 1
+
+                assert trace.tasks().size() == 21
             }
         }
     }
@@ -275,6 +283,8 @@ nextflow_pipeline {
 
                 assert trace.succeeded().count{ task -> task.name.contains("MEDAKA") } == 0
                 assert trace.succeeded().count{ task -> task.name.contains("ONT_HQ") } == 1
+
+                assert trace.tasks().size() == 15
             }
         }
     }
@@ -296,6 +306,8 @@ nextflow_pipeline {
                 assert success
 
                 assert trace.succeeded().count{ task -> task.name.contains("ONT_LQ") } == 4
+
+                assert trace.tasks().size() == 20
             }
         }
     }
@@ -317,15 +329,19 @@ nextflow_pipeline {
                 assert success
 
                 assert trace.succeeded().count{ task -> task.name.contains("PACBIO_HIFI") } == 2
+
+                assert trace.tasks().size() == 14
             }
         }
     }
 
-    test("Samplesheet LR PB LQ") {
+    test("Samplesheet LR PB LQ - assembler_config overrides platform (ont) and forces pacbio-raw") {
 
         tag "slow"
         tag "LR"
 
+        // The samplesheet sets platform to "ont" (SRR1211893 is ONT on ENA) and assembler_config to "pacbio-raw".
+        // This test checks that assembler_config overrides the platform and the PacBio LQ flow runs.
         when {
             params {
                 samplesheet     = "${projectDir}/tests/samplesheet/test_long_reads_pb_lq.csv"
@@ -337,7 +353,9 @@ nextflow_pipeline {
             with(workflow) {
                 assert success
 
-                assert trace.succeeded().count{ task -> task.name.contains("PACBIO_LQ") } == 4
+                assert trace.succeeded().count{ task -> task.name.contains("PACBIO_LQ") } == 3
+
+                assert trace.tasks().size() == 19
             }
         }
     }

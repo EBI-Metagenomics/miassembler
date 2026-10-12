@@ -5,12 +5,6 @@
         "https://github.com/EBI-Metagenomics/nf-modules": {
             "modules": {
                 "ebi-metagenomics": {
-                    "bwamem2/mem": {
-                        "branch": "main",
-                        "git_sha": "75707538d91ddd27fb6007b4ac3710cb05154780",
-                        "installed_by": ["modules"],
-                        "patch": "modules/ebi-metagenomics/bwamem2/mem/bwamem2-mem.diff"
-                    },
                     "bwamem2decontnobams": {
                         "branch": "main",
                         "git_sha": "32049180387cf2406254acf57882fc55915cb52e",
@@ -32,11 +26,6 @@
         "https://github.com/nf-core/modules.git": {
             "modules": {
                 "nf-core": {
-                    "bwamem2/index": {
-                        "branch": "master",
-                        "git_sha": "6d46786420b4d7bc88eba026eb389c0c5535d120",
-                        "installed_by": ["modules"]
-                    },
                     "chopper": {
                         "branch": "master",
                         "git_sha": "41dfa3f7c0ffabb96a6a813fe321c6d1cc5b6e46",
@@ -45,11 +34,6 @@
                     "custom/dumpsoftwareversions": {
                         "branch": "master",
                         "git_sha": "82024cf6325d2ee194e7f056d841ecad2f6856e9",
-                        "installed_by": ["modules"]
-                    },
-                    "diamond/makedb": {
-                        "branch": "master",
-                        "git_sha": "666652151335353eef2fcd58880bcef5bc2928e1",
                         "installed_by": ["modules"]
                     },
                     "fastp": {
@@ -104,11 +88,6 @@
                         "git_sha": "870f9af2eaf0000c94d74910d762cf153752af98",
                         "installed_by": ["modules"]
                     },
-                    "prodigal": {
-                        "branch": "master",
-                        "git_sha": "666652151335353eef2fcd58880bcef5bc2928e1",
-                        "installed_by": ["modules"]
-                    },
                     "proovframe/fix": {
                         "branch": "master",
                         "git_sha": "4f393faf4273deae61e9cfae5dcedcf4e1126d27",
@@ -132,16 +111,6 @@
                         "git_sha": "8fc1d24c710ebe1d5de0f2447ec9439fd3d9d66a",
                         "installed_by": ["modules"],
                         "patch": "modules/nf-core/racon/racon.diff"
-                    },
-                    "samtools/idxstats": {
-                        "branch": "master",
-                        "git_sha": "a64788f5ad388f1d2ac5bd5f1f3f8fc81476148c",
-                        "installed_by": ["modules"]
-                    },
-                    "samtools/index": {
-                        "branch": "master",
-                        "git_sha": "a64788f5ad388f1d2ac5bd5f1f3f8fc81476148c",
-                        "installed_by": ["modules"]
                     },
                     "seqkit/grep": {
                         "branch": "master",

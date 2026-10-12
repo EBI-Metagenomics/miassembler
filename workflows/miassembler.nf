@@ -136,7 +136,6 @@ workflow MIASSEMBLER {
 
     def samplesheet = channel.fromList(samplesheetToList(params.samplesheet, "./assets/schema_input.json"))
 
-    // [ study, sample, read1, [read2], library_layout, library_strategy, platform, assembly_memory]
     fetch_reads_transformed = samplesheet.map(groupReads)
 
     /*******************************************/

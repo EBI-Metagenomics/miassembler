@@ -71,10 +71,10 @@ Example:
 
 ```bash
 nextflow run ebi-metagenomics/miassembler \
-  -profile codon_slurm \
+  -profile <docker/singularity/...> \
   --assembler metaspades \
-  --reference_genome human.fasta \
-  --reference_genomes_folder references/
+  --reference_genomes_folder references/ \
+  --human_reference human \
   --outdir testing_results \
   --samplesheet tests/samplesheet/test.csv
 ```
