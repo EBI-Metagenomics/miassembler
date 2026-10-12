@@ -11,7 +11,7 @@ workflow LONG_READS_QC {
     input_reads        // [ val(meta), path(reads) ]
 
     main:
-    ch_versions = Channel.empty()
+    ch_versions = channel.empty()
 
     FASTPLONG(
         input_reads,
@@ -24,18 +24,20 @@ workflow LONG_READS_QC {
     reads_json = FASTPLONG.out.reads.join( FASTPLONG.out.json )
 
     reads_quality_levels = reads_json.map { meta, reads, json ->
-        def json_txt = new groovy.json.JsonSlurper().parseText(json.text)
+        def json_txt = json.text.trim() ? new groovy.json.JsonSlurper().parseText(json.text) : [:]
 
         def q20_percentage = json_txt?.summary?.before_filtering?.q20_rate ?: 0;
+        def ont_quality_threshold = params.long_reads_ont_quality_threshold as BigDecimal
+        def pacbio_quality_threshold = params.long_reads_pacbio_quality_threshold as BigDecimal
 
         if (meta.platform == "ont"){
-            if ( q20_percentage >= params.long_reads_ont_quality_threshold ) {
+            if ( q20_percentage >= ont_quality_threshold ) {
                 return [ meta + [quality: "high"], reads]
             } else {
                 return [ meta + [quality: "low"], reads]
             }
         } else if (meta.platform == "pb") {
-            if ( q20_percentage >= params.long_reads_pacbio_quality_threshold ) {
+            if ( q20_percentage >= pacbio_quality_threshold ) {
                 return [ meta + [quality: "high"], reads]
             } else {
                 return [ meta + [quality: "low"], reads]

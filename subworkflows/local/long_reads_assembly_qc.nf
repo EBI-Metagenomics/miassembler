@@ -7,7 +7,7 @@ workflow LONG_READS_ASSEMBLY_QC {
     assembly            // [ val(meta), path(assembly_fasta) ]
 
     main:
-    ch_versions = Channel.empty()
+    ch_versions = channel.empty()
 
     /***************************************************************************/
     /* Perform decontamination from human sequences if requested               */
