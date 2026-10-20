@@ -87,10 +87,10 @@ The samplesheet is a comma-separated file (.csv) with the following columns:
 - fastq_2: Full path to the second FastQ file (for paired-end reads). Leave empty if single-end.
 - library_layout: Either single or paired.
 - library_strategy: One of metagenomic, metatranscriptomic, genomic, transcriptomic, or other.
-- platform: Relevant for long reads, requiring either ont or pb for nanopore or pacbio, respectively.
+- platform: Relevant for long reads. Use ont, ONT or nanopore for Oxford Nanopore, and pb or pacbio for PacBio. Other accepted values (short reads): illumina, iontorrent, or empty.
 - assembler: Relevant for short reads, where either megahit, metaspades, or spades can be picked. Flye is also supported
 - assembly_memory: Integer value specifying the memory allocated for the assembly process.
-- assembler_config: Configuration to use flye with. One of "nano-raw", "nano-corr", "nano-hq", "pacbio-raw", "pacbio-corr", "pacbio-hifi".
+- assembler_config: Configuration to use flye with. One of "nano-raw", "nano-hq", "pacbio-raw", "pacbio-hifi". Runs with other values (for example "nano-corr" or "pacbio-corr") are not assembled and are listed in `qc_failed_runs.csv` with the message `unsupported_assembler_config`.
 - contaminant_reference: Filename of fasta reference to be used for host decontamination of reads and assembly. BWA-MEM2 index files must exist in <contaminant_reference>/bwa-mem2/ and their names must start with <contaminant_reference>.fna.\*.
 - human_reference: Name of the subfolder with genome reference to be used for human decontamination of reads and assembly. BWA-MEM2 index files must exist in <human_reference>/bwa-mem2/ and their names must start with <human_reference>.fna.\*.
 - phix_reference: Filename of PhiX genome reference to be used for PhiX decontamination of reads and assembly. BWA-MEM2 index files must must exist in <phix_reference>/bwa-mem2/ and their names must start with <phix_reference>.fna.\*.
@@ -157,6 +157,8 @@ results
 │       │       └── qc
 │       │           ├── fastp
 │       │           └── fastqc
+│       │               ├── after
+│       │               └── before
 │       └── multiqc
 └── SRP1154
     └── SRP115494
@@ -175,11 +177,15 @@ results
         │       └── qc
         │           ├── fastp
         │           └── fastqc
+        │               ├── after
+        │               └── before
         └── SRR6180
             └── SRR6180434 --> QC Failed (not assembled)
                 └── qc
                     ├── fastp
                     └── fastqc
+                        ├── after
+                        └── before
 ```
 
 The nested structure based on ENA Study and Reads accessions was created to suit the Microbiome Informatics team’s needs. The benefit of this structure is that results from different runs of the same study won’t overwrite any results.
@@ -235,6 +241,11 @@ The pipeline produces two [MultiQC](https://multiqc.info) reports: one per study
 
 The run-level MultiQC report is generated for runs that passed QC and were assembled. The study-level MultiQC report includes all runs; however, runs without assemblies will not have assembly stats included.
 
+Both reports show the results of the contig decontamination:
+
+- The run-level report has one table for each decontamination step (PhiX, human and contaminant) that removed contigs. The table lists the removed contigs with their query coverage and identity. The same data is in the `decontamination` folder of the assembly (`<run>_<step>_mapped.tsv.gz`).
+- The study-level report has the "Contaminated contigs" table, with one row for each run and the number of removed contigs for each step. An empty cell means that the step did not run (for example, PhiX decontamination does not run for long reads).
+
 #### QC failed runs
 
 QC failed runs are filtered out to prevent downstream assembly failures.
@@ -254,6 +265,7 @@ SRR6180434,short_reads_filter_ratio_threshold_exceeded
 | `short_reads_filter_ratio_threshold_exceeded` | The maximum fraction of reads that are allowed to be filtered out. If exceeded, it flags excessive filtering. The default value is 0.1, meaning that if less than 10% of the reads are retained after filtering, the threshold is considered exceeded, and the run is not assembled. |
 | `short_reads_low_reads_count_threshold`       | The minimum number of reads required after filtering. If below, it flags a low read count, and the run is not assembled.                                                                                                                                                             |
 | `short_reads_contig_threshold`                | The minimum number of contigs allowed after human+phiX+host cleaning. If below it flags a low contig count and the cleaned assembly isn't generated.                                                                                                                                 |
+| `unsupported_assembler_config`                | Long reads only. The assembler_config value is not supported (for example nano-corr or pacbio-corr), so the run is not assembled.                                                                                                                                                    |
 
 #### Assembled Runs
 
