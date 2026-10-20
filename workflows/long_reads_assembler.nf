@@ -47,13 +47,18 @@ workflow LONG_READS_ASSEMBLER {
 
     ch_versions = channel.empty()
 
+    // Long reads are always assembled with Flye
+    def reads_flye = input_reads.map { meta, reads ->
+        [meta + [assembler: "flye", assembler_version: params.flye_version], reads]
+    }
+
     FASTQC_BEFORE (
-        input_reads
+        reads_flye
     )
     ch_versions = ch_versions.mix(FASTQC_BEFORE.out.versions)
 
     LONG_READS_QC (
-        input_reads
+        reads_flye
     )
     ch_versions = ch_versions.mix(LONG_READS_QC.out.versions)
 
@@ -78,7 +83,6 @@ workflow LONG_READS_ASSEMBLER {
     // meta.assembler_config is never overriden if provided as input.
     // If no input was provided, quality and platform will determine the assembly type
     reads_assembler_config = LONG_READS_QC.out.qc_reads.map { meta, reads ->
-        meta = meta + ["assembler": "flye", "assembler_version": params.flye_version]
         if (!meta.assembler_config) {
             if (meta.platform == "ont") {
                 if (meta.quality == "low") {
@@ -96,7 +100,7 @@ workflow LONG_READS_ASSEMBLER {
                 error "Invalid quality ${meta.quality} or platform ${meta.platform} for ${meta.id}"
             }
         } else {
-            return [meta + ["assembler": "flye", "assembler_version": params.flye_version], reads]
+            return [meta, reads]
         }
     }
 
@@ -105,7 +109,13 @@ workflow LONG_READS_ASSEMBLER {
         hq_ont: meta.assembler_config == "nano-hq"
         lq_pacbio: meta.assembler_config == "pacbio-raw"
         hq_pacbio: meta.assembler_config == "pacbio-hifi"
+        // For example nano-corr and pacbio-corr: not assembled, reported in qc_failed_runs.csv
+        unsupported: true
     }.set {subworkflow_platform_reads}
+
+    def unsupported_reads = subworkflow_platform_reads.unsupported.map { meta, reads ->
+        [meta + ["unsupported_assembler_config": true], reads]
+    }
 
     ONT_LQ(
         subworkflow_platform_reads.lq_ont
@@ -186,9 +196,24 @@ workflow LONG_READS_ASSEMBLER {
     emit:
     fastqc_before_zip                    = FASTQC_BEFORE.out.zip                              // tuple(meta)
     fastqc_after_zip                     = FASTQC_AFTER.out.zip                               // tuple(meta)
+    qc_failed_all                        = unsupported_reads                                  // tuple(meta)
     assembly_coverage_samtools_idxstats  = LONG_READS_ASSEMBLY_COVERAGE.out.samtools_idxstats // tuple(meta)
     quast_results                        = QUAST.out.results                                  // tuple(meta)
+    decontamination_mqc                  = LONG_READS_ASSEMBLY_QC.out.decontamination_mqc     // tuple(meta), path(mqc_tsv)
+    decontaminated_contigs               = LONG_READS_ASSEMBLY_QC.out.contigs                 // tuple(meta), path(assembly_fasta)
+    contaminated_contigs                 = LONG_READS_ASSEMBLY_QC.out.contaminated_contigs    // tuple(meta), val(step), path(tsv)
     versions                             = ch_versions
+
+    // Published outputs //
+    fastqc_before                        = FASTQC_BEFORE.out.html.mix(FASTQC_BEFORE.out.zip)
+    fastqc_after                         = FASTQC_AFTER.out.html.mix(FASTQC_AFTER.out.zip)
+    fastplong_reports                    = LONG_READS_QC.out.fastplong_reports
+    contigs                              = final_contigs                                      // LQ (frame-shift corrected) + HQ
+    decontamination                      = LONG_READS_ASSEMBLY_QC.out.decontamination
+    coverage                             = LONG_READS_ASSEMBLY_COVERAGE.out.coverage_depth.mix(
+                                               LONG_READS_ASSEMBLY_COVERAGE.out.assembly_coverage_json
+                                           )
+    quast                                = QUAST.out.results.mix(QUAST.out.tsv)
 }
 
 /*

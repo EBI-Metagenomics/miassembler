@@ -102,6 +102,7 @@
                 "platform": {
                     "type": "string",
                     "description": "Force the instrument_platform value for the study / reads",
+                    "enum": ["ont", "ONT", "nanopore", "pb", "pacbio", "illumina", "iontorrent", ""],
                     "default": null
                 }
             }

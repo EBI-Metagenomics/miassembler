@@ -107,7 +107,8 @@ workflow SHORT_READS_QC {
     )
 
     emit:
-    qc_reads   = decontaminated_reads
-    fastp_json = FASTP.out.json
-    versions   = ch_versions
+    qc_reads      = decontaminated_reads
+    fastp_json    = FASTP.out.json
+    fastp_reports = FASTP.out.json.mix(FASTP.out.html, FASTP.out.log) // [ val(meta), path(report) ]
+    versions      = ch_versions
 }

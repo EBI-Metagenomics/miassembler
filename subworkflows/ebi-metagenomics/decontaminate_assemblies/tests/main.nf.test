@@ -1,0 +1,281 @@
+nextflow_workflow {
+
+    name "Test Workflow DECONTAMINATE_ASSEMBLIES"
+    script "../main.nf"
+    config "../nextflow.config"
+    workflow "DECONTAMINATE_ASSEMBLIES"
+
+    tag "subworkflows"
+    tag "decontaminate_assemblies"
+
+    tag "subworkflows"
+    tag "subworkflows_ebimetagenomics"
+    tag "subworkflows/decontaminate_assemblies"
+    tag "subworkflows/decontaminate_contigs"
+
+
+    test("decontaminate_assemblies - all references") {
+
+        when {
+            params {
+                reference_genomes_folder = "${moduleDir}/tests/data"
+            }
+            workflow {
+                """
+                input[0] = Channel.of([
+                    [
+                        id: 'test_sample_all',
+                        phix_reference: 'phix',
+                        human_reference: 'human',
+                        contaminant_reference: 'contamination'
+                    ],
+                    file("${moduleDir}/tests/data/test.fasta", checkIfExists: true)
+                ])
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.success },
+                { assert snapshot(
+                    workflow.out.cleaned_contigs,
+                    workflow.out.versions.collect { path(it).yaml }.unique()
+                    ).match()
+                },
+                {
+                    def cleaned_contigs = path(workflow.out.cleaned_contigs.get(0).get(1)).fasta
+                    assert cleaned_contigs.size() == 1
+                    assert "uncontaminated_contig" in cleaned_contigs
+                },
+                {
+                    def phix_mqc_lines = path(workflow.out.phix_contaminated_contigs_tsv_mqc.get(0).get(1)).readLines()
+                    assert phix_mqc_lines[0] == "# id: 'phix_decontamination'"
+                    assert phix_mqc_lines[1] == "# section_name: 'PhiX contaminated contigs (phix)'"
+                    assert phix_mqc_lines[2] == "# plot_type: 'table'"
+                    assert phix_mqc_lines[3] == "# pconfig:"
+                    assert phix_mqc_lines[4] == "#     id: 'phix_decontamination_table'"
+                    assert phix_mqc_lines[5] == "#     title: 'PhiX Contamination Removal (phix)'"
+                    assert phix_mqc_lines[6] == "sequence_id\tquery_coverage\tidentity"
+                },
+                {
+                    def human_mqc_lines = path(workflow.out.human_contaminated_contigs_tsv_mqc.get(0).get(1)).readLines()
+                    assert human_mqc_lines[0] == "# id: 'human_decontamination'"
+                    assert human_mqc_lines[1] == "# section_name: 'Human contaminated contigs (human)'"
+                    assert human_mqc_lines[2] == "# plot_type: 'table'"
+                    assert human_mqc_lines[3] == "# pconfig:"
+                    assert human_mqc_lines[4] == "#     id: 'human_decontamination_table'"
+                    assert human_mqc_lines[5] == "#     title: 'Human Contamination Removal (human)'"
+                    assert human_mqc_lines[6] == "sequence_id\tquery_coverage\tidentity"
+                },
+                {
+                    def host_mqc_lines = path(workflow.out.host_contaminated_contigs_tsv_mqc.get(0).get(1)).readLines()
+                    assert host_mqc_lines[0] == "# id: 'host_decontamination'"
+                    assert host_mqc_lines[1] == "# section_name: 'Host/Contaminant contaminated contigs (contamination)'"
+                    assert host_mqc_lines[2] == "# plot_type: 'table'"
+                    assert host_mqc_lines[3] == "# pconfig:"
+                    assert host_mqc_lines[4] == "#     id: 'host_decontamination_table'"
+                    assert host_mqc_lines[5] == "#     title: 'Host/Contaminant Removal (contamination)'"
+                    assert host_mqc_lines[6] == "sequence_id\tquery_coverage\tidentity"
+                },
+            )
+        }
+    }
+
+    test("decontaminate_assemblies - phix only") {
+
+        when {
+            params {
+                reference_genomes_folder = "${moduleDir}/tests/data"
+            }
+            workflow {
+                """
+                input[0] = Channel.of([
+                    [
+                        id: 'test_sample_phix',
+                        phix_reference: 'phix',
+                        human_reference: null,
+                        contaminant_reference: null
+                    ],
+                    file("${moduleDir}/tests/data/test.fasta", checkIfExists: true)
+                ])
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.success },
+                { assert snapshot(
+                    workflow.out.cleaned_contigs,
+                    workflow.out.versions.collect { path(it).yaml }.unique()
+                    ).match()
+                },
+                {
+                    def cleaned_contigs = path(workflow.out.cleaned_contigs.get(0).get(1)).fasta
+                    assert cleaned_contigs.size() == 4
+                    assert "uncontaminated_contig" in cleaned_contigs
+                    assert "contaminated_contig" in cleaned_contigs
+                    assert "partially_contaminated_contig" in cleaned_contigs
+                    assert "human_contanimated_contig" in cleaned_contigs
+                },
+                {
+                    def phix_mqc_lines = path(workflow.out.phix_contaminated_contigs_tsv_mqc.get(0).get(1)).readLines()
+                    assert phix_mqc_lines[0] == "# id: 'phix_decontamination'"
+                    assert phix_mqc_lines[1] == "# section_name: 'PhiX contaminated contigs (phix)'"
+                    assert phix_mqc_lines[2] == "# plot_type: 'table'"
+                    assert phix_mqc_lines[3] == "# pconfig:"
+                    assert phix_mqc_lines[4] == "#     id: 'phix_decontamination_table'"
+                    assert phix_mqc_lines[5] == "#     title: 'PhiX Contamination Removal (phix)'"
+                    assert phix_mqc_lines[6] == "sequence_id\tquery_coverage\tidentity"
+                },
+            )
+        }
+    }
+
+    test("decontaminate_assemblies - human only") {
+
+        when {
+            params {
+                reference_genomes_folder = "${moduleDir}/tests/data"
+            }
+            workflow {
+                """
+                input[0] = Channel.of([
+                    [
+                        id: 'test_sample_human',
+                        phix_reference: null,
+                        human_reference: 'human',
+                        contaminant_reference: null
+                    ],
+                    file("${moduleDir}/tests/data/test.fasta", checkIfExists: true)
+                ])
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.success },
+                { assert snapshot(
+                    workflow.out.cleaned_contigs,
+                    workflow.out.versions.collect { path(it).yaml }.unique()
+                    ).match()
+                },
+                {
+                    def cleaned_contigs = path(workflow.out.cleaned_contigs.get(0).get(1)).fasta
+                    assert cleaned_contigs.size() == 4
+                    assert "uncontaminated_contig" in cleaned_contigs
+                    assert "contaminated_contig" in cleaned_contigs
+                    assert "partially_contaminated_contig" in cleaned_contigs
+                    assert "phix_contanimated_contig" in cleaned_contigs
+                },
+                {
+                    def human_mqc_lines = path(workflow.out.human_contaminated_contigs_tsv_mqc.get(0).get(1)).readLines()
+                    assert human_mqc_lines[0] == "# id: 'human_decontamination'"
+                    assert human_mqc_lines[1] == "# section_name: 'Human contaminated contigs (human)'"
+                    assert human_mqc_lines[2] == "# plot_type: 'table'"
+                    assert human_mqc_lines[3] == "# pconfig:"
+                    assert human_mqc_lines[4] == "#     id: 'human_decontamination_table'"
+                    assert human_mqc_lines[5] == "#     title: 'Human Contamination Removal (human)'"
+                    assert human_mqc_lines[6] == "sequence_id\tquery_coverage\tidentity"
+                },
+            )
+        }
+    }
+
+    test("decontaminate_assemblies - host only") {
+
+        when {
+            params {
+                reference_genomes_folder = "${moduleDir}/tests/data"
+            }
+            workflow {
+                """
+                input[0] = Channel.of([
+                    [
+                        id: 'test_sample_host',
+                        phix_reference: null,
+                        human_reference: null,
+                        contaminant_reference: 'contamination'
+                    ],
+                    file("${moduleDir}/tests/data/test.fasta", checkIfExists: true)
+                ])
+                """
+            }
+        }
+
+
+        then {
+            assertAll(
+                { assert workflow.success },
+                { assert snapshot(
+                    workflow.out.cleaned_contigs,
+                    workflow.out.versions.collect { path(it).yaml }.unique()
+                    ).match()
+                },
+                {
+                    def cleaned_contigs = path(workflow.out.cleaned_contigs.get(0).get(1)).fasta
+                    assert cleaned_contigs.size() == 3
+                    assert "uncontaminated_contig" in cleaned_contigs
+                    assert "phix_contanimated_contig" in cleaned_contigs
+                    assert "human_contanimated_contig" in cleaned_contigs
+                },
+                {
+                    def host_mqc_lines = path(workflow.out.host_contaminated_contigs_tsv_mqc.get(0).get(1)).readLines()
+                    assert host_mqc_lines[0] == "# id: 'host_decontamination'"
+                    assert host_mqc_lines[1] == "# section_name: 'Host/Contaminant contaminated contigs (contamination)'"
+                    assert host_mqc_lines[2] == "# plot_type: 'table'"
+                    assert host_mqc_lines[3] == "# pconfig:"
+                    assert host_mqc_lines[4] == "#     id: 'host_decontamination_table'"
+                    assert host_mqc_lines[5] == "#     title: 'Host/Contaminant Removal (contamination)'"
+                    assert host_mqc_lines[6] == "sequence_id\tquery_coverage\tidentity"
+                },
+            )
+        }
+    }
+
+    test("decontaminate_assemblies - multiple samples") {
+
+        when {
+            params {
+                reference_genomes_folder = "${moduleDir}/tests/data"
+            }
+            workflow {
+                """
+                input[0] = Channel.of(
+                    [
+                        [
+                            id: 'sample1',
+                            phix_reference: 'phix',
+                            human_reference: 'human',
+                            contaminant_reference: null
+                        ],
+                        file("${moduleDir}/tests/data/test.fasta", checkIfExists: true)
+                    ],
+                    [
+                        [
+                            id: 'sample2',
+                            phix_reference: null,
+                            human_reference: null,
+                            contaminant_reference: 'contamination'
+                        ],
+                        file("${moduleDir}/tests/data/test.fasta", checkIfExists: true)
+                    ]
+                )
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.success },
+                { assert snapshot(
+                    workflow.out.cleaned_contigs,
+                    workflow.out.versions.collect { path(it).yaml }.unique()
+                    ).match()
+                },
+            )
+        }
+    }
+}

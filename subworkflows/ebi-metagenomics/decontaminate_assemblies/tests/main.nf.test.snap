@@ -1,0 +1,265 @@
+{
+    "decontaminate_assemblies - phix only": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "test_sample_phix",
+                        "phix_reference": "phix",
+                        "human_reference": null,
+                        "contaminant_reference": null
+                    },
+                    "test_sample_phix.fa.gz:md5,99855030a1f86513a54dfbb7c4dfcb33"
+                ]
+            ],
+            [
+                {
+                    "DECONTAMINATE_ASSEMBLIES:PHIX_DECONTAMINATE_CONTIGS:SEQKIT_GREP": {
+                        "seqkit": "2.9.0"
+                    }
+                },
+                {
+                    "DECONTAMINATE_ASSEMBLIES:PHIX_DECONTAMINATE_CONTIGS:MINIMAP2_ALIGN": {
+                        "minimap2": "2.29-r1283",
+                        "samtools": 1.21
+                    }
+                },
+                {
+                    "DECONTAMINATE_ASSEMBLIES:PHIX_DECONTAMINATE_CONTIGS:FILTERPAF": {
+                        "gawk": "5.3.0"
+                    }
+                }
+            ]
+        ],
+        "timestamp": "2026-09-16T15:39:07.155736",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.1"
+        }
+    },
+    "decontaminate_assemblies - host only": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "test_sample_host",
+                        "phix_reference": null,
+                        "human_reference": null,
+                        "contaminant_reference": "contamination"
+                    },
+                    "test_sample_host.fa.gz:md5,34e46545ace41695f3ce565717235f61"
+                ]
+            ],
+            [
+                {
+                    "DECONTAMINATE_ASSEMBLIES:HOST_DECONTAMINATE_CONTIGS:FILTERPAF": {
+                        "gawk": "5.3.0"
+                    }
+                },
+                {
+                    "DECONTAMINATE_ASSEMBLIES:HOST_DECONTAMINATE_CONTIGS:MINIMAP2_ALIGN": {
+                        "minimap2": "2.29-r1283",
+                        "samtools": 1.21
+                    }
+                },
+                {
+                    "DECONTAMINATE_ASSEMBLIES:HOST_DECONTAMINATE_CONTIGS:SEQKIT_GREP": {
+                        "seqkit": "2.9.0"
+                    }
+                }
+            ]
+        ],
+        "timestamp": "2026-09-16T15:51:09.37567",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.1"
+        }
+    },
+    "decontaminate_assemblies - all references": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "test_sample_all",
+                        "phix_reference": "phix",
+                        "human_reference": "human",
+                        "contaminant_reference": "contamination"
+                    },
+                    "test_sample_all.fa.gz:md5,25aa49239f327c6704ad4590eb1698c9"
+                ]
+            ],
+            [
+                {
+                    "DECONTAMINATE_ASSEMBLIES:HUMAN_DECONTAMINATE_CONTIGS:MINIMAP2_ALIGN": {
+                        "minimap2": "2.29-r1283",
+                        "samtools": 1.21
+                    }
+                },
+                {
+                    "DECONTAMINATE_ASSEMBLIES:HOST_DECONTAMINATE_CONTIGS:FILTERPAF": {
+                        "gawk": "5.3.0"
+                    }
+                },
+                {
+                    "DECONTAMINATE_ASSEMBLIES:HOST_DECONTAMINATE_CONTIGS:MINIMAP2_ALIGN": {
+                        "minimap2": "2.29-r1283",
+                        "samtools": 1.21
+                    }
+                },
+                {
+                    "DECONTAMINATE_ASSEMBLIES:PHIX_DECONTAMINATE_CONTIGS:SEQKIT_GREP": {
+                        "seqkit": "2.9.0"
+                    }
+                },
+                {
+                    "DECONTAMINATE_ASSEMBLIES:PHIX_DECONTAMINATE_CONTIGS:MINIMAP2_ALIGN": {
+                        "minimap2": "2.29-r1283",
+                        "samtools": 1.21
+                    }
+                },
+                {
+                    "DECONTAMINATE_ASSEMBLIES:HUMAN_DECONTAMINATE_CONTIGS:FILTERPAF": {
+                        "gawk": "5.3.0"
+                    }
+                },
+                {
+                    "DECONTAMINATE_ASSEMBLIES:HOST_DECONTAMINATE_CONTIGS:SEQKIT_GREP": {
+                        "seqkit": "2.9.0"
+                    }
+                },
+                {
+                    "DECONTAMINATE_ASSEMBLIES:HUMAN_DECONTAMINATE_CONTIGS:SEQKIT_GREP": {
+                        "seqkit": "2.9.0"
+                    }
+                },
+                {
+                    "DECONTAMINATE_ASSEMBLIES:PHIX_DECONTAMINATE_CONTIGS:FILTERPAF": {
+                        "gawk": "5.3.0"
+                    }
+                }
+            ]
+        ],
+        "timestamp": "2026-09-16T15:39:01.282725",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.1"
+        }
+    },
+    "decontaminate_assemblies - multiple samples": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "sample1",
+                        "phix_reference": "phix",
+                        "human_reference": "human",
+                        "contaminant_reference": null
+                    },
+                    "sample1.fa.gz:md5,a9e09e2aa32fa94543bab203db8c65e2"
+                ],
+                [
+                    {
+                        "id": "sample2",
+                        "phix_reference": null,
+                        "human_reference": null,
+                        "contaminant_reference": "contamination"
+                    },
+                    "sample2.fa.gz:md5,34e46545ace41695f3ce565717235f61"
+                ]
+            ],
+            [
+                {
+                    "DECONTAMINATE_ASSEMBLIES:HUMAN_DECONTAMINATE_CONTIGS:MINIMAP2_ALIGN": {
+                        "minimap2": "2.29-r1283",
+                        "samtools": 1.21
+                    }
+                },
+                {
+                    "DECONTAMINATE_ASSEMBLIES:HOST_DECONTAMINATE_CONTIGS:FILTERPAF": {
+                        "gawk": "5.3.0"
+                    }
+                },
+                {
+                    "DECONTAMINATE_ASSEMBLIES:HOST_DECONTAMINATE_CONTIGS:MINIMAP2_ALIGN": {
+                        "minimap2": "2.29-r1283",
+                        "samtools": 1.21
+                    }
+                },
+                {
+                    "DECONTAMINATE_ASSEMBLIES:PHIX_DECONTAMINATE_CONTIGS:SEQKIT_GREP": {
+                        "seqkit": "2.9.0"
+                    }
+                },
+                {
+                    "DECONTAMINATE_ASSEMBLIES:PHIX_DECONTAMINATE_CONTIGS:MINIMAP2_ALIGN": {
+                        "minimap2": "2.29-r1283",
+                        "samtools": 1.21
+                    }
+                },
+                {
+                    "DECONTAMINATE_ASSEMBLIES:HUMAN_DECONTAMINATE_CONTIGS:FILTERPAF": {
+                        "gawk": "5.3.0"
+                    }
+                },
+                {
+                    "DECONTAMINATE_ASSEMBLIES:HOST_DECONTAMINATE_CONTIGS:SEQKIT_GREP": {
+                        "seqkit": "2.9.0"
+                    }
+                },
+                {
+                    "DECONTAMINATE_ASSEMBLIES:HUMAN_DECONTAMINATE_CONTIGS:SEQKIT_GREP": {
+                        "seqkit": "2.9.0"
+                    }
+                },
+                {
+                    "DECONTAMINATE_ASSEMBLIES:PHIX_DECONTAMINATE_CONTIGS:FILTERPAF": {
+                        "gawk": "5.3.0"
+                    }
+                }
+            ]
+        ],
+        "timestamp": "2026-09-16T15:51:18.448366",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.1"
+        }
+    },
+    "decontaminate_assemblies - human only": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "test_sample_human",
+                        "phix_reference": null,
+                        "human_reference": "human",
+                        "contaminant_reference": null
+                    },
+                    "test_sample_human.fa.gz:md5,f70cb2597c24eb83d69c68c0a0ae9333"
+                ]
+            ],
+            [
+                {
+                    "DECONTAMINATE_ASSEMBLIES:HUMAN_DECONTAMINATE_CONTIGS:MINIMAP2_ALIGN": {
+                        "minimap2": "2.29-r1283",
+                        "samtools": 1.21
+                    }
+                },
+                {
+                    "DECONTAMINATE_ASSEMBLIES:HUMAN_DECONTAMINATE_CONTIGS:FILTERPAF": {
+                        "gawk": "5.3.0"
+                    }
+                },
+                {
+                    "DECONTAMINATE_ASSEMBLIES:HUMAN_DECONTAMINATE_CONTIGS:SEQKIT_GREP": {
+                        "seqkit": "2.9.0"
+                    }
+                }
+            ]
+        ],
+        "timestamp": "2026-09-16T15:51:03.544371",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.1"
+        }
+    }
+}

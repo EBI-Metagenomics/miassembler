@@ -27,8 +27,6 @@ process HIFIADAPTERFILT {
 
     script:
     def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
-    
     """
     hifiadapterfilt.sh ${args}
 
@@ -39,7 +37,6 @@ process HIFIADAPTERFILT {
     """
 
     stub:
-    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     echo "" | gzip > ${prefix}.filt.fastq.gz

@@ -40,6 +40,11 @@ include { LONG_READS_ASSEMBLER        } from '../workflows/long_reads_assembler'
 include { DOWNLOAD_FROM_FIRE as DOWNLOAD_FROM_FIRE_SHORT_READS } from '../modules/ebi-metagenomics/downloadfromfire/main'
 include { DOWNLOAD_FROM_FIRE as DOWNLOAD_FROM_FIRE_LONG_READS  } from '../modules/ebi-metagenomics/downloadfromfire/main'
 
+// One assembly of one run
+def runKey(Map meta) {
+    meta.subMap("study_accession", "id", "assembler", "assembler_version")
+}
+
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     RUN MAIN WORKFLOW
@@ -47,6 +52,8 @@ include { DOWNLOAD_FROM_FIRE as DOWNLOAD_FROM_FIRE_LONG_READS  } from '../module
 */
 
 workflow MIASSEMBLER {
+
+    main:
 
     /*
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -86,7 +93,13 @@ workflow MIASSEMBLER {
         }
     }
 
+    // Other names for the long reads platforms. The pipeline uses only "ont" and "pb".
+    def platform_aliases = ["ONT": "ont", "nanopore": "ont", "pacbio": "pb"]
+
     def groupReads = { study_accession, reads_accession, fq1, fq2, library_layout, library_strategy, platform, assembler, assembly_memory, assembler_config, contaminant_reference, human_reference, phix_reference, lambdaphage_reference ->
+
+        def platform_name = params.platform ?: platform
+        platform_name = platform_aliases.get(platform_name, platform_name)
 
         def human_reference_path = human_reference ?: params.human_reference
         if (!params.skip_human_decontamination && human_reference_path == null) {
@@ -101,7 +114,7 @@ workflow MIASSEMBLER {
                     "single_end": true,
                     "library_layout": library_layout,
                     "library_strategy": library_strategy,
-                    "platform": params.platform ?: platform,
+                    "platform": platform_name,
                     "assembler": assembler ?: params.assembler,
                     "assembly_memory": assembly_memory ?: params.assembly_memory,
                     "assembler_config": assembler_config ?: params.long_reads_assembler_config,
@@ -120,7 +133,7 @@ workflow MIASSEMBLER {
                     "single_end": false,
                     "library_layout": library_layout,
                     "library_strategy": library_strategy,
-                    "platform": params.platform ?: platform,
+                    "platform": platform_name,
                     "assembler": assembler ?: params.assembler,
                     "assembly_memory": assembly_memory ?: params.assembly_memory,
                     "assembler_config": assembler_config ?: params.long_reads_assembler_config,
@@ -239,7 +252,7 @@ workflow MIASSEMBLER {
     }
 
     // Helper method for the MultiQC aggregation by study and runs //
-    def combineFiles = { meta, fastqc_before, fastqc_after, assembly_coverage, quast ->
+    def combineFiles = { meta, fastqc_before, fastqc_after, assembly_coverage, quast, decontamination_mqc ->
         // Flatten the fastqc_before and fastqc_after lists
         def flattened_fastqc_before = fastqc_before instanceof List ? fastqc_before.flatten() : [fastqc_before]
         def flattened_fastqc_after = fastqc_after instanceof List ? fastqc_after.flatten() : [fastqc_after]
@@ -251,6 +264,9 @@ workflow MIASSEMBLER {
         }
         if (quast) {
             all_files += [quast]
+        }
+        if (decontamination_mqc) {
+            all_files += decontamination_mqc
         }
         // Produce a tuple with meta and the flattened list of files
         return all_files.flatten().collect { file ->
@@ -269,10 +285,60 @@ workflow MIASSEMBLER {
     def quast_results = SHORT_READS_ASSEMBLER.out.quast_results
         .mix(LONG_READS_ASSEMBLER.out.quast_results)
 
+    // Decontamination summary: one row per run, one column per decontamination step.
+    // The study report can't use the per-run tables, because contig ids (e.g. k141_12) repeat across runs.
+    def decontamination_steps = [phix: "phix_reference", human: "human_reference", contaminant: "contaminant_reference"]
+    // MultiQC custom content in YAML: a step that did not run has no value, so its cell is empty
+    def decontamination_summary_header = """\
+        id: 'decontamination_summary'
+        section_name: 'Contaminated contigs'
+        description: 'Number of contigs removed by each decontamination step. An empty cell means that the step did not run.'
+        plot_type: 'table'
+        pconfig:
+            id: 'decontamination_summary_table'
+            title: 'Contaminated contigs per run'
+        headers:
+            phix:
+                title: 'PhiX'
+                format: '{:,.0f}'
+            human:
+                title: 'Human'
+                format: '{:,.0f}'
+            contaminant:
+                title: 'Contaminant'
+                format: '{:,.0f}'
+        data:""".stripIndent()
+
+    // A contig can have more than one alignment in the table, so count the unique ids
+    def contaminated_contigs_by_run = SHORT_READS_ASSEMBLER.out.contaminated_contigs
+        .mix(LONG_READS_ASSEMBLER.out.contaminated_contigs)
+        .map { meta, step, tsv ->
+            def contig_ids = tsv.splitCsv(sep: "\t", header: true).collect { row -> row.sequence_id }
+            [runKey(meta), [(step): contig_ids.unique().size()]]
+        }
+        .groupTuple()
+
+    def decontamination_summary = SHORT_READS_ASSEMBLER.out.decontaminated_contigs
+        .mix(LONG_READS_ASSEMBLER.out.decontaminated_contigs)
+        .map { meta, _contigs -> [runKey(meta), meta] }
+        .join(contaminated_contigs_by_run, remainder: true)
+        .map { _run, meta, step_counts ->
+            def counts = (step_counts ?: []).collectEntries { step_count -> step_count }
+            def cells = decontamination_steps
+                .findAll { _step, reference -> meta[reference] != null }
+                .collect { step, _reference -> "${step}: ${counts[step] ?: 0}" }
+            [meta.study_accession, "    '${meta.id}': {${cells.join(', ')}}"]
+        }
+        .collectFile(seed: decontamination_summary_header, newLine: true, sort: true, cache: false) { study_accession, row ->
+            ["${study_accession}_decontamination_summary_mqc.yaml", row]
+        }
+        .map { summary -> [[study_accession: summary.name - "_decontamination_summary_mqc.yaml"], summary] }
+
     ch_multiqc_study_tools_files = fastqc_before_zip.map(meta_by_study)
         .mix(fastqc_after_zip.map(meta_by_study))
         .mix(assembly_coverage_samtools_idxstats.map(meta_by_study))
         .mix(quast_results.map(meta_by_study))
+        .mix(decontamination_summary)
         .flatMap(flatten_files_by_meta)
         .groupTuple()
 
@@ -291,16 +357,24 @@ workflow MIASSEMBLER {
     /*************************/
 
     def meta_by_run = { meta, result_artifact ->
-        [meta.subMap("study_accession", "id", "assembler", "assembler_version"), result_artifact]
+        [runKey(meta), result_artifact]
     }
 
-    def run_multiqc_files = SHORT_READS_ASSEMBLER.out.fastqc_before_zip.map(meta_by_run)
-        .join(SHORT_READS_ASSEMBLER.out.fastqc_after_zip.map(meta_by_run))
-        .join(SHORT_READS_ASSEMBLER.out.assembly_coverage_samtools_idxstats.map(meta_by_run), remainder: true, failOnMismatch: false) // the assembly step could fail
-        .join(SHORT_READS_ASSEMBLER.out.quast_results.map(meta_by_run), remainder: true, failOnMismatch: false)                       // the assembly step could fail
+    // Zero to three tables per run (PhiX, human, host), only for the steps that found contaminated contigs
+    def decontamination_mqc_by_run = SHORT_READS_ASSEMBLER.out.decontamination_mqc
+        .mix(LONG_READS_ASSEMBLER.out.decontamination_mqc)
+        .map(meta_by_run)
+        .groupTuple()
+
+    // Short and long reads runs
+    def run_multiqc_files = fastqc_before_zip.map(meta_by_run)
+        .join(fastqc_after_zip.map(meta_by_run))
+        .join(assembly_coverage_samtools_idxstats.map(meta_by_run), remainder: true, failOnMismatch: false) // the assembly step could fail
+        .join(quast_results.map(meta_by_run), remainder: true, failOnMismatch: false)                       // the assembly step could fail
+        .join(decontamination_mqc_by_run, remainder: true, failOnMismatch: false)                           // no contaminated contigs, no table
 
     // Filter out the non-assembled runs //
-    def ch_multiqc_run_tools_files = run_multiqc_files.filter { _meta, _fastqc_before, _fastqc_after, assembly_coverage, quast ->
+    def ch_multiqc_run_tools_files = run_multiqc_files.filter { _meta, _fastqc_before, _fastqc_after, assembly_coverage, quast, _decontamination_mqc ->
         assembly_coverage != null && quast != null
     }.flatMap(combineFiles).groupTuple()
 
@@ -321,16 +395,17 @@ workflow MIASSEMBLER {
     // TODO: we need to add LR end-of-run reports
 
     // Short reads asssembled runs //
-    SHORT_READS_ASSEMBLER.out.assembly_coverage_samtools_idxstats
+    def ch_assembled_runs = SHORT_READS_ASSEMBLER.out.assembly_coverage_samtools_idxstats
         .map { meta, __ ->
             "${meta.id},${meta.assembler},${meta.assembler_version}"
         }
-        .collectFile(name: "assembled_runs.csv", storeDir: "${params.outdir}", newLine: true, cache: false)
+        .collectFile(name: "assembled_runs.csv", newLine: true, cache: false)
 
-    // Short reads and assembly QC failed //
+    // Short reads, long reads and assembly QC failed //
 
-    def short_reads_qc_failed_entries = SHORT_READS_ASSEMBLER.out.qc_failed_all.map {
-        meta, __ ->
+    def qc_failed_entries = SHORT_READS_ASSEMBLER.out.qc_failed_all
+        .mix(LONG_READS_ASSEMBLER.out.qc_failed_all)
+        .map { meta, __ ->
             if (meta.low_reads_count) {
                 return "${meta.id},low_reads_count"
             }
@@ -340,8 +415,27 @@ workflow MIASSEMBLER {
             if (meta.too_few_contigs) {
                 return "${meta.id},too_few_contigs"
             }
+            if (meta.unsupported_assembler_config) {
+                return "${meta.id},unsupported_assembler_config"
+            }
             error("Unexpected. meta: ${meta}")
-    }
+        }
 
-    short_reads_qc_failed_entries.collectFile(name: "qc_failed_runs.csv", storeDir: "${params.outdir}", newLine: true, cache: false)
+    def ch_qc_failed_runs = qc_failed_entries.collectFile(name: "qc_failed_runs.csv", newLine: true, cache: false)
+
+    emit:
+    fastqc_before    = SHORT_READS_ASSEMBLER.out.fastqc_before.mix(LONG_READS_ASSEMBLER.out.fastqc_before)
+    fastqc_after     = SHORT_READS_ASSEMBLER.out.fastqc_after.mix(LONG_READS_ASSEMBLER.out.fastqc_after)
+    fastp            = SHORT_READS_ASSEMBLER.out.fastp_reports
+    fastplong        = LONG_READS_ASSEMBLER.out.fastplong_reports
+    assembler_params = SHORT_READS_ASSEMBLER.out.assembler_params
+    contigs          = SHORT_READS_ASSEMBLER.out.contigs.mix(LONG_READS_ASSEMBLER.out.contigs)
+    decontamination  = SHORT_READS_ASSEMBLER.out.decontamination.mix(LONG_READS_ASSEMBLER.out.decontamination)
+    coverage         = SHORT_READS_ASSEMBLER.out.coverage.mix(LONG_READS_ASSEMBLER.out.coverage)
+    quast            = SHORT_READS_ASSEMBLER.out.quast.mix(LONG_READS_ASSEMBLER.out.quast)
+    multiqc_study    = MULTIQC_STUDY.out.report.mix(MULTIQC_STUDY.out.data, MULTIQC_STUDY.out.plots)
+    multiqc_run      = MULTIQC_RUN.out.report.mix(MULTIQC_RUN.out.data, MULTIQC_RUN.out.plots)
+    versions         = CUSTOM_DUMPSOFTWAREVERSIONS.out.yml
+    assembled_runs   = ch_assembled_runs
+    qc_failed_runs   = ch_qc_failed_runs
 }

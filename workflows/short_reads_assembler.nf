@@ -86,7 +86,8 @@ workflow SHORT_READS_ASSEMBLER {
     /*  - Less than 1k reads                  */
     /******************************************/
     def extended_qc = SHORT_READS_QC.out.fastp_json.map { meta, json ->
-        def json_txt = json.text.trim() ? new groovy.json.JsonSlurper().parseText(json.text) : [:]
+        def json_content = json.text
+        def json_txt = json_content.trim() ? new groovy.json.JsonSlurper().parseText(json_content) : [:]
         def bf_total_reads = json_txt?.summary?.before_filtering?.total_reads ?: 0
         def af_total_reads = json_txt?.summary?.after_filtering?.total_reads ?: 0
         def low_reads_count_threshold = params.short_reads_low_reads_count_threshold as Integer
@@ -181,11 +182,25 @@ workflow SHORT_READS_ASSEMBLER {
     ch_versions = ch_versions.mix(QUAST.out.versions)
 
     emit:
-    cleaned_contigs                      = SHORT_READS_ASSEMBLY_QC.out.passed_cleaned_contigs   // tuple(meta), path(assembly_fasta)
     fastqc_before_zip                    = FASTQC_BEFORE.out.zip                                // tuple(meta)
     qc_failed_all                        = qc_failed_all                                        // tuple(meta)
     fastqc_after_zip                     = FASTQC_AFTER.out.zip                                 // tuple(meta)
     assembly_coverage_samtools_idxstats  = SHORT_READS_ASSEMBLY_COVERAGE.out.samtools_idxstats  // tuple(meta)
     quast_results                        = QUAST.out.results                                    // tuple(meta)
+    decontamination_mqc                  = SHORT_READS_ASSEMBLY_QC.out.decontamination_mqc      // tuple(meta), path(mqc_tsv)
+    decontaminated_contigs               = SHORT_READS_ASSEMBLY_QC.out.decontaminated_contigs   // tuple(meta), path(assembly_fasta)
+    contaminated_contigs                 = SHORT_READS_ASSEMBLY_QC.out.contaminated_contigs     // tuple(meta), val(step), path(tsv)
     versions                             = ch_versions
+
+    // Published outputs //
+    fastqc_before                        = FASTQC_BEFORE.out.html.mix(FASTQC_BEFORE.out.zip)
+    fastqc_after                         = FASTQC_AFTER.out.html.mix(FASTQC_AFTER.out.zip)
+    fastp_reports                        = SHORT_READS_QC.out.fastp_reports
+    assembler_params                     = SPADES.out.params
+    contigs                              = SHORT_READS_ASSEMBLY_QC.out.passed_cleaned_contigs
+    decontamination                      = SHORT_READS_ASSEMBLY_QC.out.decontamination
+    coverage                             = SHORT_READS_ASSEMBLY_COVERAGE.out.coverage_depth_summary.mix(
+                                               SHORT_READS_ASSEMBLY_COVERAGE.out.assembly_coverage_json
+                                           )
+    quast                                = QUAST.out.results.mix(QUAST.out.tsv)
 }

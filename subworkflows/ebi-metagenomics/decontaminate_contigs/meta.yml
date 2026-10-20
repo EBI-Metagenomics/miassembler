@@ -34,6 +34,22 @@ output:
         Channel containing decontaminated assembly contigs.
         Structure: [ val(meta), path(fasta_file) ]
       pattern: "*.{fa,fna,fasta}[.gz]"
+  - mapped_contigs_tsv:
+      type: map
+      description: |
+        Optional channel with a gzipped TSV listing the contaminated contigs, their
+        query coverage and identity to the reference. Only emitted when at least one
+        contig was flagged as contaminated.
+        Structure: [ val(meta), path(tsv_file) ]
+      pattern: "*_mapped.tsv.gz"
+  - mapped_contigs_tsv_mqc:
+      type: map
+      description: |
+        Optional channel with an uncompressed copy of the contaminated contigs TSV carrying a
+        MultiQC custom-content front-matter header, so MultiQC picks it up as a distinct
+        table. Only emitted when at least one contig was flagged as contaminated.
+        Structure: [ val(meta), path(tsv_file) ]
+      pattern: "*_mapped_mqc.tsv"
   - versions:
       type: file
       description: |

@@ -1,0 +1,99 @@
+name: "decontaminate_assemblies"
+
+description: |
+  MGnify Production assembly decontamination subworkflow.
+  Performs sequential decontamination of assembled contigs against the human genome, PhiX and a genome
+  specified by the user (usually the sample host). It designed to remove any contigs that come from any
+  of those references.
+
+keywords:
+  - assembly
+  - decontamination
+  - contamination
+  - contigs
+  - metagenomics
+  - phix
+  - human
+  - host
+
+components:
+  - decontaminate_contigs
+
+input:
+  - meta:
+      type: map
+      description: |
+        Groovy Map containing sample information and decontamination parameters.
+        Expected keys:
+        - phix_reference: Filename prefix of PhiX reference genome (optional, null to skip)
+        - human_reference: Filename prefix of human reference genome (optional, null to skip)
+        - contaminant_reference: Filename prefix of custom contaminant reference (optional, null to skip)
+  - assembly:
+      type: file
+      description: Assembly FASTA file containing contigs to be decontaminated
+      pattern: "*.{fasta,fa,fna}"
+
+output:
+  - meta:
+      type: map
+      description: Groovy Map containing sample information
+  - cleaned_contigs:
+      type: file
+      description: Decontaminated assembly FASTA file
+      pattern: "*.{fasta,fa,fna}"
+  - phix_contaminated_contigs_tsv:
+      type: file
+      description: |
+        Optional gzipped TSV listing contigs flagged as PhiX contamination, with their
+        query coverage and identity to the PhiX reference. Only emitted when at least
+        one contig was flagged.
+      pattern: "*_mapped.tsv.gz"
+  - human_contaminated_contigs_tsv:
+      type: file
+      description: |
+        Optional gzipped TSV listing contigs flagged as human contamination, with their
+        query coverage and identity to the human reference. Only emitted when at least
+        one contig was flagged.
+      pattern: "*_mapped.tsv.gz"
+  - host_contaminated_contigs_tsv:
+      type: file
+      description: |
+        Optional gzipped TSV listing contigs flagged as host/custom contaminant
+        contamination, with their query coverage and identity to the reference. Only
+        emitted when at least one contig was flagged.
+      pattern: "*_mapped.tsv.gz"
+  - phix_contaminated_contigs_tsv_mqc:
+      type: file
+      description: |
+        Optional uncompressed copy of the PhiX contaminated contigs TSV carrying a MultiQC
+        custom-content front-matter header, so MultiQC picks it up as a distinct table.
+        Only emitted when at least one contig was flagged.
+      pattern: "*_mapped_mqc.tsv"
+  - human_contaminated_contigs_tsv_mqc:
+      type: file
+      description: |
+        Optional uncompressed copy of the human contaminated contigs TSV carrying a MultiQC
+        custom-content front-matter header, so MultiQC picks it up as a distinct table.
+        Only emitted when at least one contig was flagged.
+      pattern: "*_mapped_mqc.tsv"
+  - host_contaminated_contigs_tsv_mqc:
+      type: file
+      description: |
+        Optional uncompressed copy of the host/custom contaminant contigs TSV carrying a
+        MultiQC custom-content front-matter header, so MultiQC picks it up as a distinct
+        table. Only emitted when at least one contig was flagged.
+      pattern: "*_mapped_mqc.tsv"
+  - versions:
+      type: file
+      description: File containing software versions
+      pattern: "versions.yml"
+
+authors:
+  - "@jmattock5"
+  - "@ochkalova"
+  - "@Ge94"
+
+maintainers:
+  - "@mberacochea"
+  - "@jmattock5"
+  - "@ochkalova"

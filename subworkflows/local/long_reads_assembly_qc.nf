@@ -1,5 +1,4 @@
-include { DECONTAMINATE_CONTIGS as HUMAN_DECONTAMINATE_CONTIGS } from '../../subworkflows/ebi-metagenomics/decontaminate_contigs/main'
-include { DECONTAMINATE_CONTIGS as HOST_DECONTAMINATE_CONTIGS  } from '../../subworkflows/ebi-metagenomics/decontaminate_contigs/main'
+include { DECONTAMINATE_ASSEMBLIES } from '../../subworkflows/ebi-metagenomics/decontaminate_assemblies/main'
 
 workflow LONG_READS_ASSEMBLY_QC {
 
@@ -10,54 +9,24 @@ workflow LONG_READS_ASSEMBLY_QC {
     ch_versions = channel.empty()
 
     /***************************************************************************/
-    /* Perform decontamination from human sequences if requested               */
+    /* Remove human and host contigs (each step runs only if requested)        */
+    /* PhiX decontamination is not used for long reads                         */
     /***************************************************************************/
-    assembly
-        .branch { meta, _contigs ->
-            run_decontamination: meta.human_reference != null
-            skip_decontamination: meta.human_reference == null
-        }
-        .set { human_subdivided_assemblies }
-
-    human_subdivided_assemblies.run_decontamination
-        .map { meta, contigs ->
-            [ [meta, contigs], file("${params.reference_genomes_folder}/${meta.human_reference}/${meta.human_reference}.fna", checkIfExists: true) ]
-        }
-        .set { ch_human_decontamination_input }
-
-    HUMAN_DECONTAMINATE_CONTIGS(ch_human_decontamination_input)
-    ch_versions = ch_versions.mix(HUMAN_DECONTAMINATE_CONTIGS.out.versions)
-
-    human_cleaned_contigs = human_subdivided_assemblies.skip_decontamination.mix(
-        HUMAN_DECONTAMINATE_CONTIGS.out.cleaned_contigs
+    DECONTAMINATE_ASSEMBLIES(
+        assembly.map { meta, contigs -> [meta + [phix_reference: null], contigs] }
     )
+    ch_versions = ch_versions.mix(DECONTAMINATE_ASSEMBLIES.out.versions)
 
-    /***************************************************************************/
-    /* Perform decontamination from arbitrary contaminant sequences            */
-    /***************************************************************************/
-
-    human_cleaned_contigs
-        .branch { meta, _contigs ->
-            run_decontamination: meta.contaminant_reference != null
-            skip_decontamination: meta.contaminant_reference == null
-        }
-        .set { subdivided_assemblies }
-
-    subdivided_assemblies.run_decontamination
-        .map { meta, contigs ->
-            [ [meta, contigs], file("${params.reference_genomes_folder}/${meta.contaminant_reference}/${meta.contaminant_reference}.fna", checkIfExists: true) ]
-        }
-        .set { ch_decontamination_input }
-
-    HOST_DECONTAMINATE_CONTIGS(ch_decontamination_input)
-
-    cleaned_contigs = subdivided_assemblies.skip_decontamination.mix(
-        HOST_DECONTAMINATE_CONTIGS.out.cleaned_contigs
+    def contaminated_contigs_by_step = DECONTAMINATE_ASSEMBLIES.out.human_contaminated_contigs_tsv.map { meta, tsv -> [meta, "human", tsv] }.mix(
+        DECONTAMINATE_ASSEMBLIES.out.host_contaminated_contigs_tsv.map { meta, tsv -> [meta, "contaminant", tsv] }
     )
-
-    ch_versions = ch_versions.mix(HOST_DECONTAMINATE_CONTIGS.out.versions)
 
     emit:
-    contigs  = cleaned_contigs
-    versions = ch_versions
+    contigs              = DECONTAMINATE_ASSEMBLIES.out.cleaned_contigs                         // [ val(meta), path(assembly_fasta) ]
+    contaminated_contigs = contaminated_contigs_by_step                                         // [ val(meta), val(step), path(tsv) ]
+    decontamination      = contaminated_contigs_by_step.map { meta, _step, tsv -> [meta, tsv] } // [ val(meta), path(tsv) ]
+    decontamination_mqc  = DECONTAMINATE_ASSEMBLIES.out.human_contaminated_contigs_tsv_mqc.mix(
+                               DECONTAMINATE_ASSEMBLIES.out.host_contaminated_contigs_tsv_mqc
+                           )                                                                    // [ val(meta), path(mqc_tsv) ]
+    versions             = ch_versions
 }

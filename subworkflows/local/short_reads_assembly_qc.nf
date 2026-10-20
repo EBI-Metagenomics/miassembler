@@ -1,21 +1,5 @@
-include { DECONTAMINATE_CONTIGS as HUMAN_DECONTAMINATE_CONTIGS } from '../../subworkflows/ebi-metagenomics/decontaminate_contigs/main'
-include { DECONTAMINATE_CONTIGS as PHIX_DECONTAMINATE_CONTIGS  } from '../../subworkflows/ebi-metagenomics/decontaminate_contigs/main'
-include { DECONTAMINATE_CONTIGS as HOST_DECONTAMINATE_CONTIGS  } from '../../subworkflows/ebi-metagenomics/decontaminate_contigs/main'
-include { SEQKIT_SEQ                                           } from '../../modules/nf-core/seqkit/seq/main'
-
-process PUBLISH_CLEANED_CONTIGS {
-
-    input:
-    tuple val(meta), path(cleaned_contigs)
-
-    output:
-    tuple val(meta), path("${meta.id}_cleaned.contigs.fa.gz")
-
-    script:
-    """
-    cp ${cleaned_contigs} ${meta.id}_cleaned.contigs.fa.gz
-    """
-}
+include { DECONTAMINATE_ASSEMBLIES } from '../../subworkflows/ebi-metagenomics/decontaminate_assemblies/main'
+include { SEQKIT_SEQ               } from '../../modules/nf-core/seqkit/seq/main'
 
 workflow SHORT_READS_ASSEMBLY_QC {
 
@@ -29,76 +13,18 @@ workflow SHORT_READS_ASSEMBLY_QC {
     SEQKIT_SEQ(assembly)
     ch_versions = ch_versions.mix(SEQKIT_SEQ.out.versions)
 
-
     /***************************************************************************/
-    /* Perform decontamination from PhiX sequences if requested                */
+    /* Remove PhiX, human and host contigs (each step runs only if requested)  */
     /***************************************************************************/
-    SEQKIT_SEQ.out.fastx
-        .branch { meta, _contigs ->
-            run_decontamination: meta.phix_reference != null
-            skip_decontamination: meta.phix_reference == null
-        }
-        .set { phix_subdivided_assemblies }
+    DECONTAMINATE_ASSEMBLIES(SEQKIT_SEQ.out.fastx)
+    ch_versions = ch_versions.mix(DECONTAMINATE_ASSEMBLIES.out.versions)
 
-    phix_subdivided_assemblies.run_decontamination
-        .map { meta, contigs ->
-            [ [meta, contigs], "${params.reference_genomes_folder}/${meta.phix_reference}/${meta.phix_reference}.fna" ]
-        }
-        .set { ch_phix_decontamination_input }
+    def cleaned_contigs = DECONTAMINATE_ASSEMBLIES.out.cleaned_contigs
 
-    PHIX_DECONTAMINATE_CONTIGS(ch_phix_decontamination_input)
-    ch_versions = ch_versions.mix(PHIX_DECONTAMINATE_CONTIGS.out.versions)
-
-    phix_cleaned_contigs = phix_subdivided_assemblies.skip_decontamination.mix(
-        PHIX_DECONTAMINATE_CONTIGS.out.cleaned_contigs
+    def contaminated_contigs_by_step = DECONTAMINATE_ASSEMBLIES.out.phix_contaminated_contigs_tsv.map { meta, tsv -> [meta, "phix", tsv] }.mix(
+        DECONTAMINATE_ASSEMBLIES.out.human_contaminated_contigs_tsv.map { meta, tsv -> [meta, "human", tsv] },
+        DECONTAMINATE_ASSEMBLIES.out.host_contaminated_contigs_tsv.map { meta, tsv -> [meta, "contaminant", tsv] }
     )
-
-    /***************************************************************************/
-    /* Perform decontamination from human sequences if requested               */
-    /***************************************************************************/
-    phix_cleaned_contigs
-        .branch { meta, _contigs ->
-            run_decontamination: meta.human_reference != null
-            skip_decontamination: meta.human_reference == null
-        }
-        .set { human_subdivided_assemblies }
-
-    human_subdivided_assemblies.run_decontamination
-        .map { meta, contigs ->
-            [ [meta, contigs], file( "${params.reference_genomes_folder}/${meta.human_reference}/${meta.human_reference}.fna", checkIfExists: true ) ]
-        }
-        .set { ch_human_decontamination_input }
-
-    HUMAN_DECONTAMINATE_CONTIGS(ch_human_decontamination_input)
-    ch_versions = ch_versions.mix(HUMAN_DECONTAMINATE_CONTIGS.out.versions)
-
-    human_cleaned_contigs = human_subdivided_assemblies.skip_decontamination.mix(
-        HUMAN_DECONTAMINATE_CONTIGS.out.cleaned_contigs
-    )
-
-    /***************************************************************************/
-    /* Perform decontamination from arbitrary contaminant sequences            */
-    /***************************************************************************/
-    human_cleaned_contigs
-        .branch { meta, _contigs ->
-            run_decontamination: meta.contaminant_reference != null
-            skip_decontamination: meta.contaminant_reference == null
-        }
-        .set { subdivided_assemblies }
-
-    subdivided_assemblies.run_decontamination
-        .map { meta, contigs ->
-            [ [meta, contigs], "${params.reference_genomes_folder}/${meta.contaminant_reference}/${meta.contaminant_reference}.fna" ]
-        }
-        .set { ch_decontamination_input }
-
-    HOST_DECONTAMINATE_CONTIGS(ch_decontamination_input)
-    ch_versions = ch_versions.mix(HOST_DECONTAMINATE_CONTIGS.out.versions)
-
-    cleaned_contigs = subdivided_assemblies.skip_decontamination.mix(
-        HOST_DECONTAMINATE_CONTIGS.out.cleaned_contigs
-    )
-
 
     /***************************************************************************/
     /*  Cleaned assemblies that fail the following rule:                       */
@@ -124,12 +50,15 @@ workflow SHORT_READS_ASSEMBLY_QC {
         [meta + ["too_few_contigs": true], contigs]
     }
 
-    PUBLISH_CLEANED_CONTIGS(
-        passed_cleaned_contigs
-    )
-
     emit:
-    passed_cleaned_contigs = passed_cleaned_contigs   // [ val(meta), path(assembly_fasta) ]
-    qc_failed_assemblies   = qc_failed_assemblies     // [ val(meta), path(assembly_fasta) ]
+    passed_cleaned_contigs = passed_cleaned_contigs                                         // [ val(meta), path(assembly_fasta) ]
+    qc_failed_assemblies   = qc_failed_assemblies                                           // [ val(meta), path(assembly_fasta) ]
+    decontaminated_contigs = cleaned_contigs                                                // [ val(meta), path(assembly_fasta) ], all runs
+    contaminated_contigs   = contaminated_contigs_by_step                                   // [ val(meta), val(step), path(tsv) ]
+    decontamination        = contaminated_contigs_by_step.map { meta, _step, tsv -> [meta, tsv] } // [ val(meta), path(tsv) ]
+    decontamination_mqc    = DECONTAMINATE_ASSEMBLIES.out.phix_contaminated_contigs_tsv_mqc.mix(
+                                 DECONTAMINATE_ASSEMBLIES.out.human_contaminated_contigs_tsv_mqc,
+                                 DECONTAMINATE_ASSEMBLIES.out.host_contaminated_contigs_tsv_mqc
+                             )                                                              // [ val(meta), path(mqc_tsv) ]
     versions               = ch_versions
 }

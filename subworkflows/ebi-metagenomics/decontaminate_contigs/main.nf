@@ -1,6 +1,6 @@
-include { MINIMAP2_ALIGN } from '../../../modules/nf-core/minimap2/align/main'
+include { MINIMAP2_ALIGN } from '../../../modules/ebi-metagenomics/minimap2/align/main'
 include { FILTERPAF      } from '../../../modules/ebi-metagenomics/filterpaf/main'
-include { SEQKIT_GREP    } from '../../../modules/nf-core/seqkit/grep/main'
+include { SEQKIT_GREP    } from '../../../modules/ebi-metagenomics/seqkit/grep/main'
 
 workflow DECONTAMINATE_CONTIGS {
 
@@ -33,8 +33,6 @@ workflow DECONTAMINATE_CONTIGS {
     MINIMAP2_ALIGN(
         minimap2_input_ch.contigs,
         minimap2_input_ch.reference,
-        "",                // no prefix needed for paf generation
-        "",                // no extension needed for paf generation
         false,             // bam_format
         false,             // bam_index_extension
         false,             // cigar_paf_format
@@ -62,6 +60,8 @@ workflow DECONTAMINATE_CONTIGS {
     ch_versions = ch_versions.mix(SEQKIT_GREP.out.versions.first())
 
     emit:
-    cleaned_contigs = SEQKIT_GREP.out.filter
-    versions        = ch_versions
+    cleaned_contigs        = SEQKIT_GREP.out.filter
+    mapped_contigs_tsv     = FILTERPAF.out.mapped_contigs_tsv
+    mapped_contigs_tsv_mqc = FILTERPAF.out.mapped_contigs_tsv_mqc
+    versions               = ch_versions
 }

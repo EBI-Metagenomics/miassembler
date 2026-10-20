@@ -34,8 +34,36 @@ output:
             e.g. `[ id:'sample1', single_end:false ]`
       - "*.txt":
           type: file
-          description: Plain text file containing the IDs of query sequences that mapped the reference with high confidence.
+          description: Plain text file containing the IDs of query sequences that mapped the reference with high confidence and have to be filtered out.
           pattern: "*.txt"
+  - mapped_contigs_tsv:
+      - meta:
+          type: map
+          description: |
+            Groovy Map containing sample information
+            e.g. `[ id:'sample1', single_end:false ]`
+      - "*_mapped.tsv.gz":
+          type: file
+          description: |
+            Optional gzipped TSV listing the query sequences that mapped the reference
+            with high confidence and have to be filtered out. Includes 3 columns: sequence ID,
+            query coverage and identity. Only produced when at least one sequence passed the
+            filtering thresholds.
+          pattern: "*_mapped.tsv.gz"
+  - mapped_contigs_tsv_mqc:
+      - meta:
+          type: map
+          description: |
+            Groovy Map containing sample information
+            e.g. `[ id:'sample1', single_end:false ]`
+      - "*_mapped_mqc.tsv":
+          type: file
+          description: |
+            Optional uncompressed copy of the mapped contigs TSV with a MultiQC custom-content
+            front-matter header (id, section_name, pconfig.title) prepended so MultiQC
+            picks it up as a distinct table. Only produced when at least one sequence
+            passed the filtering thresholds.
+          pattern: "*_mapped_mqc.tsv"
   - versions:
       - "versions.yml":
           type: file

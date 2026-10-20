@@ -76,7 +76,7 @@ nextflow_pipeline {
                 assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 1
                 assert trace.succeeded().count{ task -> task.name.contains("MEGAHIT") } == 0
 
-                assert trace.succeeded().size() == 21
+                assert trace.succeeded().size() == 20
             }
         }
     }
@@ -100,7 +100,7 @@ nextflow_pipeline {
                 assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 0
                 assert trace.succeeded().count{ task -> task.name.contains("MEGAHIT") } == 1
 
-                assert trace.tasks().size() == 21
+                assert trace.tasks().size() == 20
             }
         }
     }
@@ -185,7 +185,7 @@ nextflow_pipeline {
                 assert trace.succeeded().count{ task -> task.name.contains("SPADES") } == 0
                 assert trace.succeeded().count{ task -> task.name.contains("MEGAHIT") } == 1
 
-                assert trace.tasks().size() == 21
+                assert trace.tasks().size() == 20
             }
         }
     }
@@ -284,7 +284,7 @@ nextflow_pipeline {
                 assert trace.succeeded().count{ task -> task.name.contains("MEDAKA") } == 0
                 assert trace.succeeded().count{ task -> task.name.contains("ONT_HQ") } == 1
 
-                assert trace.tasks().size() == 15
+                assert trace.tasks().size() == 16
             }
         }
     }
@@ -307,7 +307,7 @@ nextflow_pipeline {
 
                 assert trace.succeeded().count{ task -> task.name.contains("ONT_LQ") } == 4
 
-                assert trace.tasks().size() == 20
+                assert trace.tasks().size() == 21
             }
         }
     }
@@ -330,7 +330,7 @@ nextflow_pipeline {
 
                 assert trace.succeeded().count{ task -> task.name.contains("PACBIO_HIFI") } == 2
 
-                assert trace.tasks().size() == 14
+                assert trace.tasks().size() == 15
             }
         }
     }
@@ -355,7 +355,7 @@ nextflow_pipeline {
 
                 assert trace.succeeded().count{ task -> task.name.contains("PACBIO_LQ") } == 3
 
-                assert trace.tasks().size() == 19
+                assert trace.tasks().size() == 20
             }
         }
     }

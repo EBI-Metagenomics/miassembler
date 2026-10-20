@@ -12,7 +12,7 @@ process PROOVFRAME_FIX {
     tuple val(meta2), path(tsv)
 
     output:
-    tuple val(meta), path("*.fa"), emit: out_fa
+    tuple val(meta), path("${prefix}.fa"), emit: out_fa
     path "versions.yml"          , emit: versions
 
     when:
@@ -20,9 +20,10 @@ process PROOVFRAME_FIX {
 
     script:
     def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    prefix = task.ext.prefix ?: "${meta.id}"
     def is_compressed = fa.getExtension() == "gz" ? true : false
-    def fasta_name = is_compressed ? fa.getBaseName() : fa
+    // Local change: decompress to a name that can not be the same as the output "${prefix}.fa"
+    def fasta_name = is_compressed ? "input_${fa.getBaseName()}" : fa
     """
     if [ "${is_compressed}" == "true" ]; then
         gzip -c -d ${fa} > ${fasta_name}
@@ -43,7 +44,7 @@ process PROOVFRAME_FIX {
 
     stub:
     def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch ${prefix}.fa
 

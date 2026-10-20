@@ -1,0 +1,173 @@
+Changes in component 'ebi-metagenomics/decontaminate_contigs'
+'subworkflows/ebi-metagenomics/decontaminate_contigs/nextflow.config' is unchanged
+Changes in 'decontaminate_contigs/meta.yml':
+--- subworkflows/ebi-metagenomics/decontaminate_contigs/meta.yml
++++ subworkflows/ebi-metagenomics/decontaminate_contigs/meta.yml
+@@ -40,16 +40,16 @@
+         Optional channel with a gzipped TSV listing the contaminated contigs, their
+         query coverage and identity to the reference. Only emitted when at least one
+         contig was flagged as contaminated.
+-        Structure: [ val(meta), path(tsv_gz_file) ]
++        Structure: [ val(meta), path(tsv_file) ]
+       pattern: "*_mapped.tsv.gz"
+   - mapped_contigs_tsv_mqc:
+       type: map
+       description: |
+-        Optional channel with a gzipped copy of the contaminated contigs TSV carrying a
++        Optional channel with an uncompressed copy of the contaminated contigs TSV carrying a
+         MultiQC custom-content front-matter header, so MultiQC picks it up as a distinct
+         table. Only emitted when at least one contig was flagged as contaminated.
+-        Structure: [ val(meta), path(tsv_gz_file) ]
+-      pattern: "*_mapped_mqc.tsv.gz"
++        Structure: [ val(meta), path(tsv_file) ]
++      pattern: "*_mapped_mqc.tsv"
+   - versions:
+       type: file
+       description: |
+
+'subworkflows/ebi-metagenomics/decontaminate_contigs/main.nf' is unchanged
+Changes in 'decontaminate_contigs/tests/main.nf.test.snap':
+--- subworkflows/ebi-metagenomics/decontaminate_contigs/tests/main.nf.test.snap
++++ subworkflows/ebi-metagenomics/decontaminate_contigs/tests/main.nf.test.snap
+@@ -23,36 +23,36 @@
+                         {
+                             "id": "test"
+                         },
+-                        "test_mapped_mqc.tsv.gz:md5,61a13fd953b5d6868d93639968a4b705"
+-                    ]
+-                ],
+-                "3": [
+-                    "versions.yml:md5,09fc4b740617953bef77bfcc0833ecac",
+-                    "versions.yml:md5,168ddf5d2325c3dfe5959865ead422c3",
+-                    "versions.yml:md5,fbcc2bf4987f9f05018d9ffa49cb2d98"
+-                ],
+-                "cleaned_contigs": [
+-                    [
+-                        {
+-                            "id": "test"
+-                        },
+-                        "test_cleaned.fa.gz:md5,2e05937059d9329d7b8d56189c9d8c10"
+-                    ]
+-                ],
+-                "mapped_contigs_tsv": [
+-                    [
+-                        {
+-                            "id": "test"
+-                        },
+-                        "test_mapped.tsv.gz:md5,61a13fd953b5d6868d93639968a4b705"
+-                    ]
+-                ],
+-                "mapped_contigs_tsv_mqc": [
+-                    [
+-                        {
+-                            "id": "test"
+-                        },
+-                        "test_mapped_mqc.tsv.gz:md5,61a13fd953b5d6868d93639968a4b705"
++                        "test_mapped_mqc.tsv:md5,61a13fd953b5d6868d93639968a4b705"
++                    ]
++                ],
++                "3": [
++                    "versions.yml:md5,09fc4b740617953bef77bfcc0833ecac",
++                    "versions.yml:md5,168ddf5d2325c3dfe5959865ead422c3",
++                    "versions.yml:md5,fbcc2bf4987f9f05018d9ffa49cb2d98"
++                ],
++                "cleaned_contigs": [
++                    [
++                        {
++                            "id": "test"
++                        },
++                        "test_cleaned.fa.gz:md5,2e05937059d9329d7b8d56189c9d8c10"
++                    ]
++                ],
++                "mapped_contigs_tsv": [
++                    [
++                        {
++                            "id": "test"
++                        },
++                        "test_mapped.tsv.gz:md5,61a13fd953b5d6868d93639968a4b705"
++                    ]
++                ],
++                "mapped_contigs_tsv_mqc": [
++                    [
++                        {
++                            "id": "test"
++                        },
++                        "test_mapped_mqc.tsv:md5,61a13fd953b5d6868d93639968a4b705"
+                     ]
+                 ],
+                 "versions": [
+@@ -190,36 +190,36 @@
+                         {
+                             "id": "test"
+                         },
+-                        "test_mapped_mqc.tsv.gz:md5,61a13fd953b5d6868d93639968a4b705"
+-                    ]
+-                ],
+-                "3": [
+-                    "versions.yml:md5,09fc4b740617953bef77bfcc0833ecac",
+-                    "versions.yml:md5,168ddf5d2325c3dfe5959865ead422c3",
+-                    "versions.yml:md5,fbcc2bf4987f9f05018d9ffa49cb2d98"
+-                ],
+-                "cleaned_contigs": [
+-                    [
+-                        {
+-                            "id": "test"
+-                        },
+-                        "test_cleaned.fa.gz:md5,2e05937059d9329d7b8d56189c9d8c10"
+-                    ]
+-                ],
+-                "mapped_contigs_tsv": [
+-                    [
+-                        {
+-                            "id": "test"
+-                        },
+-                        "test_mapped.tsv.gz:md5,61a13fd953b5d6868d93639968a4b705"
+-                    ]
+-                ],
+-                "mapped_contigs_tsv_mqc": [
+-                    [
+-                        {
+-                            "id": "test"
+-                        },
+-                        "test_mapped_mqc.tsv.gz:md5,61a13fd953b5d6868d93639968a4b705"
++                        "test_mapped_mqc.tsv:md5,61a13fd953b5d6868d93639968a4b705"
++                    ]
++                ],
++                "3": [
++                    "versions.yml:md5,09fc4b740617953bef77bfcc0833ecac",
++                    "versions.yml:md5,168ddf5d2325c3dfe5959865ead422c3",
++                    "versions.yml:md5,fbcc2bf4987f9f05018d9ffa49cb2d98"
++                ],
++                "cleaned_contigs": [
++                    [
++                        {
++                            "id": "test"
++                        },
++                        "test_cleaned.fa.gz:md5,2e05937059d9329d7b8d56189c9d8c10"
++                    ]
++                ],
++                "mapped_contigs_tsv": [
++                    [
++                        {
++                            "id": "test"
++                        },
++                        "test_mapped.tsv.gz:md5,61a13fd953b5d6868d93639968a4b705"
++                    ]
++                ],
++                "mapped_contigs_tsv_mqc": [
++                    [
++                        {
++                            "id": "test"
++                        },
++                        "test_mapped_mqc.tsv:md5,61a13fd953b5d6868d93639968a4b705"
+                     ]
+                 ],
+                 "versions": [
+
+'subworkflows/ebi-metagenomics/decontaminate_contigs/tests/main.nf.test' is unchanged
+'subworkflows/ebi-metagenomics/decontaminate_contigs/tests/data/test_contaminated.fa.gz' is unchanged
+'subworkflows/ebi-metagenomics/decontaminate_contigs/tests/data/test_not_contaminated.fa' is unchanged
+'subworkflows/ebi-metagenomics/decontaminate_contigs/tests/data/ref.fa' is unchanged
+'subworkflows/ebi-metagenomics/decontaminate_contigs/tests/data/test_contaminated.fa' is unchanged
+'subworkflows/ebi-metagenomics/decontaminate_contigs/tests/data/test_not_contaminated.fa.gz' is unchanged
+************************************************************

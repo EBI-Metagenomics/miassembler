@@ -1,0 +1,102 @@
+Changes in component 'ebi-metagenomics/decontaminate_assemblies'
+'subworkflows/ebi-metagenomics/decontaminate_assemblies/nextflow.config' is unchanged
+Changes in 'decontaminate_assemblies/meta.yml':
+--- subworkflows/ebi-metagenomics/decontaminate_assemblies/meta.yml
++++ subworkflows/ebi-metagenomics/decontaminate_assemblies/meta.yml
+@@ -65,24 +65,24 @@
+   - phix_contaminated_contigs_tsv_mqc:
+       type: file
+       description: |
+-        Optional gzipped copy of the PhiX contaminated contigs TSV carrying a MultiQC
++        Optional uncompressed copy of the PhiX contaminated contigs TSV carrying a MultiQC
+         custom-content front-matter header, so MultiQC picks it up as a distinct table.
+         Only emitted when at least one contig was flagged.
+-      pattern: "*_mapped_mqc.tsv.gz"
++      pattern: "*_mapped_mqc.tsv"
+   - human_contaminated_contigs_tsv_mqc:
+       type: file
+       description: |
+-        Optional gzipped copy of the human contaminated contigs TSV carrying a MultiQC
++        Optional uncompressed copy of the human contaminated contigs TSV carrying a MultiQC
+         custom-content front-matter header, so MultiQC picks it up as a distinct table.
+         Only emitted when at least one contig was flagged.
+-      pattern: "*_mapped_mqc.tsv.gz"
++      pattern: "*_mapped_mqc.tsv"
+   - host_contaminated_contigs_tsv_mqc:
+       type: file
+       description: |
+-        Optional gzipped copy of the host/custom contaminant contigs TSV carrying a
++        Optional uncompressed copy of the host/custom contaminant contigs TSV carrying a
+         MultiQC custom-content front-matter header, so MultiQC picks it up as a distinct
+         table. Only emitted when at least one contig was flagged.
+-      pattern: "*_mapped_mqc.tsv.gz"
++      pattern: "*_mapped_mqc.tsv"
+   - versions:
+       type: file
+       description: File containing software versions
+
+'subworkflows/ebi-metagenomics/decontaminate_assemblies/main.nf' is unchanged
+'subworkflows/ebi-metagenomics/decontaminate_assemblies/tests/main.nf.test.snap' is unchanged
+Changes in 'decontaminate_assemblies/tests/main.nf.test':
+--- subworkflows/ebi-metagenomics/decontaminate_assemblies/tests/main.nf.test
++++ subworkflows/ebi-metagenomics/decontaminate_assemblies/tests/main.nf.test
+@@ -49,7 +49,7 @@
+                     assert "uncontaminated_contig" in cleaned_contigs
+                 },
+                 {
+-                    def phix_mqc_lines = path(workflow.out.phix_contaminated_contigs_tsv_mqc.get(0).get(1)).linesGzip
++                    def phix_mqc_lines = path(workflow.out.phix_contaminated_contigs_tsv_mqc.get(0).get(1)).readLines()
+                     assert phix_mqc_lines[0] == "# id: 'phix_decontamination'"
+                     assert phix_mqc_lines[1] == "# section_name: 'PhiX contaminated contigs (phix)'"
+                     assert phix_mqc_lines[2] == "# plot_type: 'table'"
+@@ -59,7 +59,7 @@
+                     assert phix_mqc_lines[6] == "sequence_id\tquery_coverage\tidentity"
+                 },
+                 {
+-                    def human_mqc_lines = path(workflow.out.human_contaminated_contigs_tsv_mqc.get(0).get(1)).linesGzip
++                    def human_mqc_lines = path(workflow.out.human_contaminated_contigs_tsv_mqc.get(0).get(1)).readLines()
+                     assert human_mqc_lines[0] == "# id: 'human_decontamination'"
+                     assert human_mqc_lines[1] == "# section_name: 'Human contaminated contigs (human)'"
+                     assert human_mqc_lines[2] == "# plot_type: 'table'"
+@@ -69,7 +69,7 @@
+                     assert human_mqc_lines[6] == "sequence_id\tquery_coverage\tidentity"
+                 },
+                 {
+-                    def host_mqc_lines = path(workflow.out.host_contaminated_contigs_tsv_mqc.get(0).get(1)).linesGzip
++                    def host_mqc_lines = path(workflow.out.host_contaminated_contigs_tsv_mqc.get(0).get(1)).readLines()
+                     assert host_mqc_lines[0] == "# id: 'host_decontamination'"
+                     assert host_mqc_lines[1] == "# section_name: 'Host/Contaminant contaminated contigs (contamination)'"
+                     assert host_mqc_lines[2] == "# plot_type: 'table'"
+@@ -120,7 +120,7 @@
+                     assert "human_contanimated_contig" in cleaned_contigs
+                 },
+                 {
+-                    def phix_mqc_lines = path(workflow.out.phix_contaminated_contigs_tsv_mqc.get(0).get(1)).linesGzip
++                    def phix_mqc_lines = path(workflow.out.phix_contaminated_contigs_tsv_mqc.get(0).get(1)).readLines()
+                     assert phix_mqc_lines[0] == "# id: 'phix_decontamination'"
+                     assert phix_mqc_lines[1] == "# section_name: 'PhiX contaminated contigs (phix)'"
+                     assert phix_mqc_lines[2] == "# plot_type: 'table'"
+@@ -171,7 +171,7 @@
+                     assert "phix_contanimated_contig" in cleaned_contigs
+                 },
+                 {
+-                    def human_mqc_lines = path(workflow.out.human_contaminated_contigs_tsv_mqc.get(0).get(1)).linesGzip
++                    def human_mqc_lines = path(workflow.out.human_contaminated_contigs_tsv_mqc.get(0).get(1)).readLines()
+                     assert human_mqc_lines[0] == "# id: 'human_decontamination'"
+                     assert human_mqc_lines[1] == "# section_name: 'Human contaminated contigs (human)'"
+                     assert human_mqc_lines[2] == "# plot_type: 'table'"
+@@ -222,7 +222,7 @@
+                     assert "human_contanimated_contig" in cleaned_contigs
+                 },
+                 {
+-                    def host_mqc_lines = path(workflow.out.host_contaminated_contigs_tsv_mqc.get(0).get(1)).linesGzip
++                    def host_mqc_lines = path(workflow.out.host_contaminated_contigs_tsv_mqc.get(0).get(1)).readLines()
+                     assert host_mqc_lines[0] == "# id: 'host_decontamination'"
+                     assert host_mqc_lines[1] == "# section_name: 'Host/Contaminant contaminated contigs (contamination)'"
+                     assert host_mqc_lines[2] == "# plot_type: 'table'"
+
+'subworkflows/ebi-metagenomics/decontaminate_assemblies/tests/data/test.fasta' is unchanged
+'subworkflows/ebi-metagenomics/decontaminate_assemblies/tests/data/phix/phix.fna' is unchanged
+'subworkflows/ebi-metagenomics/decontaminate_assemblies/tests/data/human/human.fna' is unchanged
+'subworkflows/ebi-metagenomics/decontaminate_assemblies/tests/data/contamination/contamination.fna' is unchanged
+************************************************************

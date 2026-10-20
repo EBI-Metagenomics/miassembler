@@ -17,8 +17,35 @@
                     },
                     "filterpaf": {
                         "branch": "main",
-                        "git_sha": "ad73b5f1d3e4ed60ba329d3e5be3afdca32f938f",
-                        "installed_by": ["modules"]
+                        "git_sha": "9ce33e33c4f08209b93e3732dab64189eb6612f7",
+                        "installed_by": ["decontaminate_contigs", "modules"],
+                        "patch": "modules/ebi-metagenomics/filterpaf/filterpaf.diff"
+                    },
+                    "minimap2/align": {
+                        "branch": "main",
+                        "git_sha": "53d777039662e354c21a144088ab99982b31ccb7",
+                        "installed_by": ["decontaminate_contigs"]
+                    },
+                    "seqkit/grep": {
+                        "branch": "main",
+                        "git_sha": "9f20a3e1ef64f1562992239d951522bf71dea159",
+                        "installed_by": ["decontaminate_contigs"]
+                    }
+                }
+            },
+            "subworkflows": {
+                "ebi-metagenomics": {
+                    "decontaminate_assemblies": {
+                        "branch": "main",
+                        "git_sha": "9ce33e33c4f08209b93e3732dab64189eb6612f7",
+                        "installed_by": ["subworkflows"],
+                        "patch": "subworkflows/ebi-metagenomics/decontaminate_assemblies/decontaminate_assemblies.diff"
+                    },
+                    "decontaminate_contigs": {
+                        "branch": "main",
+                        "git_sha": "9ce33e33c4f08209b93e3732dab64189eb6612f7",
+                        "installed_by": ["decontaminate_assemblies"],
+                        "patch": "subworkflows/ebi-metagenomics/decontaminate_contigs/decontaminate_contigs.diff"
                     }
                 }
             }
@@ -51,8 +78,7 @@
                     "fastqc": {
                         "branch": "master",
                         "git_sha": "21f230b8cca43755bf73470e6fd0290832a98aef",
-                        "installed_by": ["modules"],
-                        "patch": "modules/nf-core/fastqc/fastqc.diff"
+                        "installed_by": ["modules"]
                     },
                     "flye": {
                         "branch": "master",
@@ -111,12 +137,6 @@
                         "git_sha": "8fc1d24c710ebe1d5de0f2447ec9439fd3d9d66a",
                         "installed_by": ["modules"],
                         "patch": "modules/nf-core/racon/racon.diff"
-                    },
-                    "seqkit/grep": {
-                        "branch": "master",
-                        "git_sha": "3f5420aa22e00bd030a2556dfdffc9e164ec0ec5",
-                        "installed_by": ["modules"],
-                        "patch": "modules/nf-core/seqkit/grep/seqkit-grep.diff"
                     },
                     "seqkit/seq": {
                         "branch": "master",

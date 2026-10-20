@@ -48,7 +48,9 @@
                 "errorMessage": "library strategy should be only value from list: 'metagenomic', 'metatranscriptomic', 'genomic', 'transcriptomic', 'other'"
             },
             "platform": {
-                "type": "string"
+                "type": "string",
+                "enum": ["ont", "ONT", "nanopore", "pb", "pacbio", "illumina", "iontorrent", ""],
+                "errorMessage": "platform should be one of: 'ont', 'ONT', 'nanopore' (Oxford Nanopore), 'pb', 'pacbio' (PacBio), 'illumina', 'iontorrent', or empty for short reads"
             },
             "assembler": {
                 "type": "string",

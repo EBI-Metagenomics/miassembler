@@ -48,7 +48,7 @@ workflow LONG_READS_QC {
     /***********************************/
     /* Adapters and sequence chopping  */
     /***********************************/
-    reads_quality_levels.branch { meta, reads ->
+    reads_quality_levels.branch { meta, _reads ->
         ont: meta.platform == "ont"
         pacbio_low: (meta.platform == "pb") && (meta.quality == "low")
         pacbio_high: (meta.platform == "pb") && (meta.quality == "high")
@@ -148,7 +148,8 @@ workflow LONG_READS_QC {
     )
 
     emit:
-    qc_reads   = decontaminated_reads
-    fastp_json = FASTPLONG.out.json
-    versions   = ch_versions
+    qc_reads          = decontaminated_reads
+    fastp_json        = FASTPLONG.out.json
+    fastplong_reports = FASTPLONG.out.json.mix(FASTPLONG.out.html, FASTPLONG.out.log) // [ val(meta), path(report) ]
+    versions          = ch_versions
 }

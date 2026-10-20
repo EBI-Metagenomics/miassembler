@@ -1,0 +1,101 @@
+Changes in component 'ebi-metagenomics/filterpaf'
+Changes in 'filterpaf/meta.yml':
+--- modules/ebi-metagenomics/filterpaf/meta.yml
++++ modules/ebi-metagenomics/filterpaf/meta.yml
+@@ -56,14 +56,14 @@
+           description: |
+             Groovy Map containing sample information
+             e.g. `[ id:'sample1', single_end:false ]`
+-      - "*_mapped_mqc.tsv.gz":
++      - "*_mapped_mqc.tsv":
+           type: file
+           description: |
+-            Optional gzipped copy of the mapped contigs TSV with a MultiQC custom-content
++            Optional uncompressed copy of the mapped contigs TSV with a MultiQC custom-content
+             front-matter header (id, section_name, pconfig.title) prepended so MultiQC
+             picks it up as a distinct table. Only produced when at least one sequence
+             passed the filtering thresholds.
+-          pattern: "*_mapped_mqc.tsv.gz"
++          pattern: "*_mapped_mqc.tsv"
+   - versions:
+       - "versions.yml":
+           type: file
+
+Changes in 'filterpaf/main.nf':
+--- modules/ebi-metagenomics/filterpaf/main.nf
++++ modules/ebi-metagenomics/filterpaf/main.nf
+@@ -12,7 +12,7 @@
+     output:
+     tuple val(meta), path("${prefix}.txt"),               emit: mapped_contigs_txt
+     tuple val(meta), path("${prefix}_mapped.tsv.gz"),     emit: mapped_contigs_tsv, optional: true
+-    tuple val(meta), path("${prefix}_mapped_mqc.tsv.gz"), emit: mapped_contigs_tsv_mqc, optional: true
++    tuple val(meta), path("${prefix}_mapped_mqc.tsv"),    emit: mapped_contigs_tsv_mqc, optional: true
+     path "versions.yml",                                  emit: versions
+ 
+     script:
+@@ -71,7 +71,7 @@
+             cat ${prefix}_mapped.tsv
+         } > ${prefix}_mapped_mqc.tsv
+ 
+-        gzip ${prefix}_mapped_mqc.tsv
++        # MultiQC only finds uncompressed custom-content files
+         gzip ${prefix}_mapped.tsv
+     fi
+ 
+
+Changes in 'filterpaf/tests/main.nf.test.snap':
+--- modules/ebi-metagenomics/filterpaf/tests/main.nf.test.snap
++++ modules/ebi-metagenomics/filterpaf/tests/main.nf.test.snap
+@@ -23,7 +23,7 @@
+                         {
+                             "id": "test"
+                         },
+-                        "test_mapped_mqc.tsv.gz:md5,40d0cf6f566fafc60e3a79d150f52ed1"
++                        "test_mapped_mqc.tsv:md5,40d0cf6f566fafc60e3a79d150f52ed1"
+                     ]
+                 ],
+                 "3": [
+@@ -42,7 +42,7 @@
+                         {
+                             "id": "test"
+                         },
+-                        "test_mapped_mqc.tsv.gz:md5,40d0cf6f566fafc60e3a79d150f52ed1"
++                        "test_mapped_mqc.tsv:md5,40d0cf6f566fafc60e3a79d150f52ed1"
+                     ]
+                 ],
+                 "mapped_contigs_txt": [
+@@ -133,7 +133,7 @@
+                         {
+                             "id": "test"
+                         },
+-                        "test_mapped_mqc.tsv.gz:md5,e9a004b7de64717c075b9cfcbc13d6fd"
++                        "test_mapped_mqc.tsv:md5,e9a004b7de64717c075b9cfcbc13d6fd"
+                     ]
+                 ],
+                 "3": [
+@@ -152,7 +152,7 @@
+                         {
+                             "id": "test"
+                         },
+-                        "test_mapped_mqc.tsv.gz:md5,e9a004b7de64717c075b9cfcbc13d6fd"
++                        "test_mapped_mqc.tsv:md5,e9a004b7de64717c075b9cfcbc13d6fd"
+                     ]
+                 ],
+                 "mapped_contigs_txt": [
+
+'modules/ebi-metagenomics/filterpaf/tests/nextflow.config' is unchanged
+Changes in 'filterpaf/tests/main.nf.test':
+--- modules/ebi-metagenomics/filterpaf/tests/main.nf.test
++++ modules/ebi-metagenomics/filterpaf/tests/main.nf.test
+@@ -58,7 +58,7 @@
+             assertAll(
+                 { assert process.success },
+                 {
+-                    def mqc_lines = path(process.out.mapped_contigs_tsv_mqc.get(0).get(1)).linesGzip
++                    def mqc_lines = path(process.out.mapped_contigs_tsv_mqc.get(0).get(1)).readLines()
+                     assert mqc_lines[0] == "# id: 'test_decontamination'"
+                     assert mqc_lines[1] == "# section_name: 'Test contaminated contigs'"
+                     assert mqc_lines[2] == "# plot_type: 'table'"
+
+'modules/ebi-metagenomics/filterpaf/tests/data/test.paf' is unchanged
+************************************************************
