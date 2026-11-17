@@ -1,0 +1,73 @@
+%%metro title: MGnify miassembler
+%%metro track_gap: 3
+%%metro style: seqera
+%%metro line: input   | Input / fetch      | #3F3F46
+%%metro line: short   | Short reads        | #734595
+%%metro line: long    | Long reads         | #2F8F97
+%%metro line: report  | Reporting          | #8A8A93
+%%metro line: higherr | High-error reads   | #2F5B97
+%%metro line: lowerr  | Low-error reads    | #2cd3d2
+%%metro line: fire    | FIRE download (opt)| #3F3F46 | dashed
+%%metro line: sropt   | QC-failed (opt)    | #734595 | dashed
+%%metro legend: bl
+
+graph LR
+    subgraph trunk [Input]
+      IN[Input / fetch reads]
+      CLASS[Classify by platform]
+      FIRE[FIRE download]
+    end
+
+    subgraph short [Short reads]
+      SR_QC[Short-reads QC]
+      SR_SEL[Assembler select]
+      SR_SPADES[metaSPAdes]
+      SR_MEGAHIT[MEGAHIT]
+      SR_AQC[Cleaning (minimap)]
+      SR_COV[Coverage (minimap)]
+      SR_QUAST[metaQUAST]
+    end
+
+    subgraph long [Long reads]
+      LR_QC[Long-reads QC]
+      LR_SEL[Assembler select]
+      LR_HIGHERR[Flye]
+      LR_LOWERR[MetaMDBG]
+      LR_AQC[Cleaning (minimap)]
+      LR_FRAME[Frameshift fix]
+      LR_COV[Coverage (minimap)]
+      LR_QUAST[metaQUAST]
+    end
+
+    subgraph report [Report]
+      RP_MQC[MultiQC]
+    end
+
+    IN -->|input| CLASS
+    CLASS -->|fire| FIRE
+    FIRE -->|fire| SR_QC
+    FIRE -->|fire| LR_QC
+
+    CLASS -->|short| SR_QC
+    SR_QC -->|short| SR_SEL
+    SR_SEL -->|short| SR_SPADES
+    SR_SPADES -->|short| SR_AQC
+    SR_SEL -->|short| SR_MEGAHIT
+    SR_MEGAHIT -->|short| SR_AQC
+    SR_AQC -->|short| SR_COV
+    SR_COV -->|short| SR_QUAST
+
+    CLASS -->|long| LR_QC
+    LR_QC -->|long| LR_SEL
+    LR_SEL -->|higherr| LR_HIGHERR
+    LR_HIGHERR -->|higherr| LR_AQC
+    LR_AQC -->|higherr| LR_FRAME
+    LR_FRAME -->|higherr| LR_COV
+    LR_SEL -->|lowerr| LR_LOWERR
+    LR_LOWERR -->|lowerr| LR_AQC
+    LR_AQC -->|lowerr| LR_COV
+    LR_COV -->|higherr| LR_QUAST
+    LR_COV -->|lowerr| LR_QUAST
+    
+    SR_QUAST -->|report| RP_MQC
+    LR_QUAST -->|report| RP_MQC
