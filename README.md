@@ -1,7 +1,7 @@
 # miassembler
 
 <p align="center" width="100%">
-   <img src="visuals/miassembler_metromap.png" width="90%"/>
+   <img src="visuals/miassembler_metromap.png" width="100%"/>
 </p>
 
 ## Introduction
