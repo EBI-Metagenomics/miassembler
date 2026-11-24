@@ -11,7 +11,7 @@ nf-core brand guidelines: https://fonts.google.com/specimen/Maven+Pro
 
 Render the PNG with a headless browser, e.g.:
     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless \
-        --screenshot=visuals/miassembler_metromap.png --window-size=3120,1180 \
+        --screenshot=visuals/miassembler_metromap.png --window-size=3260,1130 \
         --hide-scrollbars visuals/miassembler_metromap.svg
 """
 
@@ -19,7 +19,8 @@ import argparse
 import base64
 from pathlib import Path
 
-W, H = 3340, 1130
+W, H = 3260, 1130
+SHIFT_X = 30      # trims the empty left margin before the input icons
 
 # ---------------------------------------------------------------------------
 # Lines (one per read type), ordered top -> bottom inside the trunk
@@ -29,7 +30,7 @@ LINES = {
     "ont_hq": {"color": "#FAB005", "label": "ONT, high quality"},
     "ont_lq": {"color": "#F76707", "label": "ONT, low quality"},
     "pb_lq":  {"color": "#AE3EC9", "label": "PacBio, low quality (CLR)"},
-    "hifi":   {"color": "#0CA678", "label": "PacBio HiFi"},
+    "hifi":   {"color": "#0CA678", "label": "PacBio, high quality (HiFi)"},
 }
 LONG = ["ont_hq", "ont_lq", "pb_lq", "hifi"]
 ALL = ["short"] + LONG
@@ -45,7 +46,7 @@ TY = {k: TRUNK_TOP + i * GAP for i, k in enumerate(ALL)}
 LY = {k: LONG_TOP + i * GAP for i, k in enumerate(LONG)}
 
 X_START, X_SPLIT0, X_SPLIT1 = 230, 560, 650
-X_MERGE0, X_MERGE1, X_END = 2620, 2710, 3100
+X_MERGE0, X_MERGE1, X_END = 2620, 2710, 3122
 FORK = (1520, 1580, 1920, 1980)   # short-read assembler fork: out0, out1, in0, in1
 FORK_X = 1750
 FORK_DY = 45
@@ -58,10 +59,10 @@ FONT = "'Maven Pro', 'Helvetica Neue', Arial, sans-serif"
 STAGES = [
     (250, 580, ["1", "Input"]),
     (600, 1480, ["2", "Reads QC & decontamination"]),
-    (1500, 2050, ["3", "Assembly & polishing"]),
-    (2070, 2440, ["4", "Contig QC &", "decontamination"]),
+    (1500, 2075, ["3", "Assembly & polishing"]),
+    (2095, 2440, ["4", "Contig QC &", "decontamination"]),
     (2460, 2920, ["5", "Coverage & statistics"]),
-    (2940, 3160, ["6", "Reporting"]),
+    (2940, 3110, ["6", "Reporting"]),
 ]
 BOX_TOP, BOX_BOTTOM = 60, 750
 
@@ -71,31 +72,31 @@ BOX_TOP, BOX_BOTTOM = 60, 750
 # ---------------------------------------------------------------------------
 STATIONS = [
     # 1. Input
-    (340, ALL, "fetch-tool", ["Download reads", "from ENA"], True, "trunk"),
-    (490, ALL, "FastQC", ["Raw read", "quality"], False, "trunk"),
+    (352, ALL, "fetch-tool", ["Download reads", "from ENA"], True, "trunk"),
+    (508, ALL, "FastQC", ["Raw read", "quality"], False, "trunk"),
     # 2. Reads QC - short
     (740, ["short"], "fastp", ["Trimming &", "filtering"], False, "short"),
     (1050, ["short"], "bwa-mem2", ["Human, PhiX &", "host removal"], True, "short"),
-    (1380, ["short"], "FastQC", ["Processed", "read quality"], False, "short"),
+    (1395, ["short"], "FastQC", ["Processed", "read quality"], False, "short"),
     # 2. Reads QC - long
     (710, LONG, "fastplong", ["Filtering &", "quality level"], False, "long"),
     (885, ["ont_hq", "ont_lq"], "Porechop_ABI", ["Adapter", "trimming"], False, "long"),
-    (1055, ["ont_hq", "ont_lq", "pb_lq"], "Chopper", ["Filtering &", "lambda removal"], False, "long"),
-    (1220, LONG, "minimap2", ["Human &", "host removal"], True, "long"),
-    (1380, LONG, "FastQC", ["Processed", "read quality"], False, "long"),
+    (1050, ["ont_hq", "ont_lq", "pb_lq"], "Chopper", ["Filtering &", "lambda removal"], False, "long"),
+    (1235, LONG, "minimap2", ["Human &", "host removal"], True, "long"),
+    (1395, LONG, "FastQC", ["Processed", "read quality"], False, "long"),
     # 3. Assembly - short (fork: alternative assemblers)
-    (FORK_X, ["short"], "metaSPAdes", ["paired-end"], False, "fork_top"),
-    (FORK_X, ["short"], "MEGAHIT", ["single-end"], False, "fork_bottom"),
+    (FORK_X, ["short"], "metaSPAdes", [], False, "fork_top"),
+    (FORK_X, ["short"], "MEGAHIT", [], False, "fork_bottom"),
     # 3. Assembly - long
     (1600, ["hifi"], "HiFiAdapterFilt", ["HiFi adapter", "removal"], False, "long"),
     (1750, LONG, "Flye", ["Assembly"], False, "long"),
-    (1870, ["ont_lq", "pb_lq"], "Racon", ["Polishing"], False, "long"),
-    (1985, ["ont_lq"], "Medaka", ["Polishing"], False, "long"),
+    (1880, ["ont_lq", "pb_lq"], "Racon", ["Polishing"], False, "long"),
+    (2008, ["ont_lq"], "Medaka", ["Polishing"], False, "long"),
     # 4. Contig QC
-    (2160, ["short"], "SeqKit", ["Length", "filtering"], False, "short"),
-    (2340, ["short"], "minimap2", ["Human, PhiX &", "host removal"], True, "short"),
-    (2160, LONG, "minimap2", ["Human &", "host removal"], True, "long"),
-    (2340, ["ont_lq", "pb_lq"], "proovframe", ["Frameshift", "correction"], False, "long"),
+    (2178, ["short"], "SeqKit", ["Length", "filtering"], False, "short"),
+    (2350, ["short"], "minimap2", ["Human, PhiX &", "host removal"], True, "short"),
+    (2178, LONG, "minimap2", ["Human &", "host removal"], True, "long"),
+    (2350, ["ont_lq", "pb_lq"], "proovframe", ["Frameshift", "correction"], False, "long"),
     # 5. Coverage & stats
     (2540, ["short"], "bwa-mem2", ["Coverage"], False, "short"),
     (2540, LONG, "minimap2", ["Coverage"], False, "long"),
@@ -163,9 +164,9 @@ def label_anchors(row):
     if row == "long":
         return LY[LONG[0]] - 30, LY[LONG[-1]] + 44
     if row == "fork_top":
-        return SHORT_Y - FORK_DY - 54, None   # name + hint both above
+        return SHORT_Y - FORK_DY - 30, None   # name above the upper branch
     if row == "fork_bottom":
-        return None, SHORT_Y + FORK_DY + 44   # name + hint both below
+        return None, SHORT_Y + FORK_DY + 46   # name below the lower branch
     return SHORT_Y - 30, SHORT_Y + 44
 
 
@@ -181,14 +182,12 @@ def station(x, lines, name, desc, optional, row):
     top, bottom = label_anchors(row)
     if row == "fork_top":
         s.append(text(x, top, name, 26, 700))
-        s.append(text(x, top + 26, desc[0], 20, 400, fill="#444"))
     elif row == "fork_bottom":
         s.append(text(x, bottom, name, 26, 700))
-        s.append(text(x, bottom + 24, desc[0], 20, 400, fill="#444"))
     else:
         s.append(text(x, top, name, 26, 700))
         for i, d in enumerate(desc):
-            s.append(text(x, bottom + i * 26, d, 22))
+            s.append(text(x, bottom + i * 28, d, 24))
     return "\n".join(s)
 
 
@@ -202,7 +201,7 @@ def file_icon(x, y, label, caption, scale=1.0):
          f'<rect x="{x - 8}" y="{y + h * 0.42}" width="{w + 16}" height="{26 * scale}" rx="4" fill="#000"/>',
          text(x + w / 2, y + h * 0.42 + 19 * scale, label, 18 * scale, 700, fill="#fff")]
     for i, c in enumerate(caption):
-        s.append(text(x + w / 2, y + h + 26 + i * 22, c, 19))
+        s.append(text(x + w / 2, y + h + 30 + i * 28, c, 24))
     return "\n".join(s)
 
 
@@ -212,22 +211,22 @@ def build(font_b64=None):
         o.append("<defs><style>@font-face{font-family:'Maven Pro';font-weight:400 900;"
                  f"src:url(data:font/ttf;base64,{font_b64}) format('truetype');}}</style></defs>")
     o.append(f'<rect width="{W}" height="{H}" fill="#fff"/>')
+    o.append(f'<g transform="translate({-SHIFT_X},0)">')
 
     # stage boxes
-    for x0, x1, (num, *title) in STAGES:
+    for x0, x1, (_num, *title) in STAGES:
         o.append(f'<rect x="{x0}" y="{BOX_TOP}" width="{x1 - x0}" height="{BOX_BOTTOM - BOX_TOP}" '
                  f'rx="24" fill="#E9E9E9"/>')
-        o.append(text(x0 + 22, BOX_TOP + 48, num, 40, 700, "start", "#8A8A8A"))
         for i, t in enumerate(title):
-            o.append(text(x0 + 58, BOX_TOP + 44 + i * 30, t, 26, 700, "start", "#8A8A8A"))
+            o.append(text(x0 + 24, BOX_TOP + 44 + i * 30, t, 26, 700, "start", "#8A8A8A"))
 
     # lines (short drawn first so long lines sit on top in the trunk)
     for k, d in line_paths():
         o.append(f'<path d="{d}" fill="none" stroke="{LINES[k]["color"]}" stroke-width="{LW}" '
                  f'stroke-linejoin="round"/>')
+    # description between the alternative short-read assemblers
+    o.append(text(FORK_X, SHORT_Y + 8, "Assembly", 24))
 
-    # "or" between alternative assemblers
-    o.append(text(FORK_X, SHORT_Y + 8, "or", 22, 400, fill="#444"))
 
     # input terminus (triangle) and output terminus (bar)
     ty0, ty1 = TY[ALL[0]] - 12, TY[ALL[-1]] + 12
@@ -241,9 +240,9 @@ def build(font_b64=None):
     # inputs / outputs
     o.append(file_icon(110, 280, "CSV", ["Samplesheet"]))
     o.append(file_icon(110, 470, "ENA", ["Study / run", "accession"]))
-    o.append(file_icon(3215, 200, "FASTA", ["Cleaned", "contigs"], 1.0))
-    o.append(file_icon(3215, 390, "TSV", ["Coverage"], 1.0))
-    o.append(file_icon(3215, 550, "HTML", ["QC reports"], 1.0))
+    o.append(file_icon(3165, 200, "FASTA", ["Cleaned", "contigs"], 1.0))
+    o.append(file_icon(3165, 390, "TSV", ["Coverage"], 1.0))
+    o.append(file_icon(3165, 550, "HTML", ["QC reports"], 1.0))
 
     # ---------------- bottom: title + legend ----------------
     lt = 790
@@ -260,14 +259,13 @@ def build(font_b64=None):
         y = lt + 100 + i * 40
         o.append(f'<line x1="{bx + 30}" y1="{y}" x2="{bx + 100}" y2="{y}" stroke="{LINES[k]["color"]}" '
                  f'stroke-width="{LW + 3}"/>')
-        o.append(text(bx + 120, y + 8, LINES[k]["label"], 24, 400, "start"))
+        o.append(text(bx + 120, y + 8, LINES[k]["label"], 26, 400, "start"))
 
     # station legend
     sx = bx + 500
     items = [
         ("circle", "Mandatory"),
         ("optional", "Optional (depends on parameters / samplesheet)"),
-        ("pill", "Shared by all lines passing through it"),
         ("in", "Input"),
         ("out", "Output"),
     ]
@@ -287,8 +285,9 @@ def build(font_b64=None):
             o.append(f'<path d="M{cx - 10},{y - 14} L{cx + 12},{y} L{cx - 10},{y + 14} Z" fill="#000"/>')
         else:
             o.append(f'<rect x="{cx - 5}" y="{y - 15}" width="10" height="30" fill="#000"/>')
-        o.append(text(sx + 52, y + 8, lab, 24, 400, "start"))
+        o.append(text(sx + 52, y + 8, lab, 26, 400, "start"))
 
+    o.append("</g>")
     o.append("</svg>")
     return "\n".join(o)
 
