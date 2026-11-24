@@ -1,3 +1,9 @@
+# miassembler
+
+<p align="center" width="100%">
+   <img src="visuals/miassembler_metromap.png" width="100%"/>
+</p>
+
 ## Introduction
 
 **ebi-metagenomics/miassembler** is a bioinformatics pipeline for the assembly of long and short metagenomic reads.
