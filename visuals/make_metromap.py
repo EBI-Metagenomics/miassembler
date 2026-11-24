@@ -11,7 +11,7 @@ nf-core brand guidelines: https://fonts.google.com/specimen/Maven+Pro
 
 Render the PNG with a headless browser, e.g.:
     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless \
-        --screenshot=visuals/miassembler_metromap.png --window-size=3260,1130 \
+        --screenshot=visuals/miassembler_metromap.png --window-size=3260,1200 \
         --hide-scrollbars visuals/miassembler_metromap.svg
 """
 
@@ -19,7 +19,8 @@ import argparse
 import base64
 from pathlib import Path
 
-W, H = 3260, 1130
+W, H = 3260, 1200
+SHIFT_Y = 40      # extra space at the top: everything moves down, grey boxes grow upwards
 SHIFT_X = 0       # optional horizontal shift of the whole drawing
 ICON_SCALE = 1.25 # size of the input/output file icons
 
@@ -65,7 +66,7 @@ STAGES = [
     (2518, 2911, ["5", "Coverage & statistics"]),
     (2926, 3102, ["6", "Reporting"]),
 ]
-BOX_TOP, BOX_BOTTOM = 60, 750
+BOX_TOP, BOX_BOTTOM = 60 - SHIFT_Y, 780
 
 # ---------------------------------------------------------------------------
 # Stations: (x, lines, tool name, description lines, optional, row)
@@ -77,13 +78,13 @@ STATIONS = [
     (457, ALL, "FastQC", ["Raw read", "quality"], False, "trunk"),
     # 2. Reads QC - short
     (680, ["short"], "fastp", ["Trimming &", "filtering"], False, "short"),
-    (1022, ["short"], "bwa-mem2", ["Human, PhiX &", "host removal"], True, "short"),
+    (1022, ["short"], "bwa-mem2", ["Human, PhiX &", "contaminant", "removal"], True, "short"),
     (1402, ["short"], "FastQC", ["Processed", "read quality"], False, "short"),
     # 2. Reads QC - long
     (635, LONG, "fastplong", ["Filtering &", "quality level"], False, "long"),
     (819, ["ont_hq", "ont_lq"], "Porechop_ABI", ["Adapter", "trimming"], False, "long"),
     (1027, ["ont_hq", "ont_lq", "pb_lq"], "Chopper", ["Filtering &", "lambda removal"], False, "long"),
-    (1240, LONG, "minimap2", ["Human &", "host removal"], True, "long"),
+    (1240, LONG, "minimap2", ["Human &", "contaminant", "removal"], True, "long"),
     (1402, LONG, "FastQC", ["Processed", "read quality"], False, "long"),
     # 3. Assembly - short (fork: alternative assemblers)
     (FORK_X, ["short"], "metaSPAdes", [], False, "fork_top"),
@@ -95,8 +96,8 @@ STATIONS = [
     (2045, ["ont_lq"], "Medaka", ["Polishing"], False, "long"),
     # 4. Contig QC
     (2218, ["short"], "SeqKit", ["Length", "filtering"], False, "short"),
-    (2400, ["short"], "minimap2", ["Human, PhiX &", "host removal"], True, "short"),
-    (2218, LONG, "minimap2", ["Human &", "host removal"], True, "long"),
+    (2400, ["short"], "minimap2", ["Human, PhiX &", "contaminant", "removal"], True, "short"),
+    (2218, LONG, "minimap2", ["Human &", "contaminant", "removal"], True, "long"),
     (2400, ["ont_lq", "pb_lq"], "proovframe", ["Frameshift", "correction"], False, "long"),
     # 5. Coverage & stats
     (2601, ["short"], "bwa-mem2", ["Coverage"], False, "short"),
@@ -212,7 +213,7 @@ def build(font_b64=None):
         o.append("<defs><style>@font-face{font-family:'Maven Pro';font-weight:400 900;"
                  f"src:url(data:font/ttf;base64,{font_b64}) format('truetype');}}</style></defs>")
     o.append(f'<rect width="{W}" height="{H}" fill="#fff"/>')
-    o.append(f'<g transform="translate({-SHIFT_X},0)">')
+    o.append(f'<g transform="translate({-SHIFT_X},{SHIFT_Y})">')
 
     # stage boxes
     for x0, x1, (_num, *title) in STAGES:
@@ -253,7 +254,7 @@ def build(font_b64=None):
         y += ih + 40 + 30 * len(caption) + gap   # icon + caption block height + gap
 
     # ---------------- bottom: title + legend ----------------
-    lt = 790
+    lt = 820
     o.append(text(STAGES[0][0], lt + 70, "ebi-metagenomics/", 46, 700, "start", "#555"))
     o.append(text(STAGES[0][0], lt + 140, "miassembler", 86, 800, "start", "#000"))
     o.append(text(STAGES[0][0], lt + 190, "Metagenomic assembly of short and long reads", 28, 400, "start", "#444"))

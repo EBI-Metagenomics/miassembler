@@ -22,6 +22,6 @@ python3 visuals/make_metromap.py --font MavenPro.ttf
 
 # PNG for the README, via headless Chrome (or Inkscape / rsvg-convert)
 "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless \
-    --screenshot=visuals/miassembler_metromap.png --window-size=3260,1130 \
+    --screenshot=visuals/miassembler_metromap.png --window-size=3260,1200 \
     --hide-scrollbars "file://$PWD/visuals/miassembler_metromap.svg"
 ```
