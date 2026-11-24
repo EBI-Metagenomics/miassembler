@@ -7,7 +7,7 @@ and the style of our other pipeline maps
 [genomes-generation](https://github.com/EBI-Metagenomics/genomes-generation)):
 
 - one coloured line per read type (short reads, ONT HQ/LQ, PacBio CLR/HiFi), running in parallel through shared steps;
-- numbered grey boxes for pipeline stages;
+- grey boxes for pipeline stages;
 - tool name (bold) above each station, short description below;
 - mandatory steps drawn as stations with a black dot, optional steps (depending on parameters or the samplesheet) as empty stations;
 - input/output file icons, an input triangle and an output bar.
