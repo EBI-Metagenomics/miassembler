@@ -45,7 +45,7 @@ workflow LONG_READS_ASSEMBLER {
 
     main:
 
-    ch_versions = Channel.empty()
+    ch_versions = channel.empty()
 
     FASTQC_BEFORE (
         input_reads
@@ -79,7 +79,7 @@ workflow LONG_READS_ASSEMBLER {
     // If no input was provided, quality and platform will determine the assembly type
     reads_assembler_config = LONG_READS_QC.out.qc_reads.map { meta, reads ->
         meta = meta + ["assembler": "flye", "assembler_version": params.flye_version]
-        if (meta.assembler_config == "") {
+        if (!meta.assembler_config) {
             if (meta.platform == "ont") {
                 if (meta.quality == "low") {
                     return [meta + ["assembler_config": "nano-raw"], reads]
@@ -100,7 +100,7 @@ workflow LONG_READS_ASSEMBLER {
         }
     }
 
-    reads_assembler_config.branch { meta, reads ->
+    reads_assembler_config.branch { meta, _reads ->
         lq_ont: meta.assembler_config == "nano-raw"
         hq_ont: meta.assembler_config == "nano-hq"
         lq_pacbio: meta.assembler_config == "pacbio-raw"
@@ -140,7 +140,7 @@ workflow LONG_READS_ASSEMBLER {
 
     def decontaminated_assembly = LONG_READS_ASSEMBLY_QC.out.contigs
 
-    decontaminated_assembly.branch { meta, contigs ->
+    decontaminated_assembly.branch { meta, _contigs ->
         lq: meta.quality == "low"
         hq: meta.quality == "high"
     }.set{low_high_quality_contigs}
@@ -153,8 +153,22 @@ workflow LONG_READS_ASSEMBLER {
     final_contigs = FRAMESHIFT_CORRECTION.out.corrected_contigs.mix(
                         low_high_quality_contigs.hq)
 
+    def final_contigs_by_run = final_contigs.map { meta, contigs ->
+        [meta.subMap("study_accession", "id", "platform", "assembler_config"), meta, contigs]
+    }
+
+    def reads_assembler_config_by_run = reads_assembler_config.map { meta, reads ->
+        [meta.subMap("study_accession", "id", "platform", "assembler_config"), reads]
+    }
+
+    def final_contigs_reads = final_contigs_by_run
+        .join(reads_assembler_config_by_run)
+        .map { _run_meta, meta, contigs, reads ->
+            [meta, contigs, reads]
+        }
+
     LONG_READS_ASSEMBLY_COVERAGE(
-        final_contigs.join( reads_assembler_config ),
+        final_contigs_reads,
         LONG_READS_QC.out.fastp_json
     )
     ch_versions = ch_versions.mix(LONG_READS_ASSEMBLY_COVERAGE.out.versions)
