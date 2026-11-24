@@ -20,7 +20,8 @@ import base64
 from pathlib import Path
 
 W, H = 3260, 1130
-SHIFT_X = 30      # trims the empty left margin before the input icons
+SHIFT_X = 0       # optional horizontal shift of the whole drawing
+ICON_SCALE = 1.25 # size of the input/output file icons
 
 # ---------------------------------------------------------------------------
 # Lines (one per read type), ordered top -> bottom inside the trunk
@@ -45,10 +46,10 @@ LONG_TOP = 590    # y of the first long-reads track
 TY = {k: TRUNK_TOP + i * GAP for i, k in enumerate(ALL)}
 LY = {k: LONG_TOP + i * GAP for i, k in enumerate(LONG)}
 
-X_START, X_SPLIT0, X_SPLIT1 = 230, 560, 650
-X_MERGE0, X_MERGE1, X_END = 2620, 2710, 3122
-FORK = (1520, 1580, 1920, 1980)   # short-read assembler fork: out0, out1, in0, in1
-FORK_X = 1750
+X_START, X_SPLIT0, X_SPLIT1 = 150, 500, 590
+X_MERGE0, X_MERGE1, X_END = 2665, 2745, 3114
+FORK = (1515, 1575, 2011, 2071)   # short-read assembler fork: out0, out1, in0, in1
+FORK_X = 1793
 FORK_DY = 45
 
 FONT = "'Maven Pro', 'Helvetica Neue', Arial, sans-serif"
@@ -57,12 +58,12 @@ FONT = "'Maven Pro', 'Helvetica Neue', Arial, sans-serif"
 # Stages (grey boxes)
 # ---------------------------------------------------------------------------
 STAGES = [
-    (250, 580, ["1", "Input"]),
-    (600, 1480, ["2", "Reads QC & decontamination"]),
-    (1500, 2075, ["3", "Assembly & polishing"]),
-    (2095, 2440, ["4", "Contig QC &", "decontamination"]),
-    (2460, 2920, ["5", "Coverage & statistics"]),
-    (2940, 3110, ["6", "Reporting"]),
+    (170, 525, ["1", "Input"]),
+    (540, 1486, ["2", "Reads QC & decontamination"]),
+    (1501, 2113, ["3", "Assembly & polishing"]),
+    (2128, 2503, ["4", "Contig QC &", "decontamination"]),
+    (2518, 2911, ["5", "Coverage & statistics"]),
+    (2926, 3102, ["6", "Reporting"]),
 ]
 BOX_TOP, BOX_BOTTOM = 60, 750
 
@@ -72,37 +73,37 @@ BOX_TOP, BOX_BOTTOM = 60, 750
 # ---------------------------------------------------------------------------
 STATIONS = [
     # 1. Input
-    (352, ALL, "fetch-tool", ["Download reads", "from ENA"], True, "trunk"),
-    (508, ALL, "FastQC", ["Raw read", "quality"], False, "trunk"),
+    (283, ALL, "fetch-tool", ["Download reads", "from ENA"], True, "trunk"),
+    (457, ALL, "FastQC", ["Raw read", "quality"], False, "trunk"),
     # 2. Reads QC - short
-    (740, ["short"], "fastp", ["Trimming &", "filtering"], False, "short"),
-    (1050, ["short"], "bwa-mem2", ["Human, PhiX &", "host removal"], True, "short"),
-    (1395, ["short"], "FastQC", ["Processed", "read quality"], False, "short"),
+    (680, ["short"], "fastp", ["Trimming &", "filtering"], False, "short"),
+    (1022, ["short"], "bwa-mem2", ["Human, PhiX &", "host removal"], True, "short"),
+    (1402, ["short"], "FastQC", ["Processed", "read quality"], False, "short"),
     # 2. Reads QC - long
-    (710, LONG, "fastplong", ["Filtering &", "quality level"], False, "long"),
-    (885, ["ont_hq", "ont_lq"], "Porechop_ABI", ["Adapter", "trimming"], False, "long"),
-    (1050, ["ont_hq", "ont_lq", "pb_lq"], "Chopper", ["Filtering &", "lambda removal"], False, "long"),
-    (1235, LONG, "minimap2", ["Human &", "host removal"], True, "long"),
-    (1395, LONG, "FastQC", ["Processed", "read quality"], False, "long"),
+    (635, LONG, "fastplong", ["Filtering &", "quality level"], False, "long"),
+    (819, ["ont_hq", "ont_lq"], "Porechop_ABI", ["Adapter", "trimming"], False, "long"),
+    (1027, ["ont_hq", "ont_lq", "pb_lq"], "Chopper", ["Filtering &", "lambda removal"], False, "long"),
+    (1240, LONG, "minimap2", ["Human &", "host removal"], True, "long"),
+    (1402, LONG, "FastQC", ["Processed", "read quality"], False, "long"),
     # 3. Assembly - short (fork: alternative assemblers)
     (FORK_X, ["short"], "metaSPAdes", [], False, "fork_top"),
     (FORK_X, ["short"], "MEGAHIT", [], False, "fork_bottom"),
     # 3. Assembly - long
-    (1600, ["hifi"], "HiFiAdapterFilt", ["HiFi adapter", "removal"], False, "long"),
-    (1750, LONG, "Flye", ["Assembly"], False, "long"),
-    (1880, ["ont_lq", "pb_lq"], "Racon", ["Polishing"], False, "long"),
-    (2008, ["ont_lq"], "Medaka", ["Polishing"], False, "long"),
+    (1617, ["hifi"], "HiFiAdapterFilt", ["HiFi adapter", "removal"], False, "long"),
+    (FORK_X, LONG, "Flye", ["Assembly"], False, "long"),
+    (1921, ["ont_lq", "pb_lq"], "Racon", ["Polishing"], False, "long"),
+    (2045, ["ont_lq"], "Medaka", ["Polishing"], False, "long"),
     # 4. Contig QC
-    (2178, ["short"], "SeqKit", ["Length", "filtering"], False, "short"),
-    (2350, ["short"], "minimap2", ["Human, PhiX &", "host removal"], True, "short"),
-    (2178, LONG, "minimap2", ["Human &", "host removal"], True, "long"),
-    (2350, ["ont_lq", "pb_lq"], "proovframe", ["Frameshift", "correction"], False, "long"),
+    (2218, ["short"], "SeqKit", ["Length", "filtering"], False, "short"),
+    (2400, ["short"], "minimap2", ["Human, PhiX &", "host removal"], True, "short"),
+    (2218, LONG, "minimap2", ["Human &", "host removal"], True, "long"),
+    (2400, ["ont_lq", "pb_lq"], "proovframe", ["Frameshift", "correction"], False, "long"),
     # 5. Coverage & stats
-    (2540, ["short"], "bwa-mem2", ["Coverage"], False, "short"),
-    (2540, LONG, "minimap2", ["Coverage"], False, "long"),
-    (2820, ALL, "metaQUAST", ["Assembly", "statistics"], False, "trunk"),
+    (2601, ["short"], "bwa-mem2", ["Coverage"], False, "short"),
+    (2601, LONG, "minimap2", ["Coverage"], False, "long"),
+    (2815, ALL, "metaQUAST", ["Assembly", "statistics"], False, "trunk"),
     # 6. Reporting
-    (3030, ALL, "MultiQC", ["Run & study", "reports"], False, "trunk"),
+    (3014, ALL, "MultiQC", ["Run & study", "reports"], False, "trunk"),
 ]
 
 
@@ -181,13 +182,13 @@ def station(x, lines, name, desc, optional, row):
                  f'rx="{r}" fill="#000"/>')
     top, bottom = label_anchors(row)
     if row == "fork_top":
-        s.append(text(x, top, name, 26, 700))
+        s.append(text(x, top, name, 28, 700))
     elif row == "fork_bottom":
-        s.append(text(x, bottom, name, 26, 700))
+        s.append(text(x, bottom, name, 28, 700))
     else:
-        s.append(text(x, top, name, 26, 700))
+        s.append(text(x, top, name, 28, 700))
         for i, d in enumerate(desc):
-            s.append(text(x, bottom + i * 28, d, 24))
+            s.append(text(x, bottom + i * 30, d, 26))
     return "\n".join(s)
 
 
@@ -201,7 +202,7 @@ def file_icon(x, y, label, caption, scale=1.0):
          f'<rect x="{x - 8}" y="{y + h * 0.42}" width="{w + 16}" height="{26 * scale}" rx="4" fill="#000"/>',
          text(x + w / 2, y + h * 0.42 + 19 * scale, label, 18 * scale, 700, fill="#fff")]
     for i, c in enumerate(caption):
-        s.append(text(x + w / 2, y + h + 30 + i * 28, c, 24))
+        s.append(text(x + w / 2, y + h + 32 + i * 30, c, 26))
     return "\n".join(s)
 
 
@@ -218,14 +219,14 @@ def build(font_b64=None):
         o.append(f'<rect x="{x0}" y="{BOX_TOP}" width="{x1 - x0}" height="{BOX_BOTTOM - BOX_TOP}" '
                  f'rx="24" fill="#E9E9E9"/>')
         for i, t in enumerate(title):
-            o.append(text(x0 + 24, BOX_TOP + 44 + i * 30, t, 26, 700, "start", "#8A8A8A"))
+            o.append(text(x0 + 24, BOX_TOP + 46 + i * 32, t, 28, 700, "start", "#8A8A8A"))
 
     # lines (short drawn first so long lines sit on top in the trunk)
     for k, d in line_paths():
         o.append(f'<path d="{d}" fill="none" stroke="{LINES[k]["color"]}" stroke-width="{LW}" '
                  f'stroke-linejoin="round"/>')
     # description between the alternative short-read assemblers
-    o.append(text(FORK_X, SHORT_Y + 8, "Assembly", 24))
+    o.append(text(FORK_X, SHORT_Y + 8, "Assembly", 26))
 
 
     # input terminus (triangle) and output terminus (bar)
@@ -238,28 +239,35 @@ def build(font_b64=None):
         o.append(station(*st))
 
     # inputs / outputs
-    o.append(file_icon(110, 280, "CSV", ["Samplesheet"]))
-    o.append(file_icon(110, 470, "ENA", ["Study / run", "accession"]))
-    o.append(file_icon(3165, 200, "FASTA", ["Cleaned", "contigs"], 1.0))
-    o.append(file_icon(3165, 390, "TSV", ["Coverage"], 1.0))
-    o.append(file_icon(3165, 550, "HTML", ["QC reports"], 1.0))
+    iw = 62 * ICON_SCALE
+    lx = 75.8 - iw / 2 + SHIFT_X          # widest caption ("Samplesheet") starts at the left edge
+    rx = W - 63.1 - iw / 2 + SHIFT_X      # widest caption ("QC reports") ends at the right edge
+    o.append(file_icon(lx, 205, "ENA", ["Study / run", "accession"], ICON_SCALE))
+    o.append(file_icon(lx, 480, "CSV", ["Samplesheet"], ICON_SCALE))
+    # output icons: equal vertical gaps between icon blocks (icon + caption)
+    ih = 80 * ICON_SCALE
+    gap = 40
+    y = 130
+    for label, caption in [("FASTA", ["Cleaned", "contigs"]), ("TSV", ["Coverage"]), ("HTML", ["QC reports"])]:
+        o.append(file_icon(rx, y, label, caption, ICON_SCALE))
+        y += ih + 40 + 30 * len(caption) + gap   # icon + caption block height + gap
 
     # ---------------- bottom: title + legend ----------------
     lt = 790
-    o.append(text(STAGES[0][0], lt + 70, "ebi-metagenomics/", 44, 700, "start", "#555"))
-    o.append(text(STAGES[0][0], lt + 140, "miassembler", 84, 800, "start", "#000"))
-    o.append(text(STAGES[0][0], lt + 190, "Metagenomic assembly of short and long reads", 26, 400, "start", "#444"))
+    o.append(text(STAGES[0][0], lt + 70, "ebi-metagenomics/", 46, 700, "start", "#555"))
+    o.append(text(STAGES[0][0], lt + 140, "miassembler", 86, 800, "start", "#000"))
+    o.append(text(STAGES[0][0], lt + 190, "Metagenomic assembly of short and long reads", 28, 400, "start", "#444"))
 
     # line legend
     bw = 1230
     bx = STAGES[-1][1] - bw   # right edge aligned with the last stage box
     o.append(f'<rect x="{bx}" y="{lt}" width="{bw}" height="300" rx="24" fill="#E9E9E9"/>')
-    o.append(text(bx + 30, lt + 50, "Legend", 32, 700, "start"))
+    o.append(text(bx + 30, lt + 50, "Legend", 34, 700, "start"))
     for i, k in enumerate(ALL):
-        y = lt + 100 + i * 40
+        y = lt + 100 + i * 42
         o.append(f'<line x1="{bx + 30}" y1="{y}" x2="{bx + 100}" y2="{y}" stroke="{LINES[k]["color"]}" '
                  f'stroke-width="{LW + 3}"/>')
-        o.append(text(bx + 120, y + 8, LINES[k]["label"], 26, 400, "start"))
+        o.append(text(bx + 120, y + 8, LINES[k]["label"], 28, 400, "start"))
 
     # station legend
     sx = bx + 500
@@ -270,7 +278,7 @@ def build(font_b64=None):
         ("out", "Output"),
     ]
     for i, (kind, lab) in enumerate(items):
-        y = lt + 100 + i * 40
+        y = lt + 100 + i * 42
         cx = sx + 20
         if kind == "circle":
             o.append(f'<circle cx="{cx}" cy="{y}" r="{R}" fill="#fff" stroke="#000" stroke-width="4"/>')
@@ -285,7 +293,7 @@ def build(font_b64=None):
             o.append(f'<path d="M{cx - 10},{y - 14} L{cx + 12},{y} L{cx - 10},{y + 14} Z" fill="#000"/>')
         else:
             o.append(f'<rect x="{cx - 5}" y="{y - 15}" width="10" height="30" fill="#000"/>')
-        o.append(text(sx + 52, y + 8, lab, 26, 400, "start"))
+        o.append(text(sx + 52, y + 9, lab, 28, 400, "start"))
 
     o.append("</g>")
     o.append("</svg>")
