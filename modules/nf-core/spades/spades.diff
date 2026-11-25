@@ -35,7 +35,56 @@ Changes in 'spades/main.nf':
      tuple val("${task.process}"), val('spades'), eval("spades.py --version 2>&1 | sed -n 's/^.*SPAdes genome assembler v//p'"), topic: versions, emit: versions_spades
  
      when:
-@@ -59,9 +60,15 @@
+@@ -37,14 +38,41 @@
+     def nanopore_reads = nanopore ? "--nanopore $nanopore" : ""
+     def custom_hmms = hmm ? "--custom-hmms $hmm" : ""
+     def reads = yml ? "--dataset $yml" : "$illumina_reads $pacbio_reads $nanopore_reads"
++    // On a Nextflow retry the task runs in a new work directory. To avoid assembling from scratch,
++    // reuse the SPAdes output directory of the previous attempt and restart from its last checkpoint.
++    // task.previousTrace only points to the previous attempt, so its spades_out symlink is resolved
++    // to the original directory (attempt 3+ link straight to the directory that holds the checkpoints).
++    // --restart-from does not accept reads or flags such as --meta/--iontorrent/--only-assembler
++    // (SPAdes keeps them from the original run), so only --threads and --memory are updated.
++    def previous_workdir = task.previousTrace ? task.previousTrace.get('workdir') : ''
+     """
+-    spades.py \\
+-        $args \\
+-        --threads $task.cpus \\
+-        --memory $maxmem \\
+-        $custom_hmms \\
+-        $reads \\
+-        -o ./
++    if [ -n "${previous_workdir}" ] && [ -d "${previous_workdir}/spades_out/pipeline_state" ]; then
++        echo "Restarting SPAdes from the last checkpoint of the previous attempt: \$(readlink -f ${previous_workdir}/spades_out)"
++        ln -s "\$(readlink -f ${previous_workdir}/spades_out)" spades_out
++        spades.py \\
++            --restart-from last \\
++            --threads $task.cpus \\
++            --memory $maxmem \\
++            -o spades_out
++    else
++        spades.py \\
++            $args \\
++            --threads $task.cpus \\
++            --memory $maxmem \\
++            $custom_hmms \\
++            $reads \\
++            -o spades_out
++    fi
++
++    # Copy (not move) the final SPAdes outputs into the task work directory, so spades_out stays
++    # complete in case this attempt fails later and the next one needs to restart from it
++    for output_file in spades.log warnings.log params.txt scaffolds.fasta contigs.fasta transcripts.fasta \\
++        gene_clusters.fasta assembly_graph_with_scaffolds.gfa assembly_graph.fastg; do
++        if [ -e "spades_out/\$output_file" ]; then
++            cp "spades_out/\$output_file" ./
++        fi
++    done
++
+     mv spades.log ${prefix}.spades.log
+ 
+     if [ -f scaffolds.fasta ]; then
+@@ -59,9 +87,15 @@
          mv transcripts.fasta ${prefix}.transcripts.fa
          gzip -n ${prefix}.transcripts.fa
      fi
