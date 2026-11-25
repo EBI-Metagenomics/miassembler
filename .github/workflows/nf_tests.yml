@@ -16,7 +16,7 @@ jobs:
     strategy:
       matrix:
         # Nextflow versions: check pipeline minimum and current latest
-        NXF_VER: ["24.04.0"]
+        NXF_VER: ["24.10.0"]
 
     steps:
       - name: Check out pipeline code
@@ -36,6 +36,10 @@ jobs:
       - name: Run the nf-test
         run: |
           nf-test test --tag samplesheet --ci
+
+      - name: Run the SPAdes restart nf-test
+        run: |
+          nf-test test --tag spades_restart --ci
 
       - name: Run the example data
         run: |

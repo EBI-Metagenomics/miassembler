@@ -203,25 +203,23 @@ workflow MIASSEMBLER {
 
         // Push the library strategy into the meta of the reads, this is to make it easier to handle downstream
         fetch_reads_transformed = FETCHTOOL_READS.out.reads.map { meta, reads, library_strategy, library_layout, platform ->
-            {
-                [
-                    meta + [
-                        "assembler": params.assembler,
-                        "assembler_config": params.long_reads_assembler_config,
-                        "assembly_memory": params.assembly_memory,
-                        "library_strategy": params.library_strategy ?: library_strategy,
-                        "library_layout": params.library_layout ?: library_layout,
-                        "single_end": params.single_end ?: library_layout == "single",
-                        "platform": params.platform ?: platform,
-                        "contaminant_reference": params.contaminant_reference,
-                        "human_reference": params.skip_human_decontamination ? null : params.human_reference,
-                        "phix_reference": params.phix_reference,
-                        "lambdaphage_reference": params.lambdaphage_reference,
-                        "study_accession": params.study_accession
-                    ] + outputFolders(params.study_accession, params.reads_accession),
-                    reads
-                ]
-            }
+            [
+                meta + [
+                    "assembler": params.assembler,
+                    "assembler_config": params.long_reads_assembler_config,
+                    "assembly_memory": params.assembly_memory,
+                    "library_strategy": params.library_strategy ?: library_strategy,
+                    "library_layout": params.library_layout ?: library_layout,
+                    "single_end": params.single_end ?: library_layout == "single",
+                    "platform": params.platform ?: platform,
+                    "contaminant_reference": params.contaminant_reference,
+                    "human_reference": params.skip_human_decontamination ? null : params.human_reference,
+                    "phix_reference": params.phix_reference,
+                    "lambdaphage_reference": params.lambdaphage_reference,
+                    "study_accession": params.study_accession
+                ] + outputFolders(params.study_accession, params.reads_accession),
+                reads
+            ]
         }
 
         // Metadata for MultiQC
@@ -394,9 +392,8 @@ workflow MIASSEMBLER {
         .join(SHORT_READS_ASSEMBLER.out.quast_results.map(meta_by_run), remainder: true)                       // the assembly step could fail
 
     // Filter out the non-assembled runs //
-    def ch_multiqc_run_tools_files = run_multiqc_files.filter { _meta, _fastqc_before, _fastqc_after, assembly_coverage, quast -> {
-            return assembly_coverage != null && quast != null
-        }
+    def ch_multiqc_run_tools_files = run_multiqc_files.filter { _meta, _fastqc_before, _fastqc_after, assembly_coverage, quast ->
+        return assembly_coverage != null && quast != null
     }.flatMap(combineFiles).groupTuple()
 
     // TODO: add the fetch tool log file
@@ -419,27 +416,24 @@ workflow MIASSEMBLER {
     // Short reads asssembled runs //
     SHORT_READS_ASSEMBLER.out.assembly_coverage_samtools_idxstats
         .map { meta, __ ->
-            {
-                return "${meta.id},${meta.assembler},${meta.assembler_version}"
-            }
+            return "${meta.id},${meta.assembler},${meta.assembler_version}"
         }
         .collectFile(name: "assembled_runs.csv", storeDir: "${params.outdir}", newLine: true, cache: false)
 
     // Short reads and assembly QC failed //
 
     def short_reads_qc_failed_entries = SHORT_READS_ASSEMBLER.out.qc_failed_all.map {
-        meta, __ -> {
-            if (meta.low_reads_count) {
-                return "${meta.id},low_reads_count"
-            }
-            if (meta.filter_ratio_threshold_exceeded) {
-                return "${meta.id},filter_ratio_threshold_exceeded"
-            }
-            if (meta.too_few_contigs) {
-                return "${meta.id},too_few_contigs"
-            }
-            error("Unexpected. meta: ${meta}")
+        meta, __ ->
+        if (meta.low_reads_count) {
+            return "${meta.id},low_reads_count"
         }
+        if (meta.filter_ratio_threshold_exceeded) {
+            return "${meta.id},filter_ratio_threshold_exceeded"
+        }
+        if (meta.too_few_contigs) {
+            return "${meta.id},too_few_contigs"
+        }
+        error("Unexpected. meta: ${meta}")
     }
 
     short_reads_qc_failed_entries.collectFile(name: "qc_failed_runs.csv", storeDir: "${params.outdir}", newLine: true, cache: false)

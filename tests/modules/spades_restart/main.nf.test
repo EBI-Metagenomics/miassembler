@@ -1,0 +1,63 @@
+nextflow_process {
+
+    name "Test SPADES restart from the checkpoints of a previous attempt"
+    script "../../../modules/nf-core/spades/main.nf"
+    process "SPADES"
+    config "./nextflow.config"
+
+    tag "spades"
+    tag "spades_restart"
+
+    test("metaSPAdes - retries restart from the first attempt checkpoints") {
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id: 'SRR5949318', single_end: false ],
+                    [
+                        file("${projectDir}/tests/test_reads/SRR5949318_1.fastq.gz", checkIfExists: true),
+                        file("${projectDir}/tests/test_reads/SRR5949318_2.fastq.gz", checkIfExists: true)
+                    ],
+                    [],
+                    []
+                ]
+                input[1] = []
+                input[2] = []
+                """
+            }
+        }
+
+        then {
+            // spades.log is shared by all the attempts (it lives in the first attempt's spades_out)
+            def spades_log = path(process.out.log[0][1]).readLines()
+
+            assertAll(
+                { assert process.success },
+
+                // Two forced failures, then a successful third attempt
+                { assert process.trace.failed().size() == 2 },
+                { assert process.trace.succeeded().size() == 1 },
+
+                // Attempt 1 ran from scratch and stopped after K21
+                { assert spades_log.any { it.contains("Skipping the rest of SPAdes pipeline (--stop-after was set to 'k21')") } },
+
+                // Attempts 2 and 3 continued from the checkpoints instead of starting from scratch
+                { assert spades_log.count { it.contains("SPAdes pipeline continued") } == 2 },
+                { assert spades_log.count { it.contains("Restart-from=last") } == 2 },
+
+                // Attempt 3 reached the first attempt's directory through attempt 2 and reused every checkpoint
+                { assert spades_log.any { it.contains("Skipping K21 (already processed)") } },
+                { assert spades_log.any { it.contains("Skipping K33 (already processed)") } },
+                { assert spades_log.any { it.contains("Skipping K55 (already processed)") } },
+
+                // The options of the first run (--meta) were kept on restart
+                { assert spades_log.any { it.startsWith("Restored from Command line:") && it.contains("--meta") } },
+
+                { assert spades_log.any { it.contains("SPAdes pipeline finished") } },
+                { assert path(process.out.contigs[0][1]).linesGzip.any { it.startsWith(">") } },
+                { assert process.out.scaffolds.size() == 1 }
+            )
+        }
+    }
+}
