@@ -61,8 +61,8 @@ workflow SHORT_READS_QC {
         .set { phix_subdivided_reads }
 
     phix_subdivided_reads.run_decontamination
-        .multiMap { meta, reads ->
-            reads: [meta, reads]
+        .multiMap { meta, reads_ ->
+            reads: [meta, reads_]
             reference: [ [id:"phix"], file("${params.reference_genomes_folder}/${meta.phix_reference}/bwa-mem2/${meta.phix_reference}.fna.*") ]
         }
         .set { ch_phix_decontamination_input }

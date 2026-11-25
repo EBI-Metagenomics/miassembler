@@ -86,16 +86,14 @@ workflow SHORT_READS_ASSEMBLER {
     /*  - Less than 1k reads                  */
     /******************************************/
     def extended_qc = SHORT_READS_QC.out.fastp_json.map { meta, json ->
-        {
-            def json_txt = new groovy.json.JsonSlurper().parseText(json.text)
-            def bf_total_reads = json_txt.summary.before_filtering.total_reads ?: 0
-            def af_total_reads = json_txt.summary.after_filtering.total_reads ?: 0
-            def reads_qc_meta = [
-                "low_reads_count": af_total_reads <= params.short_reads_low_reads_count_threshold,
-                "filter_ratio_threshold_exceeded": af_total_reads == 0 || ((af_total_reads / bf_total_reads) <= params.short_reads_filter_ratio_threshold)
-            ]
-            return [meta, reads_qc_meta]
-        }
+        def json_txt = new groovy.json.JsonSlurper().parseText(json.text)
+        def bf_total_reads = json_txt.summary.before_filtering.total_reads ?: 0
+        def af_total_reads = json_txt.summary.after_filtering.total_reads ?: 0
+        def reads_qc_meta = [
+            "low_reads_count": af_total_reads <= params.short_reads_low_reads_count_threshold,
+            "filter_ratio_threshold_exceeded": af_total_reads == 0 || ((af_total_reads / bf_total_reads) <= params.short_reads_filter_ratio_threshold)
+        ]
+        return [meta, reads_qc_meta]
     }
 
     def extended_reads_qc = SHORT_READS_QC.out.qc_reads.join(extended_qc)
@@ -117,7 +115,13 @@ workflow SHORT_READS_ASSEMBLER {
         [],
         []
     )
-    ch_versions = ch_versions.mix(SPADES.out.versions)
+    // The updated nf-core module emits versions as a [process, tool, version] tuple (topic),
+    // convert it into versions.yml content so CUSTOM_DUMPSOFTWAREVERSIONS can collate it
+    ch_versions = ch_versions.mix(
+        SPADES.out.versions_spades
+            .map { process, tool, version -> "\"${process}\":\n    ${tool}: ${version}\n" }
+            .unique()
+    )
 
     MEGAHIT(
         qc_filtered_reads.megahit.map { meta, reads, __ -> [meta, reads] }

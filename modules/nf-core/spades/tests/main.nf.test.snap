@@ -1,0 +1,435 @@
+{
+    "sarscov2 - pe - nanopore ": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "test",
+                        "single_end": false
+                    },
+                    "test.scaffolds.fa.gz:md5,7ddaf03740df422a93fcaffbcd7e9679"
+                ]
+            ],
+            [
+                [
+                    {
+                        "id": "test",
+                        "single_end": false
+                    },
+                    "test.contigs.fa.gz:md5,7ddaf03740df422a93fcaffbcd7e9679"
+                ]
+            ],
+            [
+                
+            ],
+            [
+                
+            ],
+            [
+                [
+                    {
+                        "id": "test",
+                        "single_end": false
+                    },
+                    "test.assembly.gfa.gz:md5,d37c66bca8485314492827ab333a5dcd"
+                ]
+            ],
+            [
+                [
+                    "SPADES",
+                    "spades",
+                    "4.3.0"
+                ]
+            ]
+        ],
+        "timestamp": "2026-09-30T23:20:09.306975",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    },
+    "sarscov2 - pe - hmm ": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "test",
+                        "single_end": false
+                    },
+                    "test.scaffolds.fa.gz:md5,6263e4b88b3e0099ab0abb0bd034a581"
+                ]
+            ],
+            [
+                
+            ],
+            [
+                
+            ],
+            [
+                
+            ],
+            [
+                [
+                    {
+                        "id": "test",
+                        "single_end": false
+                    },
+                    "test.assembly.gfa.gz:md5,6470b4fda12974c496fa2d2537e841d5"
+                ]
+            ],
+            [
+                [
+                    "SPADES",
+                    "spades",
+                    "4.3.0"
+                ]
+            ]
+        ],
+        "timestamp": "2026-09-30T23:24:21.857659",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    },
+    "sarscov2 - pe - pacbio ": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "test",
+                        "single_end": false
+                    },
+                    "test.scaffolds.fa.gz:md5,7ddaf03740df422a93fcaffbcd7e9679"
+                ]
+            ],
+            [
+                [
+                    {
+                        "id": "test",
+                        "single_end": false
+                    },
+                    "test.contigs.fa.gz:md5,7ddaf03740df422a93fcaffbcd7e9679"
+                ]
+            ],
+            [
+                
+            ],
+            [
+                
+            ],
+            [
+                [
+                    {
+                        "id": "test",
+                        "single_end": false
+                    },
+                    "test.assembly.gfa.gz:md5,d37c66bca8485314492827ab333a5dcd"
+                ]
+            ],
+            [
+                [
+                    "SPADES",
+                    "spades",
+                    "4.3.0"
+                ]
+            ]
+        ],
+        "timestamp": "2026-09-30T23:18:49.884088",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    },
+    "sarscov2 - pe ": {
+        "content": [
+            [
+                
+            ],
+            [
+                [
+                    {
+                        "id": "test",
+                        "single_end": false
+                    },
+                    "test.contigs.fa.gz:md5,70e4a5485dd59566b212a199c31c343b"
+                ]
+            ],
+            [
+                
+            ],
+            [
+                
+            ],
+            [
+                [
+                    {
+                        "id": "test",
+                        "single_end": false
+                    },
+                    "test.assembly.gfa.gz:md5,873c2125e73becfe5b0941c96930c019"
+                ]
+            ],
+            [
+                [
+                    "SPADES",
+                    "spades",
+                    "4.3.0"
+                ]
+            ]
+        ],
+        "timestamp": "2026-09-30T23:17:29.540536",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    },
+    "sarscov2 - pe - nanopore - yml ": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "test",
+                        "single_end": false
+                    },
+                    "test.scaffolds.fa.gz:md5,7ddaf03740df422a93fcaffbcd7e9679"
+                ]
+            ],
+            [
+                [
+                    {
+                        "id": "test",
+                        "single_end": false
+                    },
+                    "test.contigs.fa.gz:md5,7ddaf03740df422a93fcaffbcd7e9679"
+                ]
+            ],
+            [
+                
+            ],
+            [
+                
+            ],
+            [
+                [
+                    {
+                        "id": "test",
+                        "single_end": false
+                    },
+                    "test.assembly.gfa.gz:md5,d37c66bca8485314492827ab333a5dcd"
+                ]
+            ],
+            [
+                [
+                    "SPADES",
+                    "spades",
+                    "4.3.0"
+                ]
+            ]
+        ],
+        "timestamp": "2026-09-30T23:22:21.27514",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    },
+    "sarscov2 - se ": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "test",
+                        "single_end": true
+                    },
+                    "test.scaffolds.fa.gz:md5,65ba6a517c152dbe219bf4b5b92bdad7"
+                ]
+            ],
+            [
+                [
+                    {
+                        "id": "test",
+                        "single_end": true
+                    },
+                    "test.contigs.fa.gz:md5,65ba6a517c152dbe219bf4b5b92bdad7"
+                ]
+            ],
+            [
+                
+            ],
+            [
+                
+            ],
+            [
+                [
+                    {
+                        "id": "test",
+                        "single_end": true
+                    },
+                    "test.assembly.gfa.gz:md5,c9e229166546b9601cf32afeb1d80394"
+                ]
+            ],
+            [
+                [
+                    "SPADES",
+                    "spades",
+                    "4.3.0"
+                ]
+            ]
+        ],
+        "timestamp": "2026-09-30T23:16:18.142153",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    },
+    "sarscov2 - pe - stub ": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "test",
+                            "single_end": false
+                        },
+                        "test.scaffolds.fa.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+                    ]
+                ],
+                "1": [
+                    [
+                        {
+                            "id": "test",
+                            "single_end": false
+                        },
+                        "test.contigs.fa.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+                    ]
+                ],
+                "2": [
+                    [
+                        {
+                            "id": "test",
+                            "single_end": false
+                        },
+                        "test.transcripts.fa.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+                    ]
+                ],
+                "3": [
+                    [
+                        {
+                            "id": "test",
+                            "single_end": false
+                        },
+                        "test.gene_clusters.fa.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+                    ]
+                ],
+                "4": [
+                    [
+                        {
+                            "id": "test",
+                            "single_end": false
+                        },
+                        "test.assembly.gfa.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+                    ]
+                ],
+                "5": [
+                    [
+                        {
+                            "id": "test",
+                            "single_end": false
+                        },
+                        "test.warnings.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "6": [
+                    [
+                        {
+                            "id": "test",
+                            "single_end": false
+                        },
+                        "test.spades.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "7": [
+                    [
+                        "SPADES",
+                        "spades",
+                        "4.3.0"
+                    ]
+                ],
+                "contigs": [
+                    [
+                        {
+                            "id": "test",
+                            "single_end": false
+                        },
+                        "test.contigs.fa.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+                    ]
+                ],
+                "gene_clusters": [
+                    [
+                        {
+                            "id": "test",
+                            "single_end": false
+                        },
+                        "test.gene_clusters.fa.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+                    ]
+                ],
+                "gfa": [
+                    [
+                        {
+                            "id": "test",
+                            "single_end": false
+                        },
+                        "test.assembly.gfa.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+                    ]
+                ],
+                "log": [
+                    [
+                        {
+                            "id": "test",
+                            "single_end": false
+                        },
+                        "test.spades.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "scaffolds": [
+                    [
+                        {
+                            "id": "test",
+                            "single_end": false
+                        },
+                        "test.scaffolds.fa.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+                    ]
+                ],
+                "transcripts": [
+                    [
+                        {
+                            "id": "test",
+                            "single_end": false
+                        },
+                        "test.transcripts.fa.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+                    ]
+                ],
+                "versions_spades": [
+                    [
+                        "SPADES",
+                        "spades",
+                        "4.3.0"
+                    ]
+                ],
+                "warnings": [
+                    [
+                        {
+                            "id": "test",
+                            "single_end": false
+                        },
+                        "test.warnings.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ]
+            }
+        ],
+        "timestamp": "2026-09-30T23:24:47.084702",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

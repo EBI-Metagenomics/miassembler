@@ -20,13 +20,13 @@ workflow LONG_READS_ASSEMBLY_COVERAGE {
     // since meta of the depth file contains way more fields than the
     // previous one, preventing a direct join from working
     def fastp = fastp_json.map { meta, json_file ->
-        key = meta.subMap('id', 'study_accession', 'platform')
+        def key = meta.subMap('id', 'study_accession', 'platform', 'study_folder', 'study_reads_folder')
         return [key, json_file]
     }
 
     def depth = LONG_READS_COVERAGE.out.depth.map { meta, depth_file ->
-        key = meta.subMap('id', 'study_accession', 'platform')
-        key2 = meta.subMap('assembler', 'assembler_version')
+        def key = meta.subMap('id', 'study_accession', 'platform', 'study_folder', 'study_reads_folder')
+        def key2 = meta.subMap('assembler', 'assembler_version')
         return [key, key2, depth_file]
     }
 

@@ -10,7 +10,7 @@ process FETCHTOOL_READS {
     path fetchtool_config
 
     output:
-    tuple val(meta), path("download_folder/${study_accession}/raw/${reads_accession}*.fastq.gz"), env(library_strategy), env(library_layout), env(platform), emit: reads
+    tuple val(meta), path("download_folder/${study_accession}/raw/${reads_accession}*.fastq.gz"), env('library_strategy'), env('library_layout'), env('platform'), emit: reads
     // The '_mqc.' is for multiQC
     tuple val(meta), path("download_folder/${study_accession}/${study_accession}.txt")      , emit: metadata_tsv
     path "versions.yml"                                                                     , emit: versions
@@ -29,16 +29,16 @@ process FETCHTOOL_READS {
     -c ${fetchtool_config} \\
     -v ${private_study} ${args}
 
-    library_strategy=\$(echo "\$(grep ${reads_accession} download_folder/${study_accession}/${study_accession}.txt | cut -f 7)" | tr '[:upper:]' '[:lower:]')
-    library_layout=\$(echo "\$(grep ${reads_accession} download_folder/${study_accession}/${study_accession}.txt | cut -f 5)" | tr '[:upper:]' '[:lower:]')
+    export library_strategy=\$(echo "\$(grep ${reads_accession} download_folder/${study_accession}/${study_accession}.txt | cut -f 7)" | tr '[:upper:]' '[:lower:]')
+    export library_layout=\$(echo "\$(grep ${reads_accession} download_folder/${study_accession}/${study_accession}.txt | cut -f 5)" | tr '[:upper:]' '[:lower:]')
 
     export metadata_platform=\$(echo "\$(grep ${reads_accession} download_folder/${study_accession}/${study_accession}.txt | cut -f 9)" | tr '[:upper:]' '[:lower:]')
     if [[ \$metadata_platform == "oxford_nanopore" ]]; then
-        platform="ont"
+        export platform="ont"
     elif [[ \$metadata_platform == "pacbio_smrt" ]]; then
-        platform="pb"
+        export platform="pb"
     else
-        platform="\$metadata_platform"
+        export platform="\$metadata_platform"
     fi
 
     cat <<-END_VERSIONS > versions.yml
