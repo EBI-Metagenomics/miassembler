@@ -17,8 +17,8 @@ workflow FRAMESHIFT_CORRECTION {
 
     pf_fix_input = contigs
         .join(PROOVFRAME_MAP.out.tsv)
-        .multiMap { meta, contigs, tsv ->
-            contigs:    [meta, contigs]
+        .multiMap { meta, contigs_, tsv ->
+            contigs:    [meta, contigs_]
             pf_map_out: [meta, tsv]
     }
 

@@ -117,7 +117,13 @@ workflow SHORT_READS_ASSEMBLER {
         [],
         []
     )
-    ch_versions = ch_versions.mix(SPADES.out.versions)
+    // The updated nf-core module emits versions as a [process, tool, version] tuple (topic),
+    // convert it into versions.yml content so CUSTOM_DUMPSOFTWAREVERSIONS can collate it
+    ch_versions = ch_versions.mix(
+        SPADES.out.versions_spades
+            .map { process, tool, version -> "\"${process}\":\n    ${tool}: ${version}\n" }
+            .unique()
+    )
 
     MEGAHIT(
         qc_filtered_reads.megahit.map { meta, reads, __ -> [meta, reads] }

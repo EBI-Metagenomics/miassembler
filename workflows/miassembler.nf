@@ -43,6 +43,36 @@ include { FETCHTOOL_READS                                      } from '../module
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    OUTPUT FOLDER HELPERS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*/
+
+// Returns the study folder SRPXXX/SRPXXXXXX
+def studyFolder(String study_accession) {
+    return [
+        study_accession.substring(0, 7),
+        study_accession,
+    ].join("/")
+}
+
+// Returns the study / reads folder SRPXXX/SRPXXXXXX/SRRYYYY/SRRYYYYYY
+def studyReadsFolder(String study_accession, String reads_accession) {
+    return studyFolder(study_accession) + "/" + [
+        reads_accession.substring(0, 7),
+        reads_accession,
+    ].join("/")
+}
+
+// Meta fields used by conf/modules.config to build the publishDir paths
+def outputFolders(String study_accession, String reads_accession) {
+    return [
+        "study_folder": studyFolder(study_accession),
+        "study_reads_folder": studyReadsFolder(study_accession, reads_accession),
+    ]
+}
+
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     RUN MAIN WORKFLOW
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
@@ -122,7 +152,7 @@ workflow MIASSEMBLER {
                         "human_reference": human_reference_path, // -> if this value is null (which is not the same as an empty string) the decontamination won't be executed
                         "phix_reference": phix_reference ?: params.phix_reference,
                         "lambdaphage_reference": lambdaphage_reference ?: params.lambdaphage_reference
-                    ],
+                    ] + outputFolders(study_accession, reads_accession),
                     [fq1]
                 )
             } else {
@@ -141,7 +171,7 @@ workflow MIASSEMBLER {
                         "human_reference": human_reference_path, // -> if this value is null (which is not the same as an empty string) the decontamination won't be executed
                         "phix_reference": phix_reference ?: params.phix_reference,
                         "lambdaphage_reference": lambdaphage_reference ?: params.lambdaphage_reference
-                    ],
+                    ] + outputFolders(study_accession, reads_accession),
                     [fq1, fq2]
                 )
             }
@@ -186,8 +216,9 @@ workflow MIASSEMBLER {
                         "contaminant_reference": params.contaminant_reference,
                         "human_reference": params.skip_human_decontamination ? null : params.human_reference,
                         "phix_reference": params.phix_reference,
-                        "lambdaphage_reference": params.lambdaphage_reference
-                    ],
+                        "lambdaphage_reference": params.lambdaphage_reference,
+                        "study_accession": params.study_accession
+                    ] + outputFolders(params.study_accession, params.reads_accession),
                     reads
                 ]
             }
@@ -296,7 +327,7 @@ workflow MIASSEMBLER {
     /**************************************/
 
     def meta_by_study = { meta, result_artifact ->
-        [meta.subMap("study_accession"), result_artifact]
+        [meta.subMap("study_accession", "study_folder"), result_artifact]
     }
 
     // Helper method for the MultiQC aggregation by study and runs //
@@ -354,7 +385,7 @@ workflow MIASSEMBLER {
     /*************************/
 
     def meta_by_run = { meta, result_artifact ->
-        [meta.subMap("study_accession", "id", "assembler", "assembler_version"), result_artifact]
+        [meta.subMap("study_accession", "id", "assembler", "assembler_version", "study_folder", "study_reads_folder"), result_artifact]
     }
 
     def run_multiqc_files = SHORT_READS_ASSEMBLER.out.fastqc_before_zip.map(meta_by_run)

@@ -164,7 +164,7 @@
                     },
                     "spades": {
                         "branch": "master",
-                        "git_sha": "3f5420aa22e00bd030a2556dfdffc9e164ec0ec5",
+                        "git_sha": "7856059a332d5d79c7de61221c88f2fb1efae1f4",
                         "installed_by": ["modules"],
                         "patch": "modules/nf-core/spades/spades.diff"
                     }

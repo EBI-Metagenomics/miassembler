@@ -1,10 +1,13 @@
+// Copyright (c) the nf-core community under an open-source MIT license.
+// See https://github.com/nf-core/modules for full license, file patching instructions and upstream contributing.
+
 process SPADES {
     tag "$meta.id"
 
     conda "${moduleDir}/environment.yml"
-    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/spades:3.15.5--h95f258a_1' :
-        'biocontainers/spades:3.15.5--h95f258a_1' }"
+    container "${ workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container ?
+        'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/bd/bd1aa46fe63e43f2a7bcd7cafded3236b4830bd8ec78adec0c9140e5330d908f/data' :
+        'community.wave.seqera.io/library/spades:4.3.0--ca99aa8b3ff910f5' }"
 
     input:
     tuple val(meta), path(illumina), path(pacbio), path(nanopore)
@@ -19,8 +22,9 @@ process SPADES {
     tuple val(meta), path('*.assembly_graph_with_scaffolds.gfa.gz'), optional:true, emit: gfa
     tuple val(meta), path('*.assembly_graph.fastg.gz')             , optional:true, emit: fastg
     tuple val(meta), path('params.txt')                            , optional:true, emit: params
-    tuple val(meta), path('*.log')                                 , emit: log
-    path  "versions.yml"                                           , emit: versions
+    tuple val(meta), path('*.warnings.log')                        , optional:true, emit: warnings
+    tuple val(meta), path('*.spades.log')                          , emit: log
+    tuple val("${task.process}"), val('spades'), eval("spades.py --version 2>&1 | sed -n 's/^.*SPAdes genome assembler v//p'"), topic: versions, emit: versions_spades
 
     when:
     task.ext.when == null || task.ext.when
@@ -32,22 +36,14 @@ process SPADES {
     def illumina_reads = illumina ? ( meta.single_end ? "-s $illumina" : "-1 ${illumina[0]} -2 ${illumina[1]}" ) : ""
     def pacbio_reads = pacbio ? "--pacbio $pacbio" : ""
     def nanopore_reads = nanopore ? "--nanopore $nanopore" : ""
-    def iontorrent_flag = meta.platform == "iontorrent" ? "--iontorrent" : ""
     def custom_hmms = hmm ? "--custom-hmms $hmm" : ""
     def reads = yml ? "--dataset $yml" : "$illumina_reads $pacbio_reads $nanopore_reads"
-    def metaspades_arg = meta.assembler == "metaspades" ? "--meta" : ""
-    // FIXME: figure out how to use spades retry mechanism
-    //        the problem modifyng the flags or memory forces the expiration
-    //        the nextflow cache hence a new working directory, 
-    //        which then makes spades fail as if needs the "checkpointed files to resume itself"
     """
     spades.py \\
         $args \\
-        $metaspades_arg \\
         --threads $task.cpus \\
         --memory $maxmem \\
         $custom_hmms \\
-        $iontorrent_flag \\
         $reads \\
         -o ./
     mv spades.log ${prefix}.spades.log
@@ -64,22 +60,36 @@ process SPADES {
         mv transcripts.fasta ${prefix}.transcripts.fa
         gzip -n ${prefix}.transcripts.fa
     fi
+
     if [ -f assembly_graph_with_scaffolds.gfa ]; then
         mv assembly_graph_with_scaffolds.gfa ${prefix}.assembly_graph_with_scaffolds.gfa
         gzip -n ${prefix}.assembly_graph_with_scaffolds.gfa
     fi
+
     if [ -f assembly_graph.fastg ]; then
         mv assembly_graph.fastg ${prefix}.assembly_graph.fastg
         gzip -n ${prefix}.assembly_graph.fastg
     fi
+
     if [ -f gene_clusters.fasta ]; then
         mv gene_clusters.fasta ${prefix}.gene_clusters.fa
         gzip -n ${prefix}.gene_clusters.fa
     fi
 
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        spades: \$(spades.py --version 2>&1 | sed 's/^.*SPAdes genome assembler v//; s/ .*\$//')
-    END_VERSIONS
+    if [ -f warnings.log ]; then
+        mv warnings.log ${prefix}.warnings.log
+    fi
+    """
+
+    stub:
+    def prefix = task.ext.prefix ?: "${meta.id}"
+    """
+    echo "" | gzip > ${prefix}.scaffolds.fa.gz
+    echo "" | gzip > ${prefix}.contigs.fa.gz
+    echo "" | gzip > ${prefix}.transcripts.fa.gz
+    echo "" | gzip > ${prefix}.gene_clusters.fa.gz
+    echo "" | gzip > ${prefix}.assembly.gfa.gz
+    touch ${prefix}.spades.log
+    touch ${prefix}.warnings.log
     """
 }

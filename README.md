@@ -48,7 +48,7 @@ Input metadata options
   --assembler                             [string]  The short or long reads assembler  (accepted: spades, metaspades, megahit, flye)
   --long_reads_assembler_config           [string]  Configuration to use flye with.  (accepted: nano-raw, nano-corr, nano-hq, pacbio-raw, pacbio-corr, pacbio-hifi)
   --flye_version                          [string]  [default: 2.9]
-  --spades_version                        [string]  [default: 3.15.5]
+  --spades_version                        [string]  [default: 4.3.0]
   --megahit_version                       [string]  [default: 1.2.9]
   --assembly_memory                       [number]  Default memory allocated for the assembly process. [default: 100]
   --spades_only_assembler                 [boolean] Run SPAdes/metaSPAdes without the error correction step. [default: true]
@@ -185,7 +185,7 @@ results
         │   └── SRR5949318
         │       ├── assembly
         │       │   └── metaspades
-        │       │       └── 3.15.5
+        │       │       └── 4.3.0
         │       │           ├── coverage
         │       │           ├── decontamination
         │       │           └── qc
@@ -212,7 +212,7 @@ The pipeline reports the coverage values for the assembly using two mechanisms: 
 
 This tool summarizes the depth of coverage for each contig from BAM files containing the mapped reads. It quantifies the extent to which contigs in an assembly are covered by these reads. The output is a tabular file, with rows representing contigs and columns displaying the summarized coverage values from the BAM files. This summary is useful for binning contigs or estimating abundance in various metagenomic datasets.
 
-This file is generated per assembly and stored in the following location (e.g., for study `SRP115494` and run `SRR6180434`): `SRP1154/SRP115494/multiqc/SRR5949/SRR5949318/assembly/metaspades/3.15.5/coverage/SRR6180434_coverage_depth_summary.tsv.gz`
+This file is generated per assembly and stored in the following location (e.g., for study `SRP115494` and run `SRR6180434`): `SRP1154/SRP115494/multiqc/SRR5949/SRR5949318/assembly/metaspades/4.3.0/coverage/SRR6180434_coverage_depth_summary.tsv.gz`
 
 ##### Example output of `jgi_summarize_bam_contig_depths`
 
@@ -245,7 +245,7 @@ The pipeline creates a JSON file with the following content:
 }
 ```
 
-The file is stored in (e.g. for study `SRP115494` and run `SRR6180434`) -> `SRP1154/SRP115494/multiqc/SRR5949/SRR5949318/assembly/metaspades/3.15.5/coverage/SRR6180434_coverage.json`
+The file is stored in (e.g. for study `SRP115494` and run `SRR6180434`) -> `SRP1154/SRP115494/multiqc/SRR5949/SRR5949318/assembly/metaspades/4.3.0/coverage/SRR6180434_coverage.json`
 
 ### Top Level Reports
 
@@ -283,7 +283,7 @@ Example:
 
 ```csv
 DRR280712,megahit,1.2.9
-SRR5949318,metaspades,3.15.5
+SRR5949318,metaspades,4.3.0
 ```
 
 ## Tests
